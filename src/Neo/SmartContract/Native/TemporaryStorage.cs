@@ -336,7 +336,7 @@ namespace Neo.SmartContract.Native
         /// <returns>Corresponding storage key.</returns>
         private StorageKey MakeValidTillStorageKey(ReadOnlySpan<byte> validTill, ReadOnlySpan<byte> recordKey)
         {
-            return new KeyBuilder(Id, Prefix_ValidTill).Add(validTill).Add(recordKey[1..]);
+            return new KeyBuilder(Id, Prefix_ValidTill, 8 /* validTill */ + 4 /* contractId */ + ApplicationEngine.MaxStorageKeySize /* key */).Add(validTill).Add(recordKey[1..]);
         }
 
         /// <summary>
