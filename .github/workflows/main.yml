@@ -53,12 +53,12 @@ jobs:
     - name: Test (ALL OS)
       if: matrix.os != 'ubuntu-latest'
       run: |
-        dotnet test -p:GITHUB_ACTIONS=true
+        dotnet test --logger "junit;LogFilePath=TestResults/{assembly}.xml" --binaryLogger:${{ matrix.os }}.binlog -p:GITHUB_ACTIONS=true
     - name: Test (ubuntu)
       if: matrix.os == 'ubuntu-latest'
       run: |
         find tests -name *.csproj | xargs -I % dotnet add % package coverlet.msbuild
-        dotnet test /p:GITHUB_ACTIONS=true /p:CollectCoverage=true /p:CoverletOutput='${{ github.workspace }}/TestResults/coverage/' /p:MergeWith='${{ github.workspace }}/TestResults/coverage/coverage.json' /p:CoverletOutputFormat=\"lcov,json\" -m:1
+        dotnet test /p:GITHUB_ACTIONS=true /p:CollectCoverage=true /p:CoverletOutput='${{ github.workspace }}/TestResults/coverage/' /p:MergeWith='${{ github.workspace }}/TestResults/coverage/coverage.json' /p:CoverletOutputFormat=\"lcov,json\" -m:1 --binaryLogger:${{ matrix.os }}.binlog
     - name: Codecov
       if: matrix.os == 'ubuntu-latest'
       uses: codecov/codecov-action@v6
@@ -66,6 +66,14 @@ jobs:
         token: ${{ secrets.CODECOV_TOKEN }}
         files: ${{ github.workspace }}/TestResults/coverage/coverage.info
         fail_ci_if_error: false
+    - name: Publish Test Results (Actions Summary)
+      if: matrix.os != 'ubuntu-latest' && always()
+      uses: test-summary/action@dist
+      with:
+        paths: |
+          tests/**/TestResults/**/*.xml
+        folded: true
+        show: "all"
 
   PublishMyGet:
     if: github.ref == 'refs/heads/master-n3' && startsWith(github.repository, 'neo-project/')
