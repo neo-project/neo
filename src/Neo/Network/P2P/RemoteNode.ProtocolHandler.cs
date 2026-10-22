@@ -208,6 +208,7 @@ namespace Neo.Network.P2P
             uint count = payload.Count == -1 ? InvPayload.MaxHashesCount : Math.Min((uint)payload.Count, InvPayload.MaxHashesCount);
             for (uint i = payload.IndexStart, max = payload.IndexStart + count; i < max; i++)
             {
+                if (IsDisconnected) return;
                 Block? block = NativeContract.Ledger.GetBlock(snapshot, i);
                 if (block == null)
                     break;
@@ -237,6 +238,7 @@ namespace Neo.Network.P2P
             var notFound = new List<UInt256>();
             foreach (var hash in payload.Hashes.Where(_sentHashes.TryAdd))
             {
+                if (IsDisconnected) return;
                 switch (payload.Type)
                 {
                     case InventoryType.TX:
@@ -274,7 +276,10 @@ namespace Neo.Network.P2P
             if (notFound.Count > 0)
             {
                 foreach (InvPayload entry in InvPayload.CreateGroup(payload.Type, notFound))
+                {
+                    if (IsDisconnected) return;
                     EnqueueMessage(Message.Create(MessageCommand.NotFound, entry));
+                }
             }
         }
 
@@ -377,7 +382,10 @@ namespace Neo.Network.P2P
         private void OnMemPoolMessageReceived()
         {
             foreach (InvPayload payload in InvPayload.CreateGroup(InventoryType.TX, _system.MemPool.GetVerifiedTransactions().Select(p => p.Hash).ToArray()))
+            {
+                if (IsDisconnected) return;
                 EnqueueMessage(Message.Create(MessageCommand.Inv, payload));
+            }
         }
 
         private void OnPingMessageReceived(PingPayload payload)

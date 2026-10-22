@@ -33,6 +33,10 @@ namespace Neo.Network.P2P
         internal record StartProtocol;
         internal record Relay(IInventory Inventory);
 
+        internal const int MaxQueuedMessages = 1024;
+        internal const long MaxQueuedBytes = 256L * 1024 * 1024; // 256 MiB per connection, shared by both queues.
+        private long _queuedBytes;
+
         private readonly NeoSystem _system;
         private readonly LocalNode _localNode;
         private readonly Queue<Message> _messageQueueHigh = new();
@@ -96,14 +100,16 @@ namespace Neo.Network.P2P
         /// </summary>
         private void CheckMessageQueue()
         {
-            if (!_verack || !_ack) return;
+            if (IsDisconnected || !_verack || !_ack) return;
             Queue<Message> queue = _messageQueueHigh;
             if (queue.Count == 0)
             {
                 queue = _messageQueueLow;
                 if (queue.Count == 0) return;
             }
-            SendMessage(queue.Dequeue());
+            var message = queue.Dequeue();
+            _queuedBytes -= message.QueueSize;
+            SendMessage(message);
         }
 
         private void EnqueueMessage(MessageCommand command, ISerializable? payload = null)
@@ -117,6 +123,7 @@ namespace Neo.Network.P2P
         /// <param name="message">The message to be added.</param>
         private void EnqueueMessage(Message message)
         {
+            if (IsDisconnected) return;
             bool is_single = message.Command switch
             {
                 MessageCommand.Addr or MessageCommand.GetAddr or MessageCommand.GetBlocks or MessageCommand.GetHeaders or MessageCommand.Mempool or MessageCommand.Ping or MessageCommand.Pong => true,
@@ -129,10 +136,29 @@ namespace Neo.Network.P2P
             };
             if (!is_single || message_queue.All(p => p.Command != message.Command))
             {
+                if (_messageQueueHigh.Count + _messageQueueLow.Count >= MaxQueuedMessages ||
+                    message.QueueSize > MaxQueuedBytes - _queuedBytes)
+                {
+                    // Stop synchronously: Context.Stop alone does not interrupt the
+                    // current request batch or the remaining frames in OnData.
+                    Disconnect(true);
+                    return;
+                }
                 message_queue.Enqueue(message);
+                _queuedBytes += message.QueueSize;
                 _lastSent = TimeProvider.Current.UtcNow;
             }
             CheckMessageQueue();
+        }
+
+        /// <inheritdoc/>
+        public override void Disconnect(bool abort = false)
+        {
+            _messageQueueHigh.Clear();
+            _messageQueueLow.Clear();
+            _queuedBytes = 0;
+            _messageBuffer = ByteString.Empty;
+            base.Disconnect(abort);
         }
 
         protected override void OnAck()
@@ -143,10 +169,15 @@ namespace Neo.Network.P2P
 
         protected override void OnData(ByteString data)
         {
+            if (IsDisconnected) return;
             _messageBuffer = _messageBuffer.Concat(data);
 
-            for (var message = TryParseMessage(); message != null; message = TryParseMessage())
+            while (!IsDisconnected)
+            {
+                var message = TryParseMessage();
+                if (message is null) break;
                 OnMessage(message);
+            }
         }
 
         protected override void OnReceive(object message)
