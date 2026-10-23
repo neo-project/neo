@@ -69,7 +69,7 @@ public class UT_GasToken
         // Check unclaim
 
         var unclaim = UT_NeoToken.Check_UnclaimedGas(snapshot, from, persistingBlock);
-        Assert.AreEqual(new BigInteger(0.5 * 1000 * 100000000L), unclaim.Value);
+        Assert.AreEqual(new BigInteger(4.5 * 1000 * 100000000L), unclaim.Value);
         Assert.IsTrue(unclaim.State);
 
         // Transfer
@@ -80,7 +80,7 @@ public class UT_GasToken
         Assert.AreEqual(100000000, UT_NeoToken.BalanceOf(snapshot, from));
         Assert.AreEqual(0, UT_NeoToken.BalanceOf(snapshot, to));
 
-        Assert.AreEqual(52000500_00000000, NativeContract.TokenManagement.BalanceOf(snapshot, NativeContract.Governance.GasTokenId, new UInt160(from)));
+        Assert.AreEqual(52004500_00000000, NativeContract.TokenManagement.BalanceOf(snapshot, NativeContract.Governance.GasTokenId, new UInt160(from)));
         Assert.AreEqual(0, NativeContract.TokenManagement.BalanceOf(snapshot, NativeContract.Governance.GasTokenId, new UInt160(to)));
 
         // Check unclaim
@@ -91,7 +91,7 @@ public class UT_GasToken
 
         tokenInfo = NativeContract.TokenManagement.GetTokenInfo(snapshot, NativeContract.Governance.GasTokenId);
         supply = tokenInfo!.TotalSupply;
-        Assert.AreEqual(5200050050000000, supply);
+        Assert.AreEqual(5200450050000000, supply);
 
         Assert.AreEqual(keyCount + 3, snapshot.GetChangeSet().Count()); // Gas
 
@@ -102,7 +102,7 @@ public class UT_GasToken
         using (var engine1 = ApplicationEngine.Create(TriggerType.Application, new Nep17NativeContractExtensions.ManualWitness(), snapshot, persistingBlock, settings: TestProtocolSettings.Default))
         using (ScriptBuilder sb = new())
         {
-            sb.EmitDynamicCall(NativeContract.TokenManagement.Hash, "transfer", NativeContract.Governance.GasTokenId, from, to, 52000500_00000000, null);
+            sb.EmitDynamicCall(NativeContract.TokenManagement.Hash, "transfer", NativeContract.Governance.GasTokenId, from, to, 52004500_00000000, null);
             engine1.LoadScript(sb.ToArray());
             Assert.AreEqual(VMState.HALT, engine1.Execute());
             Assert.IsFalse(engine1.ResultStack.Pop().GetBoolean()); // Not signed
@@ -111,7 +111,7 @@ public class UT_GasToken
         using (var engine2 = ApplicationEngine.Create(TriggerType.Application, new Nep17NativeContractExtensions.ManualWitness(new UInt160(from)), snapshot, persistingBlock, settings: TestProtocolSettings.Default))
         using (ScriptBuilder sb = new())
         {
-            sb.EmitDynamicCall(NativeContract.TokenManagement.Hash, "transfer", NativeContract.Governance.GasTokenId, from, to, 52000500_00000001, null);
+            sb.EmitDynamicCall(NativeContract.TokenManagement.Hash, "transfer", NativeContract.Governance.GasTokenId, from, to, 52004500_00000001, null);
             engine2.LoadScript(sb.ToArray());
             Assert.AreEqual(VMState.HALT, engine2.Execute());
             Assert.IsFalse(engine2.ResultStack.Pop().GetBoolean()); // More than balance
@@ -120,7 +120,7 @@ public class UT_GasToken
         using (var engine3 = ApplicationEngine.Create(TriggerType.Application, new Nep17NativeContractExtensions.ManualWitness(new UInt160(from)), snapshot, persistingBlock, settings: TestProtocolSettings.Default))
         using (ScriptBuilder sb = new())
         {
-            sb.EmitDynamicCall(NativeContract.TokenManagement.Hash, "transfer", NativeContract.Governance.GasTokenId, from, to, 52000500_00000000, null);
+            sb.EmitDynamicCall(NativeContract.TokenManagement.Hash, "transfer", NativeContract.Governance.GasTokenId, from, to, 52004500_00000000, null);
             engine3.LoadScript(sb.ToArray());
             Assert.AreEqual(VMState.HALT, engine3.Execute());
             Assert.IsTrue(engine3.ResultStack.Pop().GetBoolean()); // All balance
@@ -128,7 +128,7 @@ public class UT_GasToken
 
         // Balance of
 
-        Assert.AreEqual(52000500_00000000, NativeContract.TokenManagement.BalanceOf(snapshot, NativeContract.Governance.GasTokenId, new UInt160(to)));
+        Assert.AreEqual(52004500_00000000, NativeContract.TokenManagement.BalanceOf(snapshot, NativeContract.Governance.GasTokenId, new UInt160(to)));
         Assert.AreEqual(0, NativeContract.TokenManagement.BalanceOf(snapshot, NativeContract.Governance.GasTokenId, new UInt160(from)));
 
         Assert.AreEqual(keyCount + 1, snapshot.GetChangeSet().Count()); // All
@@ -149,7 +149,7 @@ public class UT_GasToken
         using (var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, persistingBlock, settings: TestProtocolSettings.Default))
         using (ScriptBuilder sb = new())
         {
-            sb.EmitDynamicCall(NativeContract.TokenManagement.Hash, "burn", NativeContract.Governance.GasTokenId, to, 52000500_00000001);
+            sb.EmitDynamicCall(NativeContract.TokenManagement.Hash, "burn", NativeContract.Governance.GasTokenId, to, 52004500_00000001);
             var context = engine.LoadScript(sb.ToArray());
             context.GetState<ExecutionContextState>().ScriptHash = NativeContract.Governance.Hash;
             Assert.AreEqual(VMState.FAULT, engine.Execute());
@@ -162,7 +162,7 @@ public class UT_GasToken
         {
             engine.LoadScript(Array.Empty<byte>());
             await NativeContract.TokenManagement.BurnInternal(engine, NativeContract.Governance.GasTokenId, to, BigInteger.One, assertOwner: false, callOnBalanceChanged: false, callOnTransfer: false);
-            Assert.AreEqual(5200049999999999, NativeContract.TokenManagement.BalanceOf(engine.SnapshotCache, NativeContract.Governance.GasTokenId, new UInt160(to)));
+            Assert.AreEqual(5200449999999999, NativeContract.TokenManagement.BalanceOf(engine.SnapshotCache, NativeContract.Governance.GasTokenId, new UInt160(to)));
             Assert.AreEqual(2, engine.SnapshotCache.GetChangeSet().Count());
         }
 
@@ -171,7 +171,7 @@ public class UT_GasToken
         using (var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, persistingBlock, settings: TestProtocolSettings.Default))
         {
             engine.LoadScript(Array.Empty<byte>());
-            await NativeContract.TokenManagement.BurnInternal(engine, NativeContract.Governance.GasTokenId, to, 5200049999999999, assertOwner: false, callOnBalanceChanged: false, callOnTransfer: false);
+            await NativeContract.TokenManagement.BurnInternal(engine, NativeContract.Governance.GasTokenId, to, 5200449999999999, assertOwner: false, callOnBalanceChanged: false, callOnTransfer: false);
             Assert.AreEqual(keyCount - 2, engine.SnapshotCache.GetChangeSet().Count());
         }
 
