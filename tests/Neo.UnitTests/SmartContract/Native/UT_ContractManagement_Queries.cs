@@ -92,7 +92,7 @@ namespace Neo.UnitTests.SmartContract.Native
             var iter = NativeContract.ContractManagement.GetContractHashes(_snapshot);
             while (iter.Next())
             {
-                var hash = new UInt160(iter.Value().GetSpan());
+                var hash = new UInt160(iter.Value(out _).GetSpan());
                 var cs = NativeContract.ContractManagement.GetContract(_snapshot, hash);
                 var id = NativeContract.ContractManagement.GetContractId(_snapshot, hash);
                 Assert.AreEqual(cs.Id, id);
