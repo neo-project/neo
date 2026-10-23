@@ -112,18 +112,19 @@ namespace Neo.Network.P2P
             SendMessage(message);
         }
 
-        private void EnqueueMessage(MessageCommand command, ISerializable? payload = null)
+        private bool EnqueueMessage(MessageCommand command, ISerializable? payload = null)
         {
-            EnqueueMessage(Message.Create(command, payload));
+            return EnqueueMessage(Message.Create(command, payload));
         }
 
         /// <summary>
         /// Add message to high priority queue or low priority queue depending on the message type.
         /// </summary>
         /// <param name="message">The message to be added.</param>
-        private void EnqueueMessage(Message message)
+        /// <returns>Whether the message was accepted or was already queued.</returns>
+        private bool EnqueueMessage(Message message)
         {
-            if (IsDisconnected) return;
+            if (IsDisconnected) return false;
             bool is_single = message.Command switch
             {
                 MessageCommand.Addr or MessageCommand.GetAddr or MessageCommand.GetBlocks or MessageCommand.GetHeaders or MessageCommand.Mempool or MessageCommand.Ping or MessageCommand.Pong => true,
@@ -139,16 +140,16 @@ namespace Neo.Network.P2P
                 if (_messageQueueHigh.Count + _messageQueueLow.Count >= MaxQueuedMessages ||
                     message.QueueSize > MaxQueuedBytes - _queuedBytes)
                 {
-                    // Stop synchronously: Context.Stop alone does not interrupt the
-                    // current request batch or the remaining frames in OnData.
-                    Disconnect(true);
-                    return;
+                    // Keep accepted messages and the connection. Batch producers
+                    // stop here; the peer can retry the remainder after the queue drains.
+                    return false;
                 }
                 message_queue.Enqueue(message);
                 _queuedBytes += message.QueueSize;
                 _lastSent = TimeProvider.Current.UtcNow;
             }
             CheckMessageQueue();
+            return true;
         }
 
         /// <inheritdoc/>

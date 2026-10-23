@@ -13,9 +13,11 @@ using Akka.IO;
 using Akka.TestKit.MsTest;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
+using Neo.IO.Caching;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Capabilities;
 using Neo.Network.P2P.Payloads;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -105,10 +107,10 @@ namespace Neo.UnitTests.Network.P2P
             Assert.HasCount(RemoteNode.MaxQueuedMessages / 2, Field<Queue<Message>>(node, "_messageQueueHigh"));
             Assert.HasCount(RemoteNode.MaxQueuedMessages / 2, Field<Queue<Message>>(node, "_messageQueueLow"));
             actor.Tell(Message.Create(MessageCommand.Inv));
-            connection.ExpectMsg<Tcp.Abort>(cancellationToken: CancellationToken.None);
-            Assert.AreEqual(0L, Field<long>(node, "_queuedBytes"));
-            Assert.IsEmpty(Field<Queue<Message>>(node, "_messageQueueHigh"));
-            Assert.IsEmpty(Field<Queue<Message>>(node, "_messageQueueLow"));
+            connection.ExpectNoMsg(TimeSpan.FromMilliseconds(100), cancellationToken: CancellationToken.None);
+            Assert.HasCount(RemoteNode.MaxQueuedMessages / 2, Field<Queue<Message>>(node, "_messageQueueHigh"));
+            Assert.HasCount(RemoteNode.MaxQueuedMessages / 2, Field<Queue<Message>>(node, "_messageQueueLow"));
+            Sys.Stop(actor);
         }
 
         [TestMethod]
@@ -131,12 +133,19 @@ namespace Neo.UnitTests.Network.P2P
             for (var i = 0; i < count; i++) actor.Tell(message);
             Assert.AreEqual(count * message.QueueSize, Field<long>(node, "_queuedBytes"));
             actor.Tell(message);
-            connection.ExpectMsg<Tcp.Abort>(cancellationToken: CancellationToken.None);
-            Assert.AreEqual(0L, Field<long>(node, "_queuedBytes"));
+            connection.ExpectNoMsg(TimeSpan.FromMilliseconds(100), cancellationToken: CancellationToken.None);
+            Assert.AreEqual(count * message.QueueSize, Field<long>(node, "_queuedBytes"));
+            Assert.HasCount(count, Field<Queue<Message>>(node, "_messageQueueLow"));
+            typeof(RemoteNode).GetField("_verack", BindingFlags.Instance | BindingFlags.NonPublic)!.SetValue(node, true);
+            actor.Tell(Connection.Ack.Instance);
+            connection.ExpectMsg<Tcp.Write>(cancellationToken: CancellationToken.None);
+            actor.Tell(message);
+            Assert.AreEqual(count * message.QueueSize, Field<long>(node, "_queuedBytes"));
+            Sys.Stop(actor);
         }
 
         [TestMethod]
-        public void OutboundQueue_RepeatedWireRequestsAbortWithoutWriteAcknowledgements()
+        public void OutboundQueue_RepeatedWireRequestsPreserveQueuedBlocksAndConnection()
         {
             var connection = CreateTestProbe();
             var actor = ActorOfAsTestActorRef(() => new RemoteNode(_system, new LocalNode(_system), connection,
@@ -154,12 +163,45 @@ namespace Neo.UnitTests.Network.P2P
             connection.ExpectMsg<Tcp.Write>(cancellationToken: CancellationToken.None);
             actor.Tell(new Tcp.Received(ByteString.FromBytes(Message.Create(MessageCommand.Verack).ToArray())));
             var request = Message.Create(MessageCommand.GetBlockByIndex, GetBlockByIndexPayload.Create(0, 500)).ToArray();
-            // Include more frames after overflow in the same TCP delivery.
+            // Additional requests in the same TCP delivery must not grow or clear the queue.
             var batch = Enumerable.Range(0, RemoteNode.MaxQueuedMessages + 20).SelectMany(_ => request).ToArray();
             actor.Tell(new Tcp.Received(ByteString.FromBytes(batch)));
-            connection.ExpectMsg<Tcp.Abort>(cancellationToken: CancellationToken.None);
-            Assert.IsEmpty(Field<Queue<Message>>(node, "_messageQueueLow"));
+            connection.ExpectNoMsg(TimeSpan.FromMilliseconds(100), cancellationToken: CancellationToken.None);
+            int QueuedCount() => Field<Queue<Message>>(node, "_messageQueueLow").Count + Field<Queue<Message>>(node, "_messageQueueHigh").Count;
+            Assert.AreEqual(RemoteNode.MaxQueuedMessages, QueuedCount());
             Assert.AreEqual(0, Field<ByteString>(node, "_messageBuffer").Count);
+            actor.Tell(Connection.Ack.Instance);
+            connection.ExpectMsg<Tcp.Write>(cancellationToken: CancellationToken.None);
+            Assert.AreEqual(RemoteNode.MaxQueuedMessages - 1, QueuedCount());
+            actor.Tell(new Tcp.Received(ByteString.FromBytes(request)));
+            Assert.AreEqual(RemoteNode.MaxQueuedMessages, QueuedCount());
+            Sys.Stop(actor);
+        }
+
+        [TestMethod]
+        public void OutboundQueue_RejectedGetDataCanBeRetried()
+        {
+            var connection = CreateTestProbe();
+            var actor = ActorOfAsTestActorRef(() => new RemoteNode(_system, new LocalNode(_system), connection, null, null, new ChannelsConfig()));
+            var node = actor.UnderlyingActor;
+            for (var i = 0; i < RemoteNode.MaxQueuedMessages; i++)
+                actor.Tell(Message.Create(MessageCommand.Inv));
+            var request = InvPayload.Create(InventoryType.Block, _system.GenesisBlock.Hash);
+            var handler = typeof(RemoteNode).GetMethod("OnGetDataMessageReceived", BindingFlags.Instance | BindingFlags.NonPublic)!;
+            handler.Invoke(node, [request]);
+            Assert.IsFalse(Field<HashSetCache<UInt256>>(node, "_sentHashes").Contains(_system.GenesisBlock.Hash));
+            Assert.HasCount(RemoteNode.MaxQueuedMessages, Field<Queue<Message>>(node, "_messageQueueLow"));
+            connection.ExpectNoMsg(TimeSpan.FromMilliseconds(100), cancellationToken: CancellationToken.None);
+
+            typeof(RemoteNode).GetField("_verack", BindingFlags.Instance | BindingFlags.NonPublic)!.SetValue(node, true);
+            actor.Tell(Connection.Ack.Instance);
+            connection.ExpectMsg<Tcp.Write>(cancellationToken: CancellationToken.None);
+            handler.Invoke(node, [request]);
+            Assert.IsTrue(Field<HashSetCache<UInt256>>(node, "_sentHashes").Contains(_system.GenesisBlock.Hash));
+            var queue = Field<Queue<Message>>(node, "_messageQueueLow");
+            Assert.HasCount(RemoteNode.MaxQueuedMessages, queue);
+            Assert.AreEqual(MessageCommand.Block, queue.Last().Command);
+            Sys.Stop(actor);
         }
 
         [TestMethod]
