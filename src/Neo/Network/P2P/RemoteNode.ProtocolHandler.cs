@@ -208,18 +208,19 @@ namespace Neo.Network.P2P
             uint count = payload.Count == -1 ? InvPayload.MaxHashesCount : Math.Min((uint)payload.Count, InvPayload.MaxHashesCount);
             for (uint i = payload.IndexStart, max = payload.IndexStart + count; i < max; i++)
             {
+                if (IsDisconnected) return;
                 Block? block = NativeContract.Ledger.GetBlock(snapshot, i);
                 if (block == null)
                     break;
 
                 if (_bloomFilter == null)
                 {
-                    EnqueueMessage(Message.Create(MessageCommand.Block, block));
+                    if (!EnqueueMessage(Message.Create(MessageCommand.Block, block))) return;
                 }
                 else
                 {
                     BitArray flags = new(block.Transactions.Select(_bloomFilter.Test).ToArray());
-                    EnqueueMessage(Message.Create(MessageCommand.MerkleBlock, MerkleBlockPayload.Create(block, flags)));
+                    if (!EnqueueMessage(Message.Create(MessageCommand.MerkleBlock, MerkleBlockPayload.Create(block, flags)))) return;
                 }
             }
         }
@@ -235,13 +236,16 @@ namespace Neo.Network.P2P
         {
             var snapshot = _system.StoreView;
             var notFound = new List<UInt256>();
-            foreach (var hash in payload.Hashes.Where(_sentHashes.TryAdd))
+            foreach (var hash in payload.Hashes.Distinct())
             {
+                if (IsDisconnected) return;
+                if (_sentHashes.Contains(hash)) continue;
+                Message? response = null;
                 switch (payload.Type)
                 {
                     case InventoryType.TX:
                         if (_system.MemPool.TryGetValue(hash, out Transaction? tx))
-                            EnqueueMessage(Message.Create(MessageCommand.Transaction, tx));
+                            response = Message.Create(MessageCommand.Transaction, tx);
                         else
                             notFound.Add(hash);
                         break;
@@ -251,12 +255,12 @@ namespace Neo.Network.P2P
                         {
                             if (_bloomFilter == null)
                             {
-                                EnqueueMessage(Message.Create(MessageCommand.Block, block));
+                                response = Message.Create(MessageCommand.Block, block);
                             }
                             else
                             {
                                 BitArray flags = new(block.Transactions.Select(p => _bloomFilter.Test(p)).ToArray());
-                                EnqueueMessage(Message.Create(MessageCommand.MerkleBlock, MerkleBlockPayload.Create(block, flags)));
+                                response = Message.Create(MessageCommand.MerkleBlock, MerkleBlockPayload.Create(block, flags));
                             }
                         }
                         else
@@ -266,15 +270,25 @@ namespace Neo.Network.P2P
                         break;
                     default:
                         if (_system.RelayCache.TryGet(hash, out IInventory inventory))
-                            EnqueueMessage(Message.Create((MessageCommand)payload.Type, inventory));
+                            response = Message.Create((MessageCommand)payload.Type, inventory);
                         break;
+                }
+                if (response != null)
+                {
+                    if (!EnqueueMessage(response)) break;
+                    _sentHashes.TryAdd(hash);
                 }
             }
 
             if (notFound.Count > 0)
             {
                 foreach (InvPayload entry in InvPayload.CreateGroup(payload.Type, notFound))
-                    EnqueueMessage(Message.Create(MessageCommand.NotFound, entry));
+                {
+                    if (IsDisconnected) return;
+                    if (!EnqueueMessage(Message.Create(MessageCommand.NotFound, entry))) return;
+                    foreach (var hash in entry.Hashes)
+                        _sentHashes.TryAdd(hash);
+                }
             }
         }
 
@@ -377,7 +391,10 @@ namespace Neo.Network.P2P
         private void OnMemPoolMessageReceived()
         {
             foreach (InvPayload payload in InvPayload.CreateGroup(InventoryType.TX, _system.MemPool.GetVerifiedTransactions().Select(p => p.Hash).ToArray()))
-                EnqueueMessage(Message.Create(MessageCommand.Inv, payload));
+            {
+                if (IsDisconnected) return;
+                if (!EnqueueMessage(Message.Create(MessageCommand.Inv, payload))) return;
+            }
         }
 
         private void OnPingMessageReceived(PingPayload payload)
