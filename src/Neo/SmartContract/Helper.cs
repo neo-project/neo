@@ -328,7 +328,7 @@ namespace Neo.SmartContract
             {
                 invocationScript = new Script(witness.InvocationScript, true);
             }
-            catch (BadScriptException)
+            catch (Exception)
             {
                 return false;
             }
@@ -352,7 +352,7 @@ namespace Neo.SmartContract
                     {
                         verificationScript = new Script(witness.VerificationScript, true);
                     }
-                    catch (BadScriptException)
+                    catch (Exception)
                     {
                         return false;
                     }
