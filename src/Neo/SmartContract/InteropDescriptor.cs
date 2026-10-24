@@ -10,14 +10,18 @@
 // modifications are permitted.
 
 using Neo.Cryptography;
+using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
 
 namespace Neo.SmartContract
 {
+    internal delegate object? InteropInvoker(ApplicationEngine engine, object?[] args);
+
     /// <summary>
     /// Represents a descriptor of an interoperable service.
     /// </summary>
@@ -52,6 +56,8 @@ namespace Neo.SmartContract
         /// </summary>
         public IReadOnlyList<InteropParameterDescriptor> Parameters => field ??= Handler.GetParameters().Select(p => new InteropParameterDescriptor(p)).ToList().AsReadOnly();
 
+        internal InteropInvoker Invoker => field ??= CreateInvoker(Handler);
+
         /// <summary>
         /// The fixed prices for calling the interoperable service in the unit of 1e-11 GAS mapped from the
         /// hardforks they're applied from, ordered from the latest hardfork to the earliest one. The last entry
@@ -72,6 +78,41 @@ namespace Neo.SmartContract
         public static implicit operator uint(InteropDescriptor descriptor)
         {
             return descriptor.Hash;
+        }
+
+        internal object? Invoke(ApplicationEngine engine, object?[] args)
+        {
+            try
+            {
+                return Invoker(engine, args);
+            }
+            catch (Exception ex) when (ex is not TargetInvocationException)
+            {
+                throw new TargetInvocationException(ex);
+            }
+        }
+
+        private static InteropInvoker CreateInvoker(MethodInfo handler)
+        {
+            var engine = Expression.Parameter(typeof(ApplicationEngine), "engine");
+            var args = Expression.Parameter(typeof(object[]), "args");
+            var handlerParameters = handler.GetParameters();
+            var callParameters = new Expression[handlerParameters.Length];
+
+            for (int i = 0; i < handlerParameters.Length; i++)
+            {
+                callParameters[i] = Expression.Convert(
+                    Expression.ArrayIndex(args, Expression.Constant(i)),
+                    handlerParameters[i].ParameterType);
+            }
+
+            Expression? instance = handler.IsStatic ? null : Expression.Convert(engine, handler.DeclaringType!);
+            Expression call = Expression.Call(instance, handler, callParameters);
+            Expression body = handler.ReturnType == typeof(void)
+                ? Expression.Block(call, Expression.Constant(null, typeof(object)))
+                : Expression.Convert(call, typeof(object));
+
+            return Expression.Lambda<InteropInvoker>(body, engine, args).Compile();
         }
     }
 }

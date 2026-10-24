@@ -17,6 +17,7 @@ using Neo.VM.Types;
 using System;
 using System.Diagnostics;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Numerics;
 using System.Reflection;
 using Array = Neo.VM.Types.Array;
@@ -25,6 +26,8 @@ using Buffer = Neo.VM.Types.Buffer;
 
 namespace Neo.SmartContract.Native
 {
+    internal delegate object? NativeMethodInvoker(NativeContract contract, ApplicationEngine engine, object?[] args);
+
     [DebuggerDisplay("{Name}")]
     internal class ContractMethodMetadata : IHardforkActivable
     {
@@ -39,6 +42,7 @@ namespace Neo.SmartContract.Native
         public ContractMethodDescriptor Descriptor { get; }
         public Hardfork? ActiveIn { get; init; } = null;
         public Hardfork? DeprecatedIn { get; init; } = null;
+        internal NativeMethodInvoker Invoker => field ??= CreateInvoker();
 
         public ContractMethodMetadata(MemberInfo member, ContractMethodAttribute attribute)
         {
@@ -73,6 +77,57 @@ namespace Neo.SmartContract.Native
                 Parameters = Parameters.Select(p => new ContractParameterDefinition { Type = ToParameterType(p.Type), Name = p.Name! }).ToArray(),
                 Safe = (attribute.RequiredCallFlags & ~CallFlags.ReadOnly) == 0
             };
+        }
+
+        internal object? Invoke(NativeContract contract, ApplicationEngine engine, object?[] args)
+        {
+            try
+            {
+                return Invoker(contract, engine, args);
+            }
+            catch (Exception ex) when (ex is not TargetInvocationException)
+            {
+                throw new TargetInvocationException(ex);
+            }
+        }
+
+        private NativeMethodInvoker CreateInvoker()
+        {
+            var contract = Expression.Parameter(typeof(NativeContract), "contract");
+            var engine = Expression.Parameter(typeof(ApplicationEngine), "engine");
+            var args = Expression.Parameter(typeof(object[]), "args");
+            var handlerParameters = Handler.GetParameters();
+            var callParameters = new Expression[handlerParameters.Length];
+            int publicParameterIndex = 0;
+
+            for (int i = 0; i < handlerParameters.Length; i++)
+            {
+                if (i == 0 && NeedApplicationEngine)
+                {
+                    callParameters[i] = Expression.Convert(engine, handlerParameters[i].ParameterType);
+                    continue;
+                }
+
+                if (i == 0 && NeedSnapshot)
+                {
+                    callParameters[i] = Expression.Convert(
+                        Expression.Property(engine, nameof(ApplicationEngine.SnapshotCache)),
+                        handlerParameters[i].ParameterType);
+                    continue;
+                }
+
+                callParameters[i] = Expression.Convert(
+                    Expression.ArrayIndex(args, Expression.Constant(publicParameterIndex++)),
+                    handlerParameters[i].ParameterType);
+            }
+
+            Expression? instance = Handler.IsStatic ? null : Expression.Convert(contract, Handler.DeclaringType!);
+            Expression call = Expression.Call(instance, Handler, callParameters);
+            Expression body = Handler.ReturnType == typeof(void)
+                ? Expression.Block(call, Expression.Constant(null, typeof(object)))
+                : Expression.Convert(call, typeof(object));
+
+            return Expression.Lambda<NativeMethodInvoker>(body, contract, engine, args).Compile();
         }
 
         private static ContractParameterType ToParameterType(Type type)
