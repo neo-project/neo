@@ -40,6 +40,180 @@ namespace Neo.UnitTests.SmartContract.Native
         }
 
         [TestMethod]
+        public void BlockAccount_SkipsGasCallbackAndPreventsRevoting()
+        {
+            var snapshot = _snapshotCache.CloneCache();
+            var committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot);
+            var committees = NativeContract.NEO.GetCommittee(snapshot);
+            var candidatePubKey = committees[0];
+
+            ulong startTime = 1_000_000;
+
+            Block blockStart = new()
+            {
+                Header = new Header
+                {
+                    PrevHash = UInt256.Zero,
+                    MerkleRoot = UInt256.Zero,
+                    Index = 1000,
+                    Timestamp = startTime,
+                    NextConsensus = UInt160.Zero,
+                    Witness = Witness.Empty
+                },
+                Transactions = []
+            };
+
+            var candidateKey = NativeContract.NEO.CreateStorageKey(33, candidatePubKey);
+            snapshot.GetAndChange(candidateKey, () => new StorageItem(new NeoToken.CandidateState { Registered = true, Votes = 0 }));
+
+            // Blocking must succeed without executing the aborting callback, while still crediting GAS.
+            var abortScript = new byte[] { (byte)OpCode.ABORT };
+            var abortManifest = TestUtils.CreateManifest("onNEP17Payment", ContractParameterType.Void,
+                ContractParameterType.Hash160, ContractParameterType.Integer, ContractParameterType.Any);
+            var abortContract = TestUtils.GetContract(abortScript, abortManifest);
+            snapshot.DeleteContract(abortContract.Hash);
+            snapshot.AddContract(abortContract.Hash, abortContract);
+
+            var abortNeoKey = NativeContract.NEO.CreateStorageKey(20, abortContract.Hash);
+            snapshot.GetAndChange(abortNeoKey, () => new StorageItem(new NeoToken.NeoAccountState
+            {
+                Balance = 1,
+                BalanceHeight = 0
+            }));
+
+            var abortRet = NativeContract.Policy.Call(
+                    snapshot,
+                    new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr),
+                    blockStart,
+                    "blockAccount",
+                    new ContractParameter(ContractParameterType.Hash160) { Value = abortContract.Hash });
+            Assert.IsTrue(abortRet.GetBoolean());
+            Assert.IsTrue(NativeContract.Policy.IsBlocked(snapshot, abortContract.Hash));
+            Assert.IsGreaterThan(BigInteger.Zero, NativeContract.GAS.BalanceOf(snapshot, abortContract.Hash));
+            Assert.AreEqual(1, NativeContract.NEO.BalanceOf(snapshot, abortContract.Hash));
+
+            // The callback must not be able to vote again during blocking.
+            byte[] revoteScript;
+            using (var sb = new ScriptBuilder())
+            {
+                sb.Emit(OpCode.CLEAR);
+                sb.EmitPush(candidatePubKey.EncodePoint(true));
+                sb.EmitSysCall(ApplicationEngine.System_Runtime_GetExecutingScriptHash);
+                sb.EmitPush(2);
+                sb.Emit(OpCode.PACK);
+                sb.EmitPush((int)CallFlags.All);
+                sb.EmitPush("vote");
+                sb.EmitPush(NativeContract.NEO.Hash);
+                sb.EmitSysCall(ApplicationEngine.System_Contract_Call);
+                sb.Emit(OpCode.DROP);
+                sb.Emit(OpCode.RET);
+                revoteScript = sb.ToArray();
+            }
+            var revoteManifest = TestUtils.CreateManifest("onNEP17Payment", ContractParameterType.Void,
+                ContractParameterType.Hash160, ContractParameterType.Integer, ContractParameterType.Any);
+            var revoteContract = TestUtils.GetContract(revoteScript, revoteManifest);
+            snapshot.DeleteContract(revoteContract.Hash);
+            snapshot.AddContract(revoteContract.Hash, revoteContract);
+
+            var revoteNeoKey = NativeContract.NEO.CreateStorageKey(20, revoteContract.Hash);
+            snapshot.GetAndChange(revoteNeoKey, () => new StorageItem(new NeoToken.NeoAccountState
+            {
+                Balance = 100,
+                BalanceHeight = 0
+            }));
+
+            var blockRet = NativeContract.Policy.Call(
+                snapshot,
+                new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr),
+                blockStart,
+                "blockAccount",
+                new ContractParameter(ContractParameterType.Hash160) { Value = revoteContract.Hash });
+            Assert.IsTrue(blockRet.GetBoolean());
+            Assert.IsTrue(NativeContract.Policy.IsBlocked(snapshot, revoteContract.Hash));
+
+            var revoteState = snapshot.TryGet(revoteNeoKey)!.GetInteroperable<NeoToken.NeoAccountState>();
+            Assert.IsNull(revoteState.VoteTo);
+            var candidateVotesAfterBlock = snapshot.TryGet(candidateKey)!.GetInteroperable<NeoToken.CandidateState>().Votes;
+            Assert.AreEqual(0, candidateVotesAfterBlock);
+            Assert.IsGreaterThan(BigInteger.Zero, NativeContract.GAS.BalanceOf(snapshot, revoteContract.Hash));
+        }
+
+        [TestMethod]
+        public void RecoverFund_NeoWithAccruedGasStillFaultsForBlockedContract()
+        {
+            var snapshot = _snapshotCache.CloneCache();
+            var committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot);
+            var committees = NativeContract.NEO.GetCommittee(snapshot);
+            var min = Math.Max(1, committees.Length - (committees.Length - 1) / 2);
+            var committeeFullMultiSigAddr = Contract.CreateMultiSigRedeemScript(Math.Max(min, committees.Length - 2), committees).ToScriptHash();
+            const ulong startTime = 1_000_000;
+            const ulong requiredTime = 365UL * 24 * 60 * 60 * 1_000;
+            Block blockStart = new()
+            {
+                Header = new Header
+                {
+                    PrevHash = UInt256.Zero,
+                    MerkleRoot = UInt256.Zero,
+                    Index = 1000,
+                    Timestamp = startTime,
+                    NextConsensus = UInt160.Zero,
+                    Witness = Witness.Empty
+                },
+                Transactions = []
+            };
+            Block blockFinish = new()
+            {
+                Header = new Header
+                {
+                    PrevHash = UInt256.Zero,
+                    MerkleRoot = UInt256.Zero,
+                    Index = 2000,
+                    Timestamp = startTime + requiredTime + 1_000,
+                    NextConsensus = UInt160.Zero,
+                    Witness = Witness.Empty
+                },
+                Transactions = []
+            };
+
+            // Known remaining issue: PostTransferAsync still invokes the blocked contract's GAS callback.
+            var benignScript = new byte[] { (byte)OpCode.CLEAR, (byte)OpCode.RET };
+            var benignManifest = TestUtils.CreateManifest("onNEP17Payment", ContractParameterType.Void,
+                ContractParameterType.Hash160, ContractParameterType.Integer, ContractParameterType.Any);
+            var benignContract = TestUtils.GetContract(benignScript, benignManifest);
+            snapshot.DeleteContract(benignContract.Hash);
+            snapshot.AddContract(benignContract.Hash, benignContract);
+
+            var benignNeoKey = NativeContract.NEO.CreateStorageKey(20, benignContract.Hash);
+            snapshot.GetAndChange(benignNeoKey, () => new StorageItem(new NeoToken.NeoAccountState
+            {
+                Balance = 50,
+                BalanceHeight = 0
+            }));
+
+            var benignBlockRet = NativeContract.Policy.Call(
+                snapshot,
+                new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr),
+                blockStart,
+                "blockAccount",
+                new ContractParameter(ContractParameterType.Hash160) { Value = benignContract.Hash });
+            Assert.IsTrue(benignBlockRet.GetBoolean());
+            Assert.IsTrue(NativeContract.Policy.IsBlocked(snapshot, benignContract.Hash));
+
+            var ex = Assert.ThrowsExactly<InvalidOperationException>(() =>
+            {
+                NativeContract.Policy.Call(
+                    snapshot,
+                    new Nep17NativeContractExtensions.ManualWitness(committeeFullMultiSigAddr),
+                    blockFinish,
+                    "recoverFund",
+                    new ContractParameter(ContractParameterType.Hash160) { Value = benignContract.Hash },
+                    new ContractParameter(ContractParameterType.Hash160) { Value = NativeContract.NEO.Hash });
+            });
+            Assert.Contains("has been blocked", ex.Message);
+            Assert.AreEqual(50, NativeContract.NEO.BalanceOf(snapshot, benignContract.Hash));
+        }
+
+        [TestMethod]
         public void Check_Default()
         {
             var snapshot = _snapshotCache.CloneCache();
