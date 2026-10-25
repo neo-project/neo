@@ -192,7 +192,8 @@ namespace Neo.SmartContract
                 if (script[++i] != 33) return false;
                 try
                 {
-                    points?.Add(ECPoint.DecodePoint(script.Slice(i + 1, 33), ECCurve.Secp256r1));
+                    var point = ECPoint.DecodePoint(script.Slice(i + 1, 33), ECCurve.Secp256r1);
+                    points?.Add(point);
                 }
                 catch (Exception) // Script may contain any data, thus exceptions are allowed on point decoding.
                 {
@@ -327,7 +328,7 @@ namespace Neo.SmartContract
             {
                 invocationScript = new Script(witness.InvocationScript, true);
             }
-            catch (BadScriptException)
+            catch (Exception)
             {
                 return false;
             }
@@ -351,7 +352,7 @@ namespace Neo.SmartContract
                     {
                         verificationScript = new Script(witness.VerificationScript, true);
                     }
-                    catch (BadScriptException)
+                    catch (Exception)
                     {
                         return false;
                     }
