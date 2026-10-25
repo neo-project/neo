@@ -12,9 +12,28 @@
 using Neo.Persistence;
 using Neo.VM;
 using System;
+using System.Numerics;
 
 namespace Neo.SmartContract
 {
+    /// <summary>
+    /// The gas budget owned by a bounded contract call.
+    /// </summary>
+    internal sealed class ContractCallGasBudget
+    {
+        public ContractCallGasBudget(BigInteger limit, ContractCallGasBudget? parent)
+        {
+            Limit = limit;
+            Parent = parent;
+        }
+
+        public BigInteger Limit { get; }
+
+        public BigInteger Consumed { get; set; }
+
+        public ContractCallGasBudget? Parent { get; }
+    }
+
     /// <summary>
     /// Represents the custom state in <see cref="ExecutionContext"/>.
     /// </summary>
@@ -58,5 +77,11 @@ namespace Neo.SmartContract
         /// True if the execution is whitelisted by committee
         /// </summary>
         public bool WhiteListed { get; set; } = false;
+
+        /// <summary>
+        /// The gas budget inherited by this context, or owned by this context when it is
+        /// the root of a bounded contract call.
+        /// </summary>
+        internal ContractCallGasBudget? ContractCallGasBudget { get; set; }
     }
 }
