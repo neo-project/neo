@@ -335,8 +335,8 @@ namespace Neo.SmartContract.Native
 
         /// <summary>
         /// Is the native contract active.
-        /// A hardfork omitted from <paramref name="settings"/> is not scheduled, so the contract stays inactive.
-        /// This matches <see cref="IsInitializeBlock"/>.
+        /// Before <see cref="Hardfork.HF_Huyao"/>, a hardfork omitted from <paramref name="settings"/> is treated as enabled from genesis.
+        /// Since <see cref="Hardfork.HF_Huyao"/>, an omitted hardfork stays inactive, matching <see cref="IsInitializeBlock"/>.
         /// </summary>
         /// <param name="settings">The <see cref="ProtocolSettings"/> where the HardForks are configured.</param>
         /// <param name="blockHeight">Block height</param>
@@ -345,9 +345,15 @@ namespace Neo.SmartContract.Native
         {
             if (ActiveIn is null) return true;
 
-            // If hf is not set in the configuration (with EnsureOmmitedHardforks applied over it), it is treated as disabled.
             if (!settings.Hardforks.TryGetValue(ActiveIn.Value, out var activeIn))
+            {
+                // Preserve the historical behaviour until Huyao. This method has executed since genesis.
+                if (!settings.IsHardforkEnabled(Hardfork.HF_Huyao, blockHeight))
+                    return true;
+
+                // If hf is not set in the configuration (with EnsureOmmitedHardforks applied over it), it is treated as disabled.
                 return false;
+            }
 
             return activeIn <= blockHeight;
         }

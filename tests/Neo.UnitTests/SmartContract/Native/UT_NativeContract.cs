@@ -145,8 +145,18 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.IsFalse(NativeContract.Treasury.IsActive(settings, 49));
             Assert.IsTrue(NativeContract.Treasury.IsActive(settings, 50));
 
-            Assert.IsFalse(NativeContract.TemporaryStorage.IsActive(settings, 0));
-            Assert.IsFalse(NativeContract.TemporaryStorage.IsActive(settings, uint.MaxValue));
+            // Before Huyao, a missing hardfork stays active from genesis.
+            Assert.IsTrue(NativeContract.TemporaryStorage.IsActive(settings, 0));
+            Assert.IsTrue(NativeContract.TemporaryStorage.IsActive(settings, uint.MaxValue));
+
+            const uint huyaoHeight = 60;
+            ProtocolSettings huyaoSettings = settings with { Hardforks = settings.Hardforks.SetItem(Hardfork.HF_Huyao, huyaoHeight) };
+            // Drop Faun while Huyao is configured, so Treasury's ActiveIn is absent from the configuration.
+            ProtocolSettings missingFaun = huyaoSettings with { Hardforks = huyaoSettings.Hardforks.Remove(Hardfork.HF_Faun) };
+
+            Assert.IsTrue(NativeContract.Treasury.IsActive(missingFaun, huyaoHeight - 1));
+            Assert.IsFalse(NativeContract.Treasury.IsActive(missingFaun, huyaoHeight));
+            Assert.IsFalse(NativeContract.Treasury.IsActive(missingFaun, uint.MaxValue));
         }
 
         [TestMethod]
