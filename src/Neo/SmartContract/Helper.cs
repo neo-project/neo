@@ -72,25 +72,52 @@ namespace Neo.SmartContract
         /// Calculates the verification fee for a signature address multiplied by the execution fee factor.
         /// In the unit of datoshi, 1 datoshi = 1e-8 GAS
         /// </summary>
+        /// <param name="settings">The <see cref="ProtocolSettings"/> used to check hardfork activation.</param>
+        /// <param name="index">The index of the block the verification is performed for.</param>
         /// <param name="execFeeFactor">The execution fee factor with the decimals defined in <see cref="ApplicationEngine.FeeFactor"/>.</param>
         /// <returns>The calculated cost.</returns>
-        public static long SignatureContractCost(BigInteger execFeeFactor) =>
-            ApplyExecFeeFactor(execFeeFactor, SignatureContractCost());
+        public static long SignatureContractCost(ProtocolSettings settings, uint index, BigInteger execFeeFactor)
+        {
+            var (prices, multiplier) = GetOpCodePrices(settings, index);
+            long fee = (prices[(byte)OpCode.PUSHDATA1] * 2 + prices[(byte)OpCode.SYSCALL]) * multiplier;
+            fee += ApplicationEngine.CheckSigPrice * ApplicationEngine.OpcodePriceMultiplier;
+            return ApplyExecFeeFactor(execFeeFactor, fee);
+        }
 
         /// <summary>
         /// Calculates the verification fee for a multi-signature address multiplied by the execution fee factor.
         /// In the unit of datoshi, 1 datoshi = 1e-8 GAS
         /// </summary>
+        /// <param name="settings">The <see cref="ProtocolSettings"/> used to check hardfork activation.</param>
+        /// <param name="index">The index of the block the verification is performed for.</param>
         /// <param name="execFeeFactor">The execution fee factor with the decimals defined in <see cref="ApplicationEngine.FeeFactor"/>.</param>
         /// <param name="m">The number of correct signatures that need to be provided in order for the verification to pass.</param>
         /// <param name="n">The number of public keys in the account.</param>
         /// <returns>The calculated cost.</returns>
-        public static long MultiSignatureContractCost(BigInteger execFeeFactor, int m, int n) =>
-            ApplyExecFeeFactor(execFeeFactor, MultiSignatureContractCost(m, n));
+        public static long MultiSignatureContractCost(ProtocolSettings settings, uint index, BigInteger execFeeFactor, int m, int n)
+        {
+            var (prices, multiplier) = GetOpCodePrices(settings, index);
+            long fee = prices[(byte)OpCode.PUSHDATA1] * (m + n);
+            using (ScriptBuilder sb = new())
+                fee += prices[sb.EmitPush(m).ToArray()[0]];
+            using (ScriptBuilder sb = new())
+                fee += prices[sb.EmitPush(n).ToArray()[0]];
+            fee += prices[(byte)OpCode.SYSCALL];
+            fee *= multiplier;
+            fee += ApplicationEngine.CheckSigPrice * ApplicationEngine.OpcodePriceMultiplier * n;
+            return ApplyExecFeeFactor(execFeeFactor, fee);
+        }
+
+        // The multiplier scales the prices to 1e-11 GAS:
+        // OpCodePriceTable is in datoshi, StaticCoefficients is already in 1e-11 GAS.
+        private static (long[], long) GetOpCodePrices(ProtocolSettings settings, uint index) =>
+            settings.IsHardforkEnabled(Hardfork.HF_Huyao, index)
+                ? (ApplicationEngine.StaticCoefficients, 1)
+                : (ApplicationEngine.OpCodePriceTable, ApplicationEngine.OpcodePriceMultiplier);
 
         // The full factor is applied and the result is rounded up, the same way as ApplicationEngine.FeeConsumed does.
         private static long ApplyExecFeeFactor(BigInteger execFeeFactor, long cost) =>
-            (long)(execFeeFactor * cost).DivideCeiling(ApplicationEngine.FeeFactor);
+            (long)(execFeeFactor * cost).DivideCeiling(ApplicationEngine.FeeFactor * ApplicationEngine.OpcodePriceMultiplier);
 
         /// <summary>
         /// Check the correctness of the script and ABI.

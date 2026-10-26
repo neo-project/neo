@@ -349,10 +349,10 @@ namespace Neo.Network.P2P.Payloads
             for (int i = 0; i < hashes.Length; i++)
             {
                 if (IsSignatureContract(Witnesses[i].VerificationScript.Span) && IsSingleSignatureInvocationScript(Witnesses[i].InvocationScript, out var _))
-                    netFeeDatoshi -= SignatureContractCost(execFeeFactor);
+                    netFeeDatoshi -= SignatureContractCost(settings, height + 1, execFeeFactor);
                 else if (IsMultiSigContract(Witnesses[i].VerificationScript.Span, out int m, out int n) && IsMultiSignatureInvocationScript(m, Witnesses[i].InvocationScript, out var _))
                 {
-                    netFeeDatoshi -= MultiSignatureContractCost(execFeeFactor, m, n);
+                    netFeeDatoshi -= MultiSignatureContractCost(settings, height + 1, execFeeFactor, m, n);
                 }
                 else
                 {

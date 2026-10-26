@@ -11,7 +11,9 @@
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography.ECC;
+using Neo.Extensions;
 using Neo.Extensions.Factories;
+using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract;
@@ -201,18 +203,94 @@ namespace Neo.UnitTests.SmartContract
         }
 
         [TestMethod]
-        public void TestContractCostWithFractionalExecFeeFactor()
+        [DataRow(false)]
+        [DataRow(true)]
+        public void TestContractCostWithFractionalExecFeeFactor(bool huyao)
         {
+            var settings = TestProtocolSettings.Default with
+            {
+                Hardforks = TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_Huyao, huyao ? 0 : uint.MaxValue)
+            };
             // 30.5001 with the decimals defined in ApplicationEngine.FeeFactor.
             BigInteger execFeeFactor = 305001;
 
-            // 32784 * 30.5001 = 999915.2784, rounded up.
-            Assert.AreEqual(999916, SignatureContractCost(execFeeFactor));
-            // 98346 * 30.5001 = 2999562.8346, rounded up.
-            Assert.AreEqual(2999563, MultiSignatureContractCost(execFeeFactor, 2, 3));
-            // An integer factor gives the same result as multiplying by it.
-            Assert.AreEqual(30 * SignatureContractCost(), SignatureContractCost(30 * ApplicationEngine.FeeFactor));
-            Assert.AreEqual(30 * MultiSignatureContractCost(2, 3), MultiSignatureContractCost(30 * ApplicationEngine.FeeFactor, 2, 3));
+            // Before Huyao: (8.000 * 2 + 0 + 32768.000) * 30.5001 = 999915.2784000, rounded up.
+            // Since Huyao: (1.685 * 2 + 0 + 32768.000) * 30.5001 = 999530.0621370, rounded up.
+            Assert.AreEqual(huyao ? 999531 : 999916, SignatureContractCost(settings, 1, execFeeFactor));
+            // Before Huyao: (8.000 * 5 + 1.000 * 2 + 0 + 32768.000 * 3) * 30.5001 = 2999562.8346000, rounded up.
+            // Since Huyao: (1.685 * 5 + 2.187 * 2 + 0 + 32768.000 * 3) * 30.5001 = 2998672.2011799, rounded up.
+            Assert.AreEqual(huyao ? 2998673 : 2999563, MultiSignatureContractCost(settings, 1, execFeeFactor, 2, 3));
+            if (!huyao)
+            {
+                // An integer factor gives the same result as multiplying by it.
+                Assert.AreEqual(30 * SignatureContractCost(), SignatureContractCost(settings, 1, 30 * ApplicationEngine.FeeFactor));
+                Assert.AreEqual(30 * MultiSignatureContractCost(2, 3), MultiSignatureContractCost(settings, 1, 30 * ApplicationEngine.FeeFactor, 2, 3));
+            }
+        }
+
+        [TestMethod]
+        [DataRow(false, 9u, 300000)]
+        [DataRow(false, 10u, 300000)]
+        [DataRow(false, 11u, 300000)]
+        [DataRow(true, 9u, 300000)]
+        [DataRow(true, 10u, 300000)]
+        [DataRow(true, 11u, 300000)]
+        [DataRow(false, 9u, 305001)]
+        [DataRow(false, 10u, 305001)]
+        [DataRow(true, 9u, 305001)]
+        [DataRow(true, 10u, 305001)]
+        public void TestContractCostMatchesWitnessExecutionAcrossHuyao(bool multisig, uint verificationHeight, int execFeeFactor)
+        {
+            var snapshot = _snapshotCache.CloneCache();
+            var settings = TestProtocolSettings.Default with
+            {
+                Hardforks = TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_Faun, 0).SetItem(Hardfork.HF_Huyao, 10)
+            };
+            snapshot.GetAndChange(StorageKey.Create(NativeContract.Ledger.Id, 12))!
+                .GetInteroperable<HashIndexState>().Index = verificationHeight - 1;
+            snapshot.GetAndChange(StorageKey.Create(NativeContract.Policy.Id, 18))!.Set(execFeeFactor);
+
+            var keys = Enumerable.Range(1, multisig ? 3 : 1).Select(i =>
+            {
+                var privateKey = new byte[32];
+                privateKey[^1] = (byte)i;
+                return new KeyPair(privateKey);
+            }).OrderBy(key => key.PublicKey).ToArray();
+            var verification = multisig
+                ? Contract.CreateMultiSigRedeemScript(2, keys.Select(key => key.PublicKey).ToArray())
+                : Contract.CreateSignatureRedeemScript(keys[0].PublicKey);
+            var account = verification.ToScriptHash();
+            var tx = new Transaction
+            {
+                Script = new[] { (byte)OpCode.PUSH1 },
+                Signers = [new Signer { Account = account, Scopes = WitnessScope.CalledByEntry }],
+                Attributes = [],
+                ValidUntilBlock = verificationHeight,
+                Witnesses = []
+            };
+
+            Witness SignWitness()
+            {
+                using var builder = new ScriptBuilder();
+                foreach (var key in keys.Take(multisig ? 2 : 1))
+                    builder.EmitPush(Neo.Wallets.Helper.Sign(tx, key, settings.Network));
+                return new Witness { InvocationScript = builder.ToArray(), VerificationScript = verification };
+            }
+
+            tx.Witnesses = [SignWitness()];
+            Assert.IsTrue(tx.VerifyWitness(settings, snapshot, account, tx.Witnesses[0], ApplicationEngine.TestModeGas, out var executionFee));
+
+            var requiredFee = executionFee + tx.Size * NativeContract.Policy.GetFeePerByte(snapshot);
+            tx.NetworkFee = requiredFee;
+            tx.Witnesses = [SignWitness()];
+            Assert.IsTrue(tx.VerifyWitness(settings, snapshot, account, tx.Witnesses[0], executionFee, out var finalExecutionFee));
+            Assert.AreEqual(executionFee, finalExecutionFee);
+
+            Assert.AreEqual(VerifyResult.Succeed, tx.VerifyStateDependent(settings, snapshot, null!, []));
+            tx.NetworkFee--;
+            tx.Witnesses = [SignWitness()];
+            Assert.AreEqual(VerifyResult.InsufficientFunds, tx.VerifyStateDependent(settings, snapshot, null!, []));
+            Assert.AreEqual(requiredFee, tx.CalculateNetworkFee(snapshot, settings, hash => hash.Equals(account) ? verification : null));
         }
     }
 }

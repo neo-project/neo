@@ -117,7 +117,8 @@ namespace Neo.Wallets
             int size = Transaction.HeaderSize + tx.Signers.GetVarSize() + tx.Attributes.GetVarSize()
                 + tx.Script.GetVarSize() + hashes.Length.GetVarSize();
             int index = -1;
-            var execFeeFactor = NativeContract.Policy.GetExecFeeFactorWithDecimals(settings, snapshot, NativeContract.Ledger.CurrentIndex(snapshot) + 1);
+            var verificationIndex = NativeContract.Ledger.CurrentIndex(snapshot) + 1;
+            var execFeeFactor = NativeContract.Policy.GetExecFeeFactorWithDecimals(settings, snapshot, verificationIndex);
             BigInteger networkFee = 0;
             foreach (var hash in hashes)
             {
@@ -212,13 +213,13 @@ namespace Neo.Wallets
                     if (IsSignatureContract(witnessScript))
                     {
                         size += 67 + witnessScript.GetVarSize();
-                        networkFee += SignatureContractCost(execFeeFactor);
+                        networkFee += SignatureContractCost(settings, verificationIndex, execFeeFactor);
                     }
                     else if (IsMultiSigContract(witnessScript, out int m, out int n))
                     {
                         var sizeInv = 66 * m;
                         size += sizeInv.GetVarSize() + sizeInv + witnessScript.GetVarSize();
-                        networkFee += MultiSignatureContractCost(execFeeFactor, m, n);
+                        networkFee += MultiSignatureContractCost(settings, verificationIndex, execFeeFactor, m, n);
                     }
                 }
             }
