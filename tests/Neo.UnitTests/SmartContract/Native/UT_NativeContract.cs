@@ -130,6 +130,26 @@ namespace Neo.UnitTests.SmartContract.Native
         }
 
         [TestMethod]
+        public void TestIsActiveUnconfiguredHardfork()
+        {
+            // Leading omitted hardforks are filled with height 0. HF_Huyao is left unscheduled.
+            string json = UT_ProtocolSettings.CreateHFSettings("\"HF_Echidna\": 40,\n\"HF_Faun\": 50");
+            var file = Path.GetTempFileName();
+            File.WriteAllText(file, json);
+            ProtocolSettings settings = ProtocolSettings.Load(file);
+            File.Delete(file);
+
+            Assert.IsFalse(settings.Hardforks.ContainsKey(Hardfork.HF_Huyao));
+            Assert.IsTrue(NativeContract.GAS.IsActive(settings, 0));
+
+            Assert.IsFalse(NativeContract.Treasury.IsActive(settings, 49));
+            Assert.IsTrue(NativeContract.Treasury.IsActive(settings, 50));
+
+            Assert.IsFalse(NativeContract.TemporaryStorage.IsActive(settings, 0));
+            Assert.IsFalse(NativeContract.TemporaryStorage.IsActive(settings, uint.MaxValue));
+        }
+
+        [TestMethod]
         public void TestGenesisNEP17Manifest()
         {
             var persistingBlock = new Block
