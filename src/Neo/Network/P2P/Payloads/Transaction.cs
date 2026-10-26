@@ -345,14 +345,14 @@ namespace Neo.Network.P2P.Payloads
             if (netFeeDatoshi < 0) return VerifyResult.InsufficientFunds;
 
             if (netFeeDatoshi > MaxVerificationGas) netFeeDatoshi = MaxVerificationGas;
-            var execFeeFactor = NativeContract.Policy.GetExecFeeFactor(settings, snapshot, height);
+            var execFeeFactor = NativeContract.Policy.GetExecFeeFactorWithDecimals(settings, snapshot, height);
             for (int i = 0; i < hashes.Length; i++)
             {
                 if (IsSignatureContract(Witnesses[i].VerificationScript.Span) && IsSingleSignatureInvocationScript(Witnesses[i].InvocationScript, out var _))
-                    netFeeDatoshi -= execFeeFactor * SignatureContractCost();
+                    netFeeDatoshi -= SignatureContractCost(execFeeFactor);
                 else if (IsMultiSigContract(Witnesses[i].VerificationScript.Span, out int m, out int n) && IsMultiSignatureInvocationScript(m, Witnesses[i].InvocationScript, out var _))
                 {
-                    netFeeDatoshi -= execFeeFactor * MultiSignatureContractCost(m, n);
+                    netFeeDatoshi -= MultiSignatureContractCost(execFeeFactor, m, n);
                 }
                 else
                 {

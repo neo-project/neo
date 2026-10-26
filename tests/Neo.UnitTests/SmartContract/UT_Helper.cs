@@ -21,6 +21,7 @@ using Neo.Wallets;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using static Neo.SmartContract.Helper;
 
 namespace Neo.UnitTests.SmartContract
@@ -197,6 +198,21 @@ namespace Neo.UnitTests.SmartContract
             Assert.IsTrue(engine.ResultStack.Pop().GetBoolean());
 
             Assert.AreEqual(MultiSignatureContractCost(1, 1) * PolicyContract.DefaultExecFeeFactor, engine.FeeConsumed);
+        }
+
+        [TestMethod]
+        public void TestContractCostWithFractionalExecFeeFactor()
+        {
+            // 30.5001 with the decimals defined in ApplicationEngine.FeeFactor.
+            BigInteger execFeeFactor = 305001;
+
+            // 32784 * 30.5001 = 999915.2784, rounded up.
+            Assert.AreEqual(999916, SignatureContractCost(execFeeFactor));
+            // 98346 * 30.5001 = 2999562.8346, rounded up.
+            Assert.AreEqual(2999563, MultiSignatureContractCost(execFeeFactor, 2, 3));
+            // An integer factor gives the same result as multiplying by it.
+            Assert.AreEqual(30 * SignatureContractCost(), SignatureContractCost(30 * ApplicationEngine.FeeFactor));
+            Assert.AreEqual(30 * MultiSignatureContractCost(2, 3), MultiSignatureContractCost(30 * ApplicationEngine.FeeFactor, 2, 3));
         }
     }
 }

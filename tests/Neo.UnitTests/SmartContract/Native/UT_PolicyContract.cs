@@ -162,6 +162,24 @@ namespace Neo.UnitTests.SmartContract.Native
         }
 
         [TestMethod]
+        public void Check_GetExecFeeFactorWithDecimals()
+        {
+            var snapshot = _snapshotCache.CloneCache();
+            var settings = TestProtocolSettings.Default with
+            {
+                Hardforks = TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_Faun, 10)
+            };
+            snapshot.GetAndChange(StorageKey.Create(NativeContract.Policy.Id, 18))!.Set(305001);
+
+            // Since Faun the factor is stored with the decimals.
+            Assert.AreEqual(305001, NativeContract.Policy.GetExecFeeFactorWithDecimals(settings, snapshot, 10));
+            Assert.AreEqual(30, NativeContract.Policy.GetExecFeeFactor(settings, snapshot, 10));
+            // Before Faun the factor is stored without the decimals.
+            Assert.AreEqual(305001 * ApplicationEngine.FeeFactor, NativeContract.Policy.GetExecFeeFactorWithDecimals(settings, snapshot, 9));
+            Assert.AreEqual(305001, NativeContract.Policy.GetExecFeeFactor(settings, snapshot, 9));
+        }
+
+        [TestMethod]
         public void Check_SetBaseExecFee()
         {
             var snapshot = _snapshotCache.CloneCache();

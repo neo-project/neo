@@ -23,6 +23,7 @@ using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Numerics;
 using System.Runtime.CompilerServices;
 
 namespace Neo.SmartContract
@@ -66,6 +67,30 @@ namespace Neo.SmartContract
             fee += ApplicationEngine.CheckSigPrice * n;
             return fee;
         }
+
+        /// <summary>
+        /// Calculates the verification fee for a signature address multiplied by the execution fee factor.
+        /// In the unit of datoshi, 1 datoshi = 1e-8 GAS
+        /// </summary>
+        /// <param name="execFeeFactor">The execution fee factor with the decimals defined in <see cref="ApplicationEngine.FeeFactor"/>.</param>
+        /// <returns>The calculated cost.</returns>
+        public static long SignatureContractCost(BigInteger execFeeFactor) =>
+            ApplyExecFeeFactor(execFeeFactor, SignatureContractCost());
+
+        /// <summary>
+        /// Calculates the verification fee for a multi-signature address multiplied by the execution fee factor.
+        /// In the unit of datoshi, 1 datoshi = 1e-8 GAS
+        /// </summary>
+        /// <param name="execFeeFactor">The execution fee factor with the decimals defined in <see cref="ApplicationEngine.FeeFactor"/>.</param>
+        /// <param name="m">The number of correct signatures that need to be provided in order for the verification to pass.</param>
+        /// <param name="n">The number of public keys in the account.</param>
+        /// <returns>The calculated cost.</returns>
+        public static long MultiSignatureContractCost(BigInteger execFeeFactor, int m, int n) =>
+            ApplyExecFeeFactor(execFeeFactor, MultiSignatureContractCost(m, n));
+
+        // The full factor is applied and the result is rounded up, the same way as ApplicationEngine.FeeConsumed does.
+        private static long ApplyExecFeeFactor(BigInteger execFeeFactor, long cost) =>
+            (long)(execFeeFactor * cost).DivideCeiling(ApplicationEngine.FeeFactor);
 
         /// <summary>
         /// Check the correctness of the script and ABI.

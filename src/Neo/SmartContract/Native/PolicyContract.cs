@@ -226,6 +226,21 @@ namespace Neo.SmartContract.Native
         }
 
         /// <summary>
+        /// Gets the execution fee factor with the decimals defined in <see cref="ApplicationEngine.FeeFactor"/>.
+        /// </summary>
+        /// <param name="settings">The <see cref="ProtocolSettings"/> used to check hardfork activation.</param>
+        /// <param name="snapshot">The snapshot used to read data.</param>
+        /// <param name="index">The block index used to check hardfork activation.</param>
+        /// <returns>The execution fee factor multiplied by <see cref="ApplicationEngine.FeeFactor"/>.</returns>
+        public BigInteger GetExecFeeFactorWithDecimals(ProtocolSettings settings, IReadOnlyStore snapshot, uint index)
+        {
+            if (settings.IsHardforkEnabled(Hardfork.HF_Faun, index))
+                return (BigInteger)snapshot[_execFeeFactor];
+
+            return (BigInteger)snapshot[_execFeeFactor] * ApplicationEngine.FeeFactor;
+        }
+
+        /// <summary>
         /// Gets the storage price.
         /// </summary>
         /// <param name="snapshot">The snapshot used to read data.</param>
