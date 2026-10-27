@@ -793,9 +793,6 @@ namespace Neo.SmartContract.Native
                 if (!Hardforks.TryParseExact(other, out var otherHF))
                     throw new InvalidOperationException($"An unknown hardfork {other} is found in the Policy storage.");
 
-                if (otherHF <= ProtocolSettings.LastConfigManagedHardfork)
-                    continue;
-
                 var otherHeight = (uint)(BigInteger)value;
                 if ((otherHF < hf && otherHeight > activationHeight) || (otherHF > hf && otherHeight < activationHeight))
                     throw new InvalidOperationException($"Hardfork {hardfork} scheduled at {activationHeight} conflicts with hardfork {Hardforks.GetName(otherHF)} scheduled at {otherHeight}.");
