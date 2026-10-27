@@ -334,7 +334,8 @@ namespace Neo.SmartContract.Native
         }
 
         /// <summary>
-        /// Is the native contract active
+        /// Is the native contract active.
+        /// A hardfork omitted from <paramref name="settings"/> stays inactive, matching <see cref="IsInitializeBlock"/>.
         /// </summary>
         /// <param name="settings">The <see cref="ProtocolSettings"/> where the HardForks are configured.</param>
         /// <param name="blockHeight">Block height</param>
@@ -343,11 +344,9 @@ namespace Neo.SmartContract.Native
         {
             if (ActiveIn is null) return true;
 
+            // If hf is not set in the configuration (with EnsureOmmitedHardforks applied over it), it is treated as disabled.
             if (!settings.Hardforks.TryGetValue(ActiveIn.Value, out var activeIn))
-            {
-                // If is not set in the configuration is treated as enabled from the genesis
-                activeIn = 0;
-            }
+                return false;
 
             return activeIn <= blockHeight;
         }
