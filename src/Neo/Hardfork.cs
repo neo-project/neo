@@ -26,7 +26,8 @@ namespace Neo
         /// <summary>
         /// First hardfork that can be activated via Policy's `activateHardfork` call.
         /// </summary>
-        HF_Iara
+        HF_Iara,
+        HF_Jackalope
     }
 
     /// <summary>
