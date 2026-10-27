@@ -1123,6 +1123,47 @@ namespace Neo.UnitTests.SmartContract.Native
         }
 
         [TestMethod]
+        public void Check_ActivateHardfork_Continuity()
+        {
+            var snapshot = _snapshotCache.CloneCache();
+            const uint blockIndex = 1000;
+            var block = CreateBlock(blockIndex);
+            var committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot);
+
+            // Fail: try to activate Jackalope before Iara activation.
+            var ex = Assert.ThrowsExactly<InvalidOperationException>(() =>
+            NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), block,
+                "activateHardfork",
+                HardforkName("Jackalope"), DefaultActivationDelay));
+            Assert.Contains("Hardfork-ancestor is not scheduled yet", ex.Message);
+
+            // Good: schedule Jackalope after Iara.
+            NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), block,
+                "activateHardfork",
+                HardforkName("Iara"), new(ContractParameterType.Integer) { Value = 5 });
+            NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), block,
+                "activateHardfork",
+                HardforkName("Jackalope"), new(ContractParameterType.Integer) { Value = 7 });
+            var ret = NativeContract.Policy.Call(snapshot, "getHardforkActivationHeight", HardforkName("Iara"));
+            Assert.AreEqual(blockIndex + 5, ret.GetInteger());
+            ret = NativeContract.Policy.Call(snapshot, "getHardforkActivationHeight", HardforkName("Jackalope"));
+            Assert.AreEqual(blockIndex + 7, ret.GetInteger());
+            Assert.IsFalse(PolicyContract.IsHardforkEnabled(TestProtocolSettings.Default, snapshot, Hardfork.HF_Iara, blockIndex));
+            Assert.IsFalse(PolicyContract.IsHardforkEnabled(TestProtocolSettings.Default, snapshot, Hardfork.HF_Jackalope, blockIndex));
+            Assert.IsTrue(PolicyContract.IsHardforkEnabled(TestProtocolSettings.Default, snapshot, Hardfork.HF_Iara, blockIndex + 5));
+            Assert.IsFalse(PolicyContract.IsHardforkEnabled(TestProtocolSettings.Default, snapshot, Hardfork.HF_Jackalope, blockIndex + 5));
+            Assert.IsTrue(PolicyContract.IsHardforkEnabled(TestProtocolSettings.Default, snapshot, Hardfork.HF_Iara, blockIndex + 7));
+            Assert.IsTrue(PolicyContract.IsHardforkEnabled(TestProtocolSettings.Default, snapshot, Hardfork.HF_Jackalope, blockIndex + 7));
+
+            // Fail: reschedule Jackalope prior to Iara.
+            ex = Assert.ThrowsExactly<InvalidOperationException>(() =>
+            NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), block,
+                "activateHardfork",
+                HardforkName("Jackalope"), new(ContractParameterType.Integer) { Value = 4 }));
+            Assert.Contains("Hardfork Jackalope scheduled at 1004 conflicts with hardfork Iara scheduled at 1005", ex.Message);
+        }
+
+        [TestMethod]
         public void Check_ActivateHardfork_NameIsCaseSensitive()
         {
             var snapshot = _snapshotCache.CloneCache();
