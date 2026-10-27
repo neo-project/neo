@@ -22,7 +22,6 @@ using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Numerics;
-using System.Text;
 
 namespace Neo.SmartContract.Native
 {
@@ -763,7 +762,7 @@ namespace Neo.SmartContract.Native
         private void ActivateHardfork(ApplicationEngine engine, string hardfork, uint activationDelay)
         {
             if (activationDelay < 1)
-                throw new ArgumentOutOfRangeException($"Hardfork activation delay should be positive.");
+                throw new ArgumentOutOfRangeException(nameof(activationDelay), "Hardfork activation delay should be positive.");
 
             // Committee first: a random sender must not be able to halt the node with a bogus name.
             AssertCommittee(engine);
@@ -780,15 +779,19 @@ namespace Neo.SmartContract.Native
                 throw new InvalidOperationException("Cannot activate hardfork without a persisting block.");
 
             var activationHeight = checked(engine.PersistingBlock.Index + activationDelay);
-            if (TryGetActivationHeightFromStorage(engine.SnapshotCache, hf, out var existingHeight) && existingHeight <= engine.PersistingBlock.Index || existingHeight == activationHeight)
-                throw new InvalidOperationException($"Hardfork {hardfork} is already scheduled at {existingHeight}.");
+            if (TryGetActivationHeightFromStorage(engine.SnapshotCache, hf, out var existingHeight))
+            {
+                // Already active at or before this block, or no-op reschedule to the same height.
+                if (existingHeight <= engine.PersistingBlock.Index || existingHeight == activationHeight)
+                    throw new InvalidOperationException($"Hardfork {hardfork} is already scheduled at {existingHeight}.");
+            }
 
             // Ensure the new activation height is aligned with other scheduled harfork heights.
             foreach (var (otherKey, value) in engine.SnapshotCache.Find(CreateStorageKey(Prefix_Hardfork), SeekDirection.Forward))
             {
-                var other = Encoding.UTF8.GetString(otherKey.Key[1..].Span);
+                var other = otherKey.Key[1..].Span.ToStrictUtf8String();
                 if (!Hardforks.TryParseExact(other, out var otherHF))
-                    throw new InvalidOperationException($"An unknown hardfork {otherHF} is found in the Policy storage.");
+                    throw new InvalidOperationException($"An unknown hardfork {other} is found in the Policy storage.");
 
                 if (otherHF <= ProtocolSettings.LastConfigManagedHardfork)
                     continue;
@@ -888,6 +891,6 @@ namespace Neo.SmartContract.Native
         }
 
         private StorageKey CreateHardforkKey(Hardfork hardfork)
-            => CreateStorageKey(Prefix_Hardfork, Encoding.UTF8.GetBytes(Hardforks.GetName(hardfork)));
+            => CreateStorageKey(Prefix_Hardfork, Hardforks.GetName(hardfork).ToStrictUtf8Bytes());
     }
 }
