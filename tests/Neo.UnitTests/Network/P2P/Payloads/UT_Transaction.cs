@@ -32,6 +32,12 @@ namespace Neo.UnitTests.Network.P2P.Payloads
     [TestClass]
     public class UT_Transaction
     {
+        // The fee tests below check the network fee calculated with the pre-Huyao opcode prices.
+        private static readonly ProtocolSettings PreHuyaoSettings = TestProtocolSettings.Default with
+        {
+            Hardforks = TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_Huyao, uint.MaxValue)
+        };
+
         Transaction _uut;
 
         [TestInitialize]
@@ -133,8 +139,8 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void FeeIsMultiSigContract()
         {
-            var walletA = TestUtils.GenerateTestWallet("123");
-            var walletB = TestUtils.GenerateTestWallet("123");
+            var walletA = TestUtils.GenerateTestWallet("123", PreHuyaoSettings);
+            var walletB = TestUtils.GenerateTestWallet("123", PreHuyaoSettings);
             var snapshotCache = TestBlockchain.GetTestSnapshotCache();
 
             var a = walletA.CreateAccount();
@@ -218,7 +224,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void FeeIsSignatureContractDetailed()
         {
-            var wallet = TestUtils.GenerateTestWallet("123");
+            var wallet = TestUtils.GenerateTestWallet("123", PreHuyaoSettings);
             var snapshotCache = TestBlockchain.GetTestSnapshotCache();
             var acc = wallet.CreateAccount();
 
@@ -327,7 +333,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void FeeIsSignatureContract_TestScope_Global()
         {
-            var wallet = TestUtils.GenerateTestWallet("");
+            var wallet = TestUtils.GenerateTestWallet("", PreHuyaoSettings);
             var snapshotCache = TestBlockchain.GetTestSnapshotCache();
             var acc = wallet.CreateAccount();
 
@@ -413,7 +419,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void FeeIsSignatureContract_TestScope_CurrentHash_GAS()
         {
-            var wallet = TestUtils.GenerateTestWallet("");
+            var wallet = TestUtils.GenerateTestWallet("", PreHuyaoSettings);
             var snapshotCache = TestBlockchain.GetTestSnapshotCache();
             var acc = wallet.CreateAccount();
 
@@ -499,7 +505,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void FeeIsSignatureContract_TestScope_CalledByEntry_Plus_GAS()
         {
-            var wallet = TestUtils.GenerateTestWallet("");
+            var wallet = TestUtils.GenerateTestWallet("", PreHuyaoSettings);
             var snapshotCache = TestBlockchain.GetTestSnapshotCache();
             var acc = wallet.CreateAccount();
 
@@ -636,7 +642,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void FeeIsSignatureContract_TestScope_CurrentHash_NEO_GAS()
         {
-            var wallet = TestUtils.GenerateTestWallet("");
+            var wallet = TestUtils.GenerateTestWallet("", PreHuyaoSettings);
             var snapshotCache = TestBlockchain.GetTestSnapshotCache();
             var acc = wallet.CreateAccount();
 
@@ -1031,7 +1037,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             var signer = (Signer)RuntimeHelpers.GetUninitializedObject(typeof(Signer));
             Assert.AreEqual(WitnessScope.None, signer.Scopes);
 
-            var wallet = TestUtils.GenerateTestWallet("");
+            var wallet = TestUtils.GenerateTestWallet("", PreHuyaoSettings);
             var snapshotCache = TestBlockchain.GetTestSnapshotCache();
             var acc = wallet.CreateAccount();
 

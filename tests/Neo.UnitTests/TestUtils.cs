@@ -64,7 +64,7 @@ namespace Neo.UnitTests
             return array;
         }
 
-        public static NEP6Wallet GenerateTestWallet(string password)
+        public static NEP6Wallet GenerateTestWallet(string password, ProtocolSettings settings = null)
         {
             var wallet = new JObject()
             {
@@ -75,7 +75,7 @@ namespace Neo.UnitTests
                 ["extra"] = null
             };
             Assert.AreEqual("{\"name\":\"noname\",\"version\":\"1.0\",\"scrypt\":{\"n\":2,\"r\":1,\"p\":1},\"accounts\":[],\"extra\":null}", wallet.ToString());
-            return new NEP6Wallet(null, password, TestProtocolSettings.Default, wallet);
+            return new NEP6Wallet(null, password, settings ?? TestProtocolSettings.Default, wallet);
         }
 
         internal static StorageItem GetStorageItem(byte[] value)
