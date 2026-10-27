@@ -204,11 +204,12 @@ namespace Neo.Network.P2P
 
         private void OnGetBlockByIndexMessageReceived(GetBlockByIndexPayload payload)
         {
+            if (!CanQueueBulkMessage) return;
             var snapshot = _system.StoreView;
             uint count = payload.Count == -1 ? InvPayload.MaxHashesCount : Math.Min((uint)payload.Count, InvPayload.MaxHashesCount);
             for (uint i = payload.IndexStart, max = payload.IndexStart + count; i < max; i++)
             {
-                if (IsDisconnected) return;
+                if (!CanQueueBulkMessage) return;
                 Block? block = NativeContract.Ledger.GetBlock(snapshot, i);
                 if (block == null)
                     break;
@@ -234,11 +235,12 @@ namespace Neo.Network.P2P
         /// <param name="payload">The payload containing the requested information.</param>
         private void OnGetDataMessageReceived(InvPayload payload)
         {
+            if (!CanQueueBulkMessage) return;
             var snapshot = _system.StoreView;
             var notFound = new List<UInt256>();
             foreach (var hash in payload.Hashes.Distinct())
             {
-                if (IsDisconnected) return;
+                if (!CanQueueBulkMessage) return;
                 if (_sentHashes.Contains(hash)) continue;
                 Message? response = null;
                 switch (payload.Type)

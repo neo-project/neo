@@ -36,6 +36,7 @@ namespace Neo.Network.P2P
         internal const int MaxQueuedMessages = 1024;
         internal const long MaxQueuedBytes = 256L * 1024 * 1024; // 256 MiB per connection, shared by both queues.
         private long _queuedBytes;
+        private bool _outboundQueueBlocked;
 
         private readonly NeoSystem _system;
         private readonly LocalNode _localNode;
@@ -109,8 +110,12 @@ namespace Neo.Network.P2P
             }
             var message = queue.Dequeue();
             _queuedBytes -= message.QueueSize;
+            _outboundQueueBlocked = false;
             SendMessage(message);
         }
+
+        private bool CanQueueBulkMessage => !IsDisconnected && !_outboundQueueBlocked &&
+            _messageQueueHigh.Count + _messageQueueLow.Count < MaxQueuedMessages && _queuedBytes < MaxQueuedBytes;
 
         private bool EnqueueMessage(MessageCommand command, ISerializable? payload = null)
         {
@@ -137,13 +142,15 @@ namespace Neo.Network.P2P
             };
             if (!is_single || message_queue.All(p => p.Command != message.Command))
             {
-                if (_messageQueueHigh.Count + _messageQueueLow.Count >= MaxQueuedMessages ||
-                    message.QueueSize > MaxQueuedBytes - _queuedBytes)
+                if (!is_single && (!CanQueueBulkMessage ||
+                    message.QueueSize > MaxQueuedBytes - _queuedBytes))
                 {
                     // Keep accepted messages and the connection. Batch producers
                     // stop here; the peer can retry the remainder after the queue drains.
+                    _outboundQueueBlocked = true;
                     return false;
                 }
+                // Singleton control messages have a bounded reserve: one of each command.
                 message_queue.Enqueue(message);
                 _queuedBytes += message.QueueSize;
                 _lastSent = TimeProvider.Current.UtcNow;

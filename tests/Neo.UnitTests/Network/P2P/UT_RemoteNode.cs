@@ -73,6 +73,63 @@ namespace Neo.UnitTests.Network.P2P
         [TestMethod]
         [DataRow(false)]
         [DataRow(true)]
+        public void OutboundQueue_SingletonControlMessagesBypassFullQueue(bool byteLimit)
+        {
+            var connection = CreateTestProbe();
+            var actor = ActorOfAsTestActorRef(() => new RemoteNode(_system, new LocalNode(_system), connection, null, null, new ChannelsConfig()));
+            var node = actor.UnderlyingActor;
+            if (byteLimit)
+                typeof(RemoteNode).GetField("_queuedBytes", BindingFlags.Instance | BindingFlags.NonPublic)!.SetValue(node, RemoteNode.MaxQueuedBytes);
+            else
+                for (var i = 0; i < RemoteNode.MaxQueuedMessages; i++) actor.Tell(Message.Create(MessageCommand.Inv));
+            var queue = Field<Queue<Message>>(node, "_messageQueueLow");
+            var initialCount = queue.Count;
+            for (uint i = 1; i <= 2; i++)
+            {
+                actor.Tell(Message.Create(MessageCommand.Ping, PingPayload.Create(i, i)));
+                actor.Tell(Message.Create(MessageCommand.Pong, PingPayload.Create(i, i)));
+                actor.Tell(Message.Create(MessageCommand.Addr, AddrPayload.Create([])));
+            }
+            Assert.HasCount(initialCount + 3, queue);
+            Assert.AreSequenceEqual(new[] { MessageCommand.Ping, MessageCommand.Pong, MessageCommand.Addr }, queue.Skip(initialCount).Select(p => p.Command).ToArray());
+            actor.Tell(Message.Create(MessageCommand.Inv));
+            Assert.HasCount(initialCount + 3, queue);
+            connection.ExpectNoMsg(TimeSpan.FromMilliseconds(100), cancellationToken: CancellationToken.None);
+            Sys.Stop(actor);
+        }
+
+        [TestMethod]
+        [DataRow(false)]
+        [DataRow(true)]
+        public void OutboundQueue_FullQueueDoesNotAccessStorage(bool byteLimit)
+        {
+            var connection = CreateTestProbe();
+            // No system is supplied: touching StoreView or any inventory cache would fail.
+            var actor = ActorOfAsTestActorRef(() => new RemoteNode(null!, new LocalNode(_system), connection, null, null, new ChannelsConfig()));
+            var node = actor.UnderlyingActor;
+            if (byteLimit)
+            {
+                // A rejected response latches backpressure even if a few bytes remain.
+                typeof(RemoteNode).GetField("_queuedBytes", BindingFlags.Instance | BindingFlags.NonPublic)!.SetValue(node, RemoteNode.MaxQueuedBytes - 1);
+                actor.Tell(Message.Create(MessageCommand.Inv));
+            }
+            else
+                for (var i = 0; i < RemoteNode.MaxQueuedMessages; i++) actor.Tell(Message.Create(MessageCommand.Inv));
+            for (var i = 0; i < 3; i++)
+            {
+                typeof(RemoteNode).GetMethod("OnGetBlockByIndexMessageReceived", BindingFlags.Instance | BindingFlags.NonPublic)!
+                    .Invoke(node, [GetBlockByIndexPayload.Create(0, 1)]);
+                foreach (var type in new[] { InventoryType.Block, InventoryType.TX, InventoryType.Extensible })
+                    typeof(RemoteNode).GetMethod("OnGetDataMessageReceived", BindingFlags.Instance | BindingFlags.NonPublic)!
+                        .Invoke(node, [InvPayload.Create(type, UInt256.Zero)]);
+            }
+            connection.ExpectNoMsg(TimeSpan.FromMilliseconds(100), cancellationToken: CancellationToken.None);
+            Sys.Stop(actor);
+        }
+
+        [TestMethod]
+        [DataRow(false)]
+        [DataRow(true)]
         public void Disconnect_ClearsQueuesAndReceiveBuffer(bool abort)
         {
             var connection = CreateTestProbe();
