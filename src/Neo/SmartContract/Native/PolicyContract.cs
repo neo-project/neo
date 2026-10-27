@@ -787,6 +787,7 @@ namespace Neo.SmartContract.Native
             }
 
             // Ensure the new activation height is aligned with other scheduled harfork heights.
+            bool ancestorScheduled = false;
             foreach (var (otherKey, value) in engine.SnapshotCache.Find(CreateStorageKey(Prefix_Hardfork), SeekDirection.Forward))
             {
                 var other = otherKey.Key[1..].Span.ToStrictUtf8String();
@@ -796,7 +797,14 @@ namespace Neo.SmartContract.Native
                 var otherHeight = (uint)(BigInteger)value;
                 if ((otherHF < hf && otherHeight > activationHeight) || (otherHF > hf && otherHeight < activationHeight))
                     throw new InvalidOperationException($"Hardfork {hardfork} scheduled at {activationHeight} conflicts with hardfork {Hardforks.GetName(otherHF)} scheduled at {otherHeight}.");
+
+                if (otherHF == hf - 1)
+                    ancestorScheduled = true;
             }
+
+            // Ensure continuity is preserved: the previous hardfork must be scheduled and must have lower height.
+            if (!ancestorScheduled)
+                throw new InvalidOperationException($"Hardfork-ancestor is not scheduled yet.");
 
             engine.SnapshotCache.GetAndChange(CreateHardforkKey(hf), () => new StorageItem()).Set(activationHeight);
 
