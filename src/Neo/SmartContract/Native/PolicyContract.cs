@@ -222,7 +222,7 @@ namespace Neo.SmartContract.Native
         [ContractMethod(Hardfork.HF_Faun, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
         public BigInteger GetExecPicoFeeFactor(ApplicationEngine engine)
         {
-            return (BigInteger)engine.SnapshotCache[_execFeeFactor];
+            return GetExecFeeFactorWithDecimals(engine.ProtocolSettings, engine.SnapshotCache, engine.GetPersistingIndex());
         }
 
         /// <summary>
