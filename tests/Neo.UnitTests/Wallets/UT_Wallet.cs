@@ -426,7 +426,7 @@ namespace Neo.UnitTests.Wallets
 
             var signature = wallet.SignBlock(block, glkey.PublicKey, network);
             Assert.IsNotNull(signature);
-            Assert.AreEqual(64, signature.Length);
+            Assert.HasCount(64, signature);
 
             var signData = block.GetSignData(network);
             var isValid = Crypto.VerifySignature(signData, signature.Span, glkey.PublicKey);
@@ -446,6 +446,53 @@ namespace Neo.UnitTests.Wallets
             wallet.GetAccount(scriptHash).Lock = true;
             action = () => wallet.SignBlock(block, pair.PublicKey, network);
             Assert.ThrowsExactly<SignException>(action); // locked
+        }
+
+        [TestMethod]
+        [DataRow(1)]
+        [DataRow(3)]
+        public void TestSignMultiSigRespectsMemberLock(int memberCount)
+        {
+            var wallet = new MyWallet();
+            using var snapshot = TestBlockchain.GetTestSnapshotCache();
+            var locked = wallet.CreateAccount([.. new byte[32].Select(_ => (byte)1)]);
+            var unlocked = wallet.CreateAccount([.. new byte[32].Select(_ => (byte)2)]);
+            var externalKey = new KeyPair([.. new byte[32].Select(_ => (byte)3)]);
+            var lockedKey = locked.GetKey().PublicKey;
+            var unlockedKey = unlocked.GetKey().PublicKey;
+            var points = memberCount == 1 ? new[] { lockedKey } : [lockedKey, unlockedKey, externalKey.PublicKey];
+            var multiSig = wallet.CreateMultiSigAccount(memberCount == 1 ? 1 : 2, points);
+            var tx = new Transaction
+            {
+                Script = Array.Empty<byte>(),
+                Signers = [new Signer { Account = multiSig.ScriptHash, Scopes = WitnessScope.None }],
+                Attributes = [],
+                Witnesses = []
+            };
+            var context = new ContractParametersContext(snapshot, tx, wallet.ProtocolSettings.Network);
+
+            locked.Lock = true;
+            Assert.AreEqual(memberCount > 1, wallet.Sign(context));
+            Assert.IsFalse(context.Completed);
+            var signatures = context.GetSignatures(multiSig.ScriptHash);
+            Assert.AreNotEqual(true, signatures?.ContainsKey(lockedKey));
+            if (memberCount > 1)
+            {
+                Assert.IsNotNull(signatures);
+                Assert.HasCount(1, signatures);
+                Assert.IsTrue(Crypto.VerifySignature(tx.GetSignData(context.Network), signatures[unlockedKey], unlockedKey));
+            }
+
+            locked.Lock = false;
+            Assert.IsTrue(wallet.Sign(context));
+            Assert.IsTrue(context.Completed);
+            Assert.IsTrue(context.GetSignatures(multiSig.ScriptHash).ContainsKey(lockedKey));
+
+            multiSig.Lock = true;
+            context = new ContractParametersContext(snapshot, tx, wallet.ProtocolSettings.Network);
+            Assert.IsFalse(wallet.Sign(context));
+            Assert.IsFalse(context.Completed);
+            Assert.IsNull(context.GetSignatures(multiSig.ScriptHash));
         }
 
         [TestMethod]
@@ -512,7 +559,7 @@ namespace Neo.UnitTests.Wallets
             Assert.AreNotEqual(expectedWalletAccount1.ScriptHash, actualMultiSigAccount1.ScriptHash);
             Assert.AreEqual(expectedAccountKey1.PublicKey, actualMultiSigAccount1.GetKey().PublicKey);
             Assert.IsTrue(Helper.IsMultiSigContract(actualMultiSigAccount1.Contract.Script));
-            Assert.IsTrue(expectedWallet.GetMultiSigAccounts().Contains(actualMultiSigAccount1));
+            Assert.Contains(actualMultiSigAccount1, expectedWallet.GetMultiSigAccounts());
 
             var notExpectedAccountKeys = new ECPoint[1025];
             Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => expectedWallet.CreateMultiSigAccount());
@@ -524,7 +571,7 @@ namespace Neo.UnitTests.Wallets
             Assert.AreNotEqual(expectedWalletAccount2.ScriptHash, actualMultiSigAccount2.ScriptHash);
             Assert.Contains(actualMultiSigAccount2.GetKey().PublicKey, [expectedAccountKey1.PublicKey, expectedAccountKey2.PublicKey, expectedAccountKey3.PublicKey]);
             Assert.IsTrue(Helper.IsMultiSigContract(actualMultiSigAccount2.Contract.Script));
-            Assert.IsTrue(expectedWallet.GetMultiSigAccounts().Contains(actualMultiSigAccount2));
+            Assert.Contains(actualMultiSigAccount2, expectedWallet.GetMultiSigAccounts());
         }
 
         [TestMethod]
