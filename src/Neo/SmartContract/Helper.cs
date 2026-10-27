@@ -40,35 +40,6 @@ namespace Neo.SmartContract
         public const long MaxVerificationGas = 1_50000000;
 
         /// <summary>
-        /// Calculates the verification fee for a signature address.
-        /// In the unit of datoshi, 1 datoshi = 1e-8 GAS
-        /// </summary>
-        /// <returns>The calculated cost.</returns>
-        public static long SignatureContractCost() =>
-            ApplicationEngine.OpCodePriceTable[(byte)OpCode.PUSHDATA1] * 2 +
-            ApplicationEngine.OpCodePriceTable[(byte)OpCode.SYSCALL] +
-            ApplicationEngine.CheckSigPrice;
-
-        /// <summary>
-        /// Calculates the verification fee for a multi-signature address.
-        /// In the unit of datoshi, 1 datoshi = 1e-8 GAS
-        /// </summary>
-        /// <param name="m">The number of correct signatures that need to be provided in order for the verification to pass.</param>
-        /// <param name="n">The number of public keys in the account.</param>
-        /// <returns>The calculated cost.</returns>
-        public static long MultiSignatureContractCost(int m, int n)
-        {
-            long fee = ApplicationEngine.OpCodePriceTable[(byte)OpCode.PUSHDATA1] * (m + n);
-            using (ScriptBuilder sb = new())
-                fee += ApplicationEngine.OpCodePriceTable[(byte)(OpCode)sb.EmitPush(m).ToArray()[0]];
-            using (ScriptBuilder sb = new())
-                fee += ApplicationEngine.OpCodePriceTable[(byte)(OpCode)sb.EmitPush(n).ToArray()[0]];
-            fee += ApplicationEngine.OpCodePriceTable[(byte)OpCode.SYSCALL];
-            fee += ApplicationEngine.CheckSigPrice * n;
-            return fee;
-        }
-
-        /// <summary>
         /// Calculates the verification fee for a signature address multiplied by the execution fee factor.
         /// In the unit of datoshi, 1 datoshi = 1e-8 GAS
         /// </summary>

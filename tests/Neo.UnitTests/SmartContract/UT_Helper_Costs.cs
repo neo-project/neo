@@ -11,6 +11,7 @@
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.SmartContract;
+using System.Numerics;
 using static Neo.SmartContract.Helper;
 
 namespace Neo.UnitTests.SmartContract
@@ -21,6 +22,8 @@ namespace Neo.UnitTests.SmartContract
     [TestClass]
     public class UT_Helper_Costs
     {
+        private static readonly BigInteger ExecFeeFactor = 30 * ApplicationEngine.FeeFactor;
+
         [TestMethod]
         public void MaxVerificationGas_IsPositive()
         {
@@ -30,16 +33,16 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void SignatureContractCost_IsPositive()
         {
-            var cost = SignatureContractCost();
+            var cost = SignatureContractCost(TestProtocolSettings.Default, 1, ExecFeeFactor);
             Assert.IsTrue(cost > 0);
         }
 
         [TestMethod]
         public void MultiSignatureContractCost_ScalesWithMAndN()
         {
-            var cost11 = MultiSignatureContractCost(1, 1);
-            var cost12 = MultiSignatureContractCost(1, 2);
-            var cost22 = MultiSignatureContractCost(2, 2);
+            var cost11 = MultiSignatureContractCost(TestProtocolSettings.Default, 1, ExecFeeFactor, 1, 1);
+            var cost12 = MultiSignatureContractCost(TestProtocolSettings.Default, 1, ExecFeeFactor, 1, 2);
+            var cost22 = MultiSignatureContractCost(TestProtocolSettings.Default, 1, ExecFeeFactor, 2, 2);
 
             Assert.IsTrue(cost11 > 0);
             Assert.IsTrue(cost12 > cost11);

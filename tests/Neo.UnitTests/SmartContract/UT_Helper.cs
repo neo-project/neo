@@ -174,7 +174,7 @@ namespace Neo.UnitTests.SmartContract
             Assert.AreEqual(VMState.HALT, engine.Execute());
             Assert.IsTrue(engine.ResultStack.Pop().GetBoolean());
 
-            Assert.AreEqual(SignatureContractCost() * PolicyContract.DefaultExecFeeFactor, engine.FeeConsumed);
+            Assert.AreEqual(SignatureContractCost(settings, engine.GetPersistingIndex(), PolicyContract.DefaultExecFeeFactor * ApplicationEngine.FeeFactor), engine.FeeConsumed);
         }
 
         [TestMethod]
@@ -199,7 +199,7 @@ namespace Neo.UnitTests.SmartContract
             Assert.AreEqual(VMState.HALT, engine.Execute());
             Assert.IsTrue(engine.ResultStack.Pop().GetBoolean());
 
-            Assert.AreEqual(MultiSignatureContractCost(1, 1) * PolicyContract.DefaultExecFeeFactor, engine.FeeConsumed);
+            Assert.AreEqual(MultiSignatureContractCost(settings, engine.GetPersistingIndex(), PolicyContract.DefaultExecFeeFactor * ApplicationEngine.FeeFactor, 1, 1), engine.FeeConsumed);
         }
 
         [TestMethod]
@@ -222,9 +222,9 @@ namespace Neo.UnitTests.SmartContract
             Assert.AreEqual(huyao ? 2998673 : 2999563, MultiSignatureContractCost(settings, 1, execFeeFactor, 2, 3));
             if (!huyao)
             {
-                // An integer factor gives the same result as multiplying by it.
-                Assert.AreEqual(30 * SignatureContractCost(), SignatureContractCost(settings, 1, 30 * ApplicationEngine.FeeFactor));
-                Assert.AreEqual(30 * MultiSignatureContractCost(2, 3), MultiSignatureContractCost(settings, 1, 30 * ApplicationEngine.FeeFactor, 2, 3));
+                // An integer factor gives the same result as multiplying the legacy prices by it.
+                Assert.AreEqual(30 * 32784, SignatureContractCost(settings, 1, 30 * ApplicationEngine.FeeFactor));
+                Assert.AreEqual(30 * 98346, MultiSignatureContractCost(settings, 1, 30 * ApplicationEngine.FeeFactor, 2, 3));
             }
         }
 
