@@ -332,6 +332,7 @@ namespace Neo.SmartContract.Native
 
         /// <summary>
         /// Is the native contract active, consulting on-chain Policy hardforks when needed.
+        /// A hardfork omitted from <paramref name="settings"/> stays inactive, matching <see cref="IsInitializeBlock"/>.
         /// </summary>
         /// <param name="settings">The <see cref="ProtocolSettings"/> where the Hardforks are configured.</param>
         /// <param name="snapshot">Store used for Policy hardfork heights.</param>

@@ -875,6 +875,7 @@ namespace Neo.SmartContract.Native
                 return true;
             }
 
+            // If hardfork is not set in the configuration (with EnsureOmmitedHardforks applied over it), it is treated as disabled.
             return settings.Hardforks.TryGetValue(hardfork, out height);
         }
 

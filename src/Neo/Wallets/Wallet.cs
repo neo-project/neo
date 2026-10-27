@@ -705,7 +705,7 @@ namespace Neo.Wallets
                         foreach (var point in points)
                         {
                             account = GetAccount(point);
-                            if (account?.HasKey != true) continue; // check `Lock` or not?
+                            if (account?.HasKey != true || account.Lock) continue;
 
                             var key = account.GetKey()!;
                             var signature = context.Verifiable.Sign(key, context.Network);
