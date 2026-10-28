@@ -415,7 +415,10 @@ namespace Neo.Network.P2P
             // When the number of AvailableTasks is no more than 0,
             // no pending tasks of InventoryType.Block, it should process pending the tasks of headers
             // If not HeaderTask pending to be processed it should ask for more Blocks
-            if (!session.InvTasks.ContainsKey(HeaderTaskHash) && (!HasHeaderTask || globalInvTasks[HeaderTaskHash] < MaxConcurrentTasks) && headerHeight < session.LastBlockIndex && !system.HeaderCache.Full)
+            if (!session.InvTasks.ContainsKey(HeaderTaskHash) &&
+                (!HasHeaderTask || globalInvTasks[HeaderTaskHash] < MaxConcurrentTasks) &&
+                headerHeight < session.LastBlockIndex &&
+                !system.HeaderCache.Full)
             {
                 session.InvTasks[HeaderTaskHash] = DateTime.UtcNow;
                 IncrementGlobalTask(HeaderTaskHash);

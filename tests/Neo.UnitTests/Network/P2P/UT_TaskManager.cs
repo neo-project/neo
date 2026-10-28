@@ -797,7 +797,7 @@ namespace Neo.UnitTests.Network.P2P
             remote.Send(s_system.TaskManager, new TaskManager.NewTasks(
                 InvPayload.Create(InventoryType.TX, hash)));
 
-            // TX NewTasks may produce GetData (or nothing); either is fine — actor must stay healthy.
+            // TX NewTasks may produce GetData (or nothing); either is fine â€” actor must stay healthy.
             _ = remote.ReceiveOne(TimeSpan.FromMilliseconds(400), cancellationToken: CancellationToken.None);
         }
 
@@ -1088,28 +1088,39 @@ namespace Neo.UnitTests.Network.P2P
             taskManager.Tell(Activator.CreateInstance(timerType, true)!);
         }
 
+        private static Header[] CreateHeaders(uint firstIndex, int count)
+            => [.. Enumerable.Range(0, count).Select(i => CreateBlock(firstIndex + (uint)i).Header)];
+
         private static int HeaderRefs(Akka.TestKit.TestActorRef<TaskManager> taskManager)
             => GetGlobalInvTasks(taskManager).GetValueOrDefault(UInt256.Zero);
 
-        private static void ExpectGetHeaders(Akka.TestKit.TestProbe peer)
-            => peer.ExpectMsg<Message>(m => m.Command == MessageCommand.GetHeaders, TimeSpan.FromSeconds(3));
+        private static bool HoldsHeaderTask(Akka.TestKit.TestActorRef<TaskManager> taskManager, Akka.TestKit.TestProbe peer)
+            => GetSessions(taskManager)[peer.Ref].InvTasks.ContainsKey(UInt256.Zero);
 
-        private static int CountPendingGetHeaders(Akka.TestKit.TestProbe peer)
+        private static void ExpectGetHeaders(Akka.TestKit.TestProbe peer)
+            => peer.FishForMessage<Message>(m => m.Command == MessageCommand.GetHeaders, TimeSpan.FromSeconds(3));
+
+        // Fails if the peer receives a GetHeaders while draining its queue.
+        private static void ExpectNoGetHeaders(Akka.TestKit.TestProbe peer, string message)
         {
-            int count = 0;
-            while (peer.HasMessages)
-            {
-                if (peer.ReceiveOne(TimeSpan.Zero) is Message { Command: MessageCommand.GetHeaders })
-                    count++;
-            }
-            return count;
+            while (peer.ReceiveOne(TimeSpan.FromMilliseconds(100)) is { } received)
+                Assert.IsFalse(received is Message { Command: MessageCommand.GetHeaders }, message);
         }
 
-        private static void WaitForNoHeaderRefs(Akka.TestKit.TestActorRef<TaskManager> taskManager)
+        private void AwaitNoHeaderRefs(Akka.TestKit.TestActorRef<TaskManager> taskManager)
         {
-            for (int i = 0; i < 100 && HeaderRefs(taskManager) != 0; i++)
-                Thread.Sleep(50);
-            Assert.AreEqual(0, HeaderRefs(taskManager));
+            AwaitAssert(
+                () => Assert.IsFalse(GetGlobalInvTasks(taskManager).ContainsKey(UInt256.Zero), "Header references were not released."),
+                TimeSpan.FromSeconds(3),
+                cancellationToken: CancellationToken.None);
+        }
+
+        private void AwaitHeaderRefs(Akka.TestKit.TestActorRef<TaskManager> taskManager, int expected)
+        {
+            AwaitAssert(
+                () => Assert.AreEqual(expected, HeaderRefs(taskManager)),
+                TimeSpan.FromSeconds(3),
+                cancellationToken: CancellationToken.None);
         }
 
         [TestMethod]
@@ -1124,22 +1135,27 @@ namespace Neo.UnitTests.Network.P2P
             Assert.AreEqual(1, HeaderRefs(taskManager));
 
             for (int i = 0; i < 5; i++) SendTimer(taskManager);
-            Assert.AreEqual(1, HeaderRefs(taskManager), "Repeated triggers must not inflate the counter.");
-            Assert.AreEqual(0, CountPendingGetHeaders(peer1), "No duplicate GetHeaders must be sent to the same peer.");
+            Assert.AreEqual(1, HeaderRefs(taskManager), "Repeated triggers inflated the counter.");
+            ExpectNoGetHeaders(peer1, "Duplicate GetHeaders sent to peer1.");
 
             var peer2 = RegisterPeer(taskManager, currentHeight + 10);
             ExpectGetHeaders(peer2);
             Assert.AreEqual(2, HeaderRefs(taskManager));
 
+            for (int i = 0; i < 5; i++) SendTimer(taskManager);
+            Assert.AreEqual(2, HeaderRefs(taskManager), "Repeated triggers inflated the counter.");
+            ExpectNoGetHeaders(peer1, "Duplicate GetHeaders sent to peer1.");
+            ExpectNoGetHeaders(peer2, "Duplicate GetHeaders sent to peer2.");
+
             Sys.Stop(peer1.Ref);
             Sys.Stop(peer2.Ref);
-            WaitForNoHeaderRefs(taskManager);
+            AwaitNoHeaderRefs(taskManager);
 
             Sys.Stop(taskManager);
         }
 
         [TestMethod]
-        public void HeadersResponse_ReleasesExactlyOneReference()
+        public void HeadersResponse_ReleasesPreviousAssignmentAndSchedulesSingleReplacement()
         {
             using var neoSystem = TestBlockchain.GetSystem();
             var currentHeight = NativeContract.Ledger.CurrentIndex(neoSystem.StoreView);
@@ -1151,50 +1167,57 @@ namespace Neo.UnitTests.Network.P2P
             ExpectGetHeaders(peer2);
             Assert.AreEqual(2, HeaderRefs(taskManager));
 
-            // Make sure the peer is not asked again after responding.
-            peer1.Send(taskManager, new TaskManager.Update(currentHeight));
-            peer1.Send(taskManager, Array.Empty<Header>());
+            // peer1 is still behind, so it gets a new request. A leaked reference would make this 3.
+            peer1.Send(taskManager, CreateHeaders(currentHeight + 1, 3));
 
-            Assert.AreEqual(1, HeaderRefs(taskManager));
-            Assert.IsFalse(GetSessions(taskManager)[peer1.Ref].InvTasks.ContainsKey(UInt256.Zero));
+            ExpectGetHeaders(peer1);
+            Assert.AreEqual(2, HeaderRefs(taskManager), "Expected one release and one new assignment.");
+            Assert.IsTrue(HoldsHeaderTask(taskManager, peer1));
+            Assert.IsTrue(HoldsHeaderTask(taskManager, peer2));
+
+            // Same again for a second response
+            peer1.Send(taskManager, CreateHeaders(currentHeight + 1, 3));
+            ExpectGetHeaders(peer1);
+            Assert.AreEqual(2, HeaderRefs(taskManager));
+
+            Sys.Stop(peer1.Ref);
+            AwaitHeaderRefs(taskManager, 1);
+            Sys.Stop(peer2.Ref);
+            AwaitNoHeaderRefs(taskManager);
 
             Sys.Stop(taskManager);
         }
 
         [TestMethod]
-        public void TaskTimeout_ReleasesPendingHeaderReference()
+        public void TaskTimeout_ReleasesExpiredHeaderReferenceAndSchedulesReplacement()
         {
             using var neoSystem = TestBlockchain.GetSystem();
             var currentHeight = NativeContract.Ledger.CurrentIndex(neoSystem.StoreView);
             var taskManager = ActorOfAsTestActorRef(() => new TaskManager(neoSystem));
 
-            var peer = RegisterPeer(taskManager, currentHeight + 10);
-            ExpectGetHeaders(peer);
+            var peer1 = RegisterPeer(taskManager, currentHeight + 10);
+            var peer2 = RegisterPeer(taskManager, currentHeight + 10);
+            ExpectGetHeaders(peer1);
+            ExpectGetHeaders(peer2);
+            Assert.AreEqual(2, HeaderRefs(taskManager));
 
-            GetSessions(taskManager)[peer.Ref].InvTasks[UInt256.Zero] = DateTime.UtcNow.AddMinutes(-5);
-            peer.Send(taskManager, new TaskManager.Update(currentHeight));
+            var expiredAt = TimeProvider.Current.UtcNow.AddMinutes(-5);
+            var session1 = GetSessions(taskManager)[peer1.Ref];
+            session1.InvTasks[UInt256.Zero] = expiredAt;
+
             SendTimer(taskManager);
 
-            Assert.AreEqual(0, HeaderRefs(taskManager));
-            Assert.IsFalse(GetSessions(taskManager)[peer.Ref].InvTasks.ContainsKey(UInt256.Zero));
+            // The expired entry is dropped and peer1 gets a fresh one
+            ExpectGetHeaders(peer1);
+            Assert.AreEqual(2, HeaderRefs(taskManager), "Expected one release and one new assignment.");
+            Assert.IsTrue(session1.InvTasks.TryGetValue(UInt256.Zero, out var assignedAt));
+            Assert.IsTrue(assignedAt > expiredAt, "The expired assignment was not replaced.");
+            ExpectNoGetHeaders(peer2, "Duplicate GetHeaders sent to peer2.");
 
-            Sys.Stop(taskManager);
-        }
-
-        [TestMethod]
-        public void RequestTasks_AllowsNewHeaderRequestAfterPreviousCompleted()
-        {
-            using var neoSystem = TestBlockchain.GetSystem();
-            var currentHeight = NativeContract.Ledger.CurrentIndex(neoSystem.StoreView);
-            var taskManager = ActorOfAsTestActorRef(() => new TaskManager(neoSystem));
-
-            var peer = RegisterPeer(taskManager, currentHeight + 10);
-            ExpectGetHeaders(peer);
-
-            peer.Send(taskManager, Array.Empty<Header>());
-
-            ExpectGetHeaders(peer);
-            Assert.AreEqual(1, HeaderRefs(taskManager));
+            Sys.Stop(peer1.Ref);
+            AwaitHeaderRefs(taskManager, 1);
+            Sys.Stop(peer2.Ref);
+            AwaitNoHeaderRefs(taskManager);
 
             Sys.Stop(taskManager);
         }
@@ -1209,14 +1232,24 @@ namespace Neo.UnitTests.Network.P2P
             var peers = Enumerable.Range(0, 4).Select(_ => RegisterPeer(taskManager, currentHeight + 10)).ToArray();
 
             for (int i = 0; i < 3; i++) ExpectGetHeaders(peers[i]);
+            ExpectNoGetHeaders(peers[3], "All slots are taken, peer 4 should not get GetHeaders.");
+            Assert.AreEqual(3, HeaderRefs(taskManager));
+            Assert.IsFalse(HoldsHeaderTask(taskManager, peers[3]));
+
+            for (int i = 0; i < 5; i++) SendTimer(taskManager);
+            Assert.AreEqual(3, HeaderRefs(taskManager), "Counter went above the limit.");
+            Assert.IsFalse(HoldsHeaderTask(taskManager, peers[3]));
+            foreach (var p in peers) ExpectNoGetHeaders(p, "Unexpected GetHeaders.");
+
+            // Once a slot is free the fourth peer can take it
+            Sys.Stop(peers[0].Ref);
+            AwaitHeaderRefs(taskManager, 2);
+            SendTimer(taskManager);
+            ExpectGetHeaders(peers[3]);
             Assert.AreEqual(3, HeaderRefs(taskManager));
 
-            for (int i = 0; i < 3; i++) SendTimer(taskManager);
-            Assert.AreEqual(3, HeaderRefs(taskManager));
-            Assert.IsFalse(GetSessions(taskManager)[peers[3].Ref].InvTasks.ContainsKey(UInt256.Zero));
-
-            foreach (var p in peers) Sys.Stop(p.Ref);
-            WaitForNoHeaderRefs(taskManager);
+            foreach (var p in peers.Skip(1)) Sys.Stop(p.Ref);
+            AwaitNoHeaderRefs(taskManager);
 
             Sys.Stop(taskManager);
         }
