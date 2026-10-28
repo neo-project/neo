@@ -13,12 +13,15 @@ using Akka.TestKit.MsTest;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography;
 using Neo.Ledger;
+using Neo.Network.P2P;
+using Neo.Network.P2P.Capabilities;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract.Native;
 using System;
 using System.Collections;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
 
 namespace Neo.UnitTests.Ledger
 {
@@ -176,6 +179,51 @@ namespace Neo.UnitTests.Ledger
             Assert.IsTrue(cache.Contains(closer.Index));
             Assert.IsFalse(cache.Contains(farthestIndex));
             Assert.AreEqual(accepted, cache.Count);
+            AssertAccounting(blockchain);
+        }
+
+        [TestMethod]
+        public void CapacityChangesNotifyTheOriginalPeerToRetry()
+        {
+            var system = TestBlockchain.GetSystem();
+            var blockchainActor = ActorOfAsTestActorRef(() => new Blockchain(system));
+            var blockchain = blockchainActor.UnderlyingActor;
+            var currentHeight = NativeContract.Ledger.CurrentIndex(system.StoreView);
+            var peer = CreateTestProbe();
+            var maxCount = GetConstant<int>("MaxUnverifiedBlockCount");
+            var firstIndex = currentHeight + 3;
+
+            peer.Send(system.TaskManager, new TaskManager.Register(new VersionPayload
+            {
+                UserAgent = "cache-test",
+                Capabilities = [new FullNodeCapability(currentHeight)]
+            }));
+            peer.ExpectMsg<Message>(TimeSpan.FromSeconds(3), cancellationToken: CancellationToken.None);
+
+            for (var i = 0; i < maxCount; i++)
+                peer.Send(blockchainActor, MakeBlock(firstIndex + (uint)i, (uint)i));
+
+            AwaitAssert(
+                () => Assert.AreEqual(maxCount, GetCache(blockchain).Count),
+                TimeSpan.FromSeconds(5),
+                cancellationToken: CancellationToken.None);
+
+            peer.Send(blockchainActor, MakeBlock(firstIndex + (uint)maxCount, 10_000));
+            peer.FishForMessage<object>(
+                message => message is RemoteNode.RestartInventory,
+                TimeSpan.FromSeconds(3),
+                cancellationToken: CancellationToken.None);
+
+            peer.Send(blockchainActor, MakeBlock(currentHeight + 2, 20_000));
+            peer.FishForMessage<object>(
+                message => message is RemoteNode.RestartInventory,
+                TimeSpan.FromSeconds(3),
+                cancellationToken: CancellationToken.None);
+
+            AwaitAssert(
+                () => Assert.AreEqual(maxCount, GetCache(blockchain).Count),
+                TimeSpan.FromSeconds(3),
+                cancellationToken: CancellationToken.None);
             AssertAccounting(blockchain);
         }
     }
