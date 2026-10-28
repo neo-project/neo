@@ -177,7 +177,9 @@ namespace Neo.UnitTests.SmartContract.Native
         }
 
         [TestMethod]
-        public void RecoverFund_NeoWithAccruedGasStillFaultsForBlockedContract()
+        [DataRow(false)]
+        [DataRow(true)]
+        public void RecoverFund_NeoWithAccruedGasDependsOnHuyao(bool activated)
         {
             var snapshot = _snapshotCache.CloneCache();
             var committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot);
@@ -213,7 +215,7 @@ namespace Neo.UnitTests.SmartContract.Native
                 Transactions = []
             };
 
-            // Known remaining issue: PostTransferAsync still invokes the blocked contract's GAS callback.
+            // Before Huyao, claiming GAS attempts to call the blocked contract and faults.
             var benignScript = new byte[] { (byte)OpCode.CLEAR, (byte)OpCode.RET };
             var benignManifest = TestUtils.CreateManifest("onNEP17Payment", ContractParameterType.Void,
                 ContractParameterType.Hash160, ContractParameterType.Integer, ContractParameterType.Any);
@@ -237,18 +239,92 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.IsTrue(benignBlockRet.GetBoolean());
             Assert.IsTrue(NativeContract.Policy.IsBlocked(snapshot, benignContract.Hash));
 
-            var ex = Assert.ThrowsExactly<InvalidOperationException>(() =>
+            var treasuryBefore = NativeContract.NEO.BalanceOf(snapshot, NativeContract.Treasury.Hash);
+            var gasBefore = NativeContract.GAS.BalanceOf(snapshot, benignContract.Hash);
+            var settings = TestProtocolSettings.Default with
             {
-                NativeContract.Policy.Call(
-                    snapshot,
-                    new Nep17NativeContractExtensions.ManualWitness(committeeFullMultiSigAddr),
-                    blockFinish,
+                Hardforks = TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_Huyao, activated ? 2000u : 2001u)
+            };
+            // The stored native ABI must match the simulated hardfork schedule.
+            foreach (var native in NativeContract.Contracts)
+            {
+                snapshot.DeleteContract(native.Hash);
+                snapshot.AddContract(native.Hash, native.GetContractState(settings, blockFinish.Index));
+            }
+            using var engine = ApplicationEngine.Create(TriggerType.Application,
+                new Nep17NativeContractExtensions.ManualWitness(committeeFullMultiSigAddr), snapshot, blockFinish, settings);
+            void Recover() => NativeContract.Policy.Call(engine,
                     "recoverFund",
                     new ContractParameter(ContractParameterType.Hash160) { Value = benignContract.Hash },
                     new ContractParameter(ContractParameterType.Hash160) { Value = NativeContract.NEO.Hash });
-            });
-            Assert.Contains("has been blocked", ex.Message);
-            Assert.AreEqual(50, NativeContract.NEO.BalanceOf(snapshot, benignContract.Hash));
+            if (!activated)
+            {
+                var ex = Assert.ThrowsExactly<InvalidOperationException>(Recover);
+                Assert.Contains("has been blocked", ex.Message);
+                Assert.AreEqual(50, NativeContract.NEO.BalanceOf(snapshot, benignContract.Hash));
+            }
+            else
+            {
+                Recover();
+                Assert.AreEqual(BigInteger.Zero, NativeContract.NEO.BalanceOf(snapshot, benignContract.Hash));
+                Assert.AreEqual(treasuryBefore + 50, NativeContract.NEO.BalanceOf(snapshot, NativeContract.Treasury.Hash));
+                Assert.AreEqual(gasBefore, NativeContract.GAS.BalanceOf(snapshot, benignContract.Hash));
+            }
+        }
+
+        [TestMethod]
+        public void BlockedAccount_ReceivingNeoSettlesRewardHeightBeforeUnblock()
+        {
+            var snapshot = _snapshotCache.CloneCache();
+            var account = UInt160.Parse("0x0000000000000000000000000000000000001234");
+            var sender = UInt160.Parse("0x0000000000000000000000000000000000005678");
+            var accountKey = NativeContract.NEO.CreateStorageKey(20, account);
+            snapshot.Add(accountKey, new StorageItem(new NeoToken.NeoAccountState { Balance = 50, BalanceHeight = 0 }));
+            snapshot.Add(NativeContract.NEO.CreateStorageKey(20, sender),
+                new StorageItem(new NeoToken.NeoAccountState { Balance = 50, BalanceHeight = 0 }));
+            var committee = new Nep17NativeContractExtensions.ManualWitness(NativeContract.NEO.GetCommitteeAddress(snapshot));
+            var block = new Block
+            {
+                Header = new Header
+                {
+                    Index = 1000,
+                    Timestamp = 1_000_000,
+                    PrevHash = UInt256.Zero,
+                    MerkleRoot = UInt256.Zero,
+                    NextConsensus = UInt160.Zero,
+                    Witness = Witness.Empty
+                },
+                Transactions = []
+            };
+            NativeContract.Policy.Call(snapshot, committee, block, "blockAccount",
+                new ContractParameter(ContractParameterType.Hash160) { Value = account });
+            var result = NativeContract.NEO.Call(snapshot,
+                new Nep17NativeContractExtensions.ManualWitness(sender), block, "transfer",
+                new ContractParameter(ContractParameterType.Hash160) { Value = sender },
+                new ContractParameter(ContractParameterType.Hash160) { Value = account },
+                new ContractParameter(ContractParameterType.Integer) { Value = 50 },
+                new ContractParameter(ContractParameterType.Any));
+            Assert.IsTrue(result.GetBoolean());
+            Assert.AreEqual(BigInteger.Zero, NativeContract.GAS.BalanceOf(snapshot, account));
+            Assert.IsGreaterThan(BigInteger.Zero, NativeContract.GAS.BalanceOf(snapshot, sender));
+            var state = snapshot.TryGet(accountKey)!.GetInteroperable<NeoToken.NeoAccountState>();
+            Assert.AreEqual(new BigInteger(100), state.Balance);
+            Assert.AreEqual(1000u, state.BalanceHeight);
+
+            NativeContract.Policy.Call(snapshot, committee, block, "unblockAccount",
+                new ContractParameter(ContractParameterType.Hash160) { Value = account });
+            block.Header.Index = 1001;
+            using var engine = ApplicationEngine.Create(TriggerType.Application,
+                new Nep17NativeContractExtensions.ManualWitness(account), snapshot, block, TestProtocolSettings.Default);
+            var expected = NativeContract.NEO.UnclaimedGas(engine, account, block.Index);
+            Assert.IsGreaterThan(BigInteger.Zero, expected);
+            result = NativeContract.NEO.Call(engine, "transfer",
+                new ContractParameter(ContractParameterType.Hash160) { Value = account },
+                new ContractParameter(ContractParameterType.Hash160) { Value = account },
+                new ContractParameter(ContractParameterType.Integer) { Value = 0 },
+                new ContractParameter(ContractParameterType.Any));
+            Assert.IsTrue(result.GetBoolean());
+            Assert.AreEqual(expected, NativeContract.GAS.BalanceOf(snapshot, account));
         }
 
         [TestMethod]

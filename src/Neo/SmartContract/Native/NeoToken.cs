@@ -86,7 +86,9 @@ namespace Neo.SmartContract.Native
         internal override void OnBalanceChanging(ApplicationEngine engine, UInt160 account, NeoAccountState state, BigInteger amount)
         {
             GasDistribution? distribution = DistributeGas(engine, account, state);
-            if (distribution is not null)
+            // Settle the old balance's reward height even when blocked, but do not mint GAS.
+            if (distribution is not null &&
+                (!engine.IsHardforkEnabled(Hardfork.HF_Huyao) || !Policy.IsBlocked(engine.SnapshotCache, account)))
             {
                 var list = engine.CurrentContext!.GetState<List<GasDistribution>>();
                 list.Add(distribution);
