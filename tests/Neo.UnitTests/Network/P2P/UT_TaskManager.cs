@@ -1081,5 +1081,144 @@ namespace Neo.UnitTests.Network.P2P
 
             Sys.Stop(taskManager);
         }
+
+        private static void SendTimer(Akka.TestKit.TestActorRef<TaskManager> taskManager)
+        {
+            var timerType = typeof(TaskManager).GetNestedType("Timer", BindingFlags.NonPublic)!;
+            taskManager.Tell(Activator.CreateInstance(timerType, true)!);
+        }
+
+        private static int HeaderRefs(Akka.TestKit.TestActorRef<TaskManager> taskManager)
+            => GetGlobalInvTasks(taskManager).GetValueOrDefault(UInt256.Zero);
+
+        private static void ExpectGetHeaders(Akka.TestKit.TestProbe peer)
+            => peer.ExpectMsg<Message>(m => m.Command == MessageCommand.GetHeaders, TimeSpan.FromSeconds(3));
+
+        private static int CountPendingGetHeaders(Akka.TestKit.TestProbe peer)
+        {
+            int count = 0;
+            while (peer.HasMessages)
+            {
+                if (peer.ReceiveOne(TimeSpan.Zero) is Message { Command: MessageCommand.GetHeaders })
+                    count++;
+            }
+            return count;
+        }
+
+        private static void WaitForNoHeaderRefs(Akka.TestKit.TestActorRef<TaskManager> taskManager)
+        {
+            for (int i = 0; i < 100 && HeaderRefs(taskManager) != 0; i++)
+                Thread.Sleep(50);
+            Assert.AreEqual(0, HeaderRefs(taskManager));
+        }
+
+        [TestMethod]
+        public void RequestTasks_DoesNotLeakHeaderTaskReferenceCount_AcrossRepeatedTriggers()
+        {
+            using var neoSystem = TestBlockchain.GetSystem();
+            var currentHeight = NativeContract.Ledger.CurrentIndex(neoSystem.StoreView);
+            var taskManager = ActorOfAsTestActorRef(() => new TaskManager(neoSystem));
+
+            var peer1 = RegisterPeer(taskManager, currentHeight + 10);
+            ExpectGetHeaders(peer1);
+            Assert.AreEqual(1, HeaderRefs(taskManager));
+
+            for (int i = 0; i < 5; i++) SendTimer(taskManager);
+            Assert.AreEqual(1, HeaderRefs(taskManager), "Repeated triggers must not inflate the counter.");
+            Assert.AreEqual(0, CountPendingGetHeaders(peer1), "No duplicate GetHeaders must be sent to the same peer.");
+
+            var peer2 = RegisterPeer(taskManager, currentHeight + 10);
+            ExpectGetHeaders(peer2);
+            Assert.AreEqual(2, HeaderRefs(taskManager));
+
+            Sys.Stop(peer1.Ref);
+            Sys.Stop(peer2.Ref);
+            WaitForNoHeaderRefs(taskManager);
+
+            Sys.Stop(taskManager);
+        }
+
+        [TestMethod]
+        public void HeadersResponse_ReleasesExactlyOneReference()
+        {
+            using var neoSystem = TestBlockchain.GetSystem();
+            var currentHeight = NativeContract.Ledger.CurrentIndex(neoSystem.StoreView);
+            var taskManager = ActorOfAsTestActorRef(() => new TaskManager(neoSystem));
+
+            var peer1 = RegisterPeer(taskManager, currentHeight + 10);
+            var peer2 = RegisterPeer(taskManager, currentHeight + 10);
+            ExpectGetHeaders(peer1);
+            ExpectGetHeaders(peer2);
+            Assert.AreEqual(2, HeaderRefs(taskManager));
+
+            // Make sure the peer is not asked again after responding.
+            peer1.Send(taskManager, new TaskManager.Update(currentHeight));
+            peer1.Send(taskManager, Array.Empty<Header>());
+
+            Assert.AreEqual(1, HeaderRefs(taskManager));
+            Assert.IsFalse(GetSessions(taskManager)[peer1.Ref].InvTasks.ContainsKey(UInt256.Zero));
+
+            Sys.Stop(taskManager);
+        }
+
+        [TestMethod]
+        public void TaskTimeout_ReleasesPendingHeaderReference()
+        {
+            using var neoSystem = TestBlockchain.GetSystem();
+            var currentHeight = NativeContract.Ledger.CurrentIndex(neoSystem.StoreView);
+            var taskManager = ActorOfAsTestActorRef(() => new TaskManager(neoSystem));
+
+            var peer = RegisterPeer(taskManager, currentHeight + 10);
+            ExpectGetHeaders(peer);
+
+            GetSessions(taskManager)[peer.Ref].InvTasks[UInt256.Zero] = DateTime.UtcNow.AddMinutes(-5);
+            peer.Send(taskManager, new TaskManager.Update(currentHeight));
+            SendTimer(taskManager);
+
+            Assert.AreEqual(0, HeaderRefs(taskManager));
+            Assert.IsFalse(GetSessions(taskManager)[peer.Ref].InvTasks.ContainsKey(UInt256.Zero));
+
+            Sys.Stop(taskManager);
+        }
+
+        [TestMethod]
+        public void RequestTasks_AllowsNewHeaderRequestAfterPreviousCompleted()
+        {
+            using var neoSystem = TestBlockchain.GetSystem();
+            var currentHeight = NativeContract.Ledger.CurrentIndex(neoSystem.StoreView);
+            var taskManager = ActorOfAsTestActorRef(() => new TaskManager(neoSystem));
+
+            var peer = RegisterPeer(taskManager, currentHeight + 10);
+            ExpectGetHeaders(peer);
+
+            peer.Send(taskManager, Array.Empty<Header>());
+
+            ExpectGetHeaders(peer);
+            Assert.AreEqual(1, HeaderRefs(taskManager));
+
+            Sys.Stop(taskManager);
+        }
+
+        [TestMethod]
+        public void RequestTasks_HeaderTasksLimitedToMaxConcurrentAcrossDistinctSessions()
+        {
+            using var neoSystem = TestBlockchain.GetSystem();
+            var currentHeight = NativeContract.Ledger.CurrentIndex(neoSystem.StoreView);
+            var taskManager = ActorOfAsTestActorRef(() => new TaskManager(neoSystem));
+
+            var peers = Enumerable.Range(0, 4).Select(_ => RegisterPeer(taskManager, currentHeight + 10)).ToArray();
+
+            for (int i = 0; i < 3; i++) ExpectGetHeaders(peers[i]);
+            Assert.AreEqual(3, HeaderRefs(taskManager));
+
+            for (int i = 0; i < 3; i++) SendTimer(taskManager);
+            Assert.AreEqual(3, HeaderRefs(taskManager));
+            Assert.IsFalse(GetSessions(taskManager)[peers[3].Ref].InvTasks.ContainsKey(UInt256.Zero));
+
+            foreach (var p in peers) Sys.Stop(p.Ref);
+            WaitForNoHeaderRefs(taskManager);
+
+            Sys.Stop(taskManager);
+        }
     }
 }
