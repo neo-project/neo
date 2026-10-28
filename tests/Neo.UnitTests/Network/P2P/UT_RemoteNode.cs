@@ -208,7 +208,7 @@ namespace Neo.UnitTests.Network.P2P
             var actor = ActorOfAsTestActorRef(() => new RemoteNode(_system, new LocalNode(_system), connection,
                 new IPEndPoint(IPAddress.Loopback, 12345), new IPEndPoint(IPAddress.Loopback, 20333), new ChannelsConfig()));
             var node = actor.UnderlyingActor;
-            var version = Message.Create(MessageCommand.Version, new VersionPayload
+            typeof(RemoteNode).GetProperty(nameof(RemoteNode.Version))!.SetValue(node, new VersionPayload
             {
                 UserAgent = "queue-test",
                 Nonce = 1,
@@ -216,9 +216,8 @@ namespace Neo.UnitTests.Network.P2P
                 Version = LocalNode.ProtocolVersion,
                 Capabilities = []
             });
-            actor.Tell(new Tcp.Received(ByteString.FromBytes(version.ToArray())));
-            connection.ExpectMsg<Tcp.Write>(cancellationToken: CancellationToken.None);
-            actor.Tell(new Tcp.Received(ByteString.FromBytes(Message.Create(MessageCommand.Verack).ToArray())));
+            typeof(RemoteNode).GetField("_verack", BindingFlags.Instance | BindingFlags.NonPublic)!.SetValue(node, true);
+            typeof(RemoteNode).GetField("_ack", BindingFlags.Instance | BindingFlags.NonPublic)!.SetValue(node, false);
             var request = Message.Create(MessageCommand.GetBlockByIndex, GetBlockByIndexPayload.Create(0, 500)).ToArray();
             // Additional requests in the same TCP delivery must not grow or clear the queue.
             var batch = Enumerable.Range(0, RemoteNode.MaxQueuedMessages + 20).SelectMany(_ => request).ToArray();
