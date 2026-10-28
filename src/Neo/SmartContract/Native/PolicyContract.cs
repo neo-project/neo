@@ -609,7 +609,7 @@ namespace Neo.SmartContract.Native
             if (engine.SnapshotCache.Contains(key)) return false;
 
             if (engine.IsHardforkEnabled(Hardfork.HF_Faun))
-                await NEO.VoteInternal(engine, account, null, claimGas: !engine.IsHardforkEnabled(Hardfork.HF_Jackalope));
+                await NEO.VoteInternal(engine, account, null, claimGas: !engine.IsHardforkEnabled(Hardfork.HF_Huyao));
 
             engine.SnapshotCache.Add(key,
                 // Set request time for recover funds

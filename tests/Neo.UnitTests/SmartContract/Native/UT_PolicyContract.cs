@@ -42,7 +42,7 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         [DataRow(false)]
         [DataRow(true)]
-        public void BlockAccount_GasClaimDependsOnJackalope(bool activated)
+        public void BlockAccount_GasClaimDependsOnHuyao(bool activated)
         {
             var snapshot = _snapshotCache.CloneCache();
             var account = UInt160.Parse("0x0000000000000000000000000000000000001234");
@@ -59,7 +59,7 @@ namespace Neo.UnitTests.SmartContract.Native
             };
             var settings = TestProtocolSettings.Default with
             {
-                Hardforks = TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_Jackalope, activated ? 1000u : 1001u)
+                Hardforks = TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_Huyao, activated ? 1000u : 1001u)
             };
             using var engine = ApplicationEngine.Create(TriggerType.Application,
                 new Nep17NativeContractExtensions.ManualWitness(NativeContract.NEO.GetCommitteeAddress(snapshot)),
