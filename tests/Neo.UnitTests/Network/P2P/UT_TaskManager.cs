@@ -797,7 +797,7 @@ namespace Neo.UnitTests.Network.P2P
             remote.Send(s_system.TaskManager, new TaskManager.NewTasks(
                 InvPayload.Create(InventoryType.TX, hash)));
 
-            // TX NewTasks may produce GetData (or nothing); either is fine â€” actor must stay healthy.
+            // TX NewTasks may produce GetData (or nothing); either is fine — actor must stay healthy.
             _ = remote.ReceiveOne(TimeSpan.FromMilliseconds(400), cancellationToken: CancellationToken.None);
         }
 
