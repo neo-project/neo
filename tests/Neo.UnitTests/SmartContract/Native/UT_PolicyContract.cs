@@ -40,7 +40,41 @@ namespace Neo.UnitTests.SmartContract.Native
         }
 
         [TestMethod]
-        public void BlockAccount_SkipsGasCallbackAndPreventsRevoting()
+        [DataRow(false)]
+        [DataRow(true)]
+        public void BlockAccount_GasClaimDependsOnJackalope(bool activated)
+        {
+            var snapshot = _snapshotCache.CloneCache();
+            var account = UInt160.Parse("0x0000000000000000000000000000000000001234");
+            var key = NativeContract.NEO.CreateStorageKey(20, account);
+            snapshot.Add(key, new StorageItem(new NeoToken.NeoAccountState { Balance = 100, BalanceHeight = 0 }));
+            var block = new Block
+            {
+                Header = new Header
+                {
+                    Index = 1000, Timestamp = 1_000_000, Witness = Witness.Empty,
+                    PrevHash = UInt256.Zero, MerkleRoot = UInt256.Zero, NextConsensus = UInt160.Zero
+                },
+                Transactions = []
+            };
+            var settings = TestProtocolSettings.Default with
+            {
+                Hardforks = TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_Jackalope, activated ? 1000u : 1001u)
+            };
+            using var engine = ApplicationEngine.Create(TriggerType.Application,
+                new Nep17NativeContractExtensions.ManualWitness(NativeContract.NEO.GetCommitteeAddress(snapshot)),
+                snapshot, block, settings);
+            var result = NativeContract.Policy.Call(engine, "blockAccount",
+                new ContractParameter(ContractParameterType.Hash160) { Value = account });
+            Assert.IsTrue(result.GetBoolean());
+            Assert.IsTrue(NativeContract.Policy.IsBlocked(snapshot, account));
+            Assert.AreEqual(activated, NativeContract.GAS.BalanceOf(snapshot, account).IsZero);
+            var state = snapshot.TryGet(key)!.GetInteroperable<NeoToken.NeoAccountState>();
+            Assert.AreEqual(activated ? 0u : 1000u, state.BalanceHeight);
+        }
+
+        [TestMethod]
+        public void BlockAccount_SkipsGasClaimAndPreventsRevoting()
         {
             var snapshot = _snapshotCache.CloneCache();
             var committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot);
@@ -66,7 +100,7 @@ namespace Neo.UnitTests.SmartContract.Native
             var candidateKey = NativeContract.NEO.CreateStorageKey(33, candidatePubKey);
             snapshot.GetAndChange(candidateKey, () => new StorageItem(new NeoToken.CandidateState { Registered = true, Votes = 0 }));
 
-            // Blocking must succeed without executing the aborting callback, while still crediting GAS.
+            // Blocking must succeed without executing the aborting callback, without claiming GAS.
             var abortScript = new byte[] { (byte)OpCode.ABORT };
             var abortManifest = TestUtils.CreateManifest("onNEP17Payment", ContractParameterType.Void,
                 ContractParameterType.Hash160, ContractParameterType.Integer, ContractParameterType.Any);
@@ -89,7 +123,7 @@ namespace Neo.UnitTests.SmartContract.Native
                     new ContractParameter(ContractParameterType.Hash160) { Value = abortContract.Hash });
             Assert.IsTrue(abortRet.GetBoolean());
             Assert.IsTrue(NativeContract.Policy.IsBlocked(snapshot, abortContract.Hash));
-            Assert.IsGreaterThan(BigInteger.Zero, NativeContract.GAS.BalanceOf(snapshot, abortContract.Hash));
+            Assert.AreEqual(BigInteger.Zero, NativeContract.GAS.BalanceOf(snapshot, abortContract.Hash));
             Assert.AreEqual(1, NativeContract.NEO.BalanceOf(snapshot, abortContract.Hash));
 
             // The callback must not be able to vote again during blocking.
@@ -135,7 +169,7 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.IsNull(revoteState.VoteTo);
             var candidateVotesAfterBlock = snapshot.TryGet(candidateKey)!.GetInteroperable<NeoToken.CandidateState>().Votes;
             Assert.AreEqual(0, candidateVotesAfterBlock);
-            Assert.IsGreaterThan(BigInteger.Zero, NativeContract.GAS.BalanceOf(snapshot, revoteContract.Hash));
+            Assert.AreEqual(BigInteger.Zero, NativeContract.GAS.BalanceOf(snapshot, revoteContract.Hash));
         }
 
         [TestMethod]
