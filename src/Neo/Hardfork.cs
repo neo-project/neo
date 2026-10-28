@@ -20,6 +20,8 @@ namespace Neo
         HF_Echidna,
         HF_Faun,
         HF_Gorgon,
-        HF_Huyao
+        HF_Huyao,
+        HF_Iara,
+        HF_Jackalope
     }
 }

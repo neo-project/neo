@@ -194,8 +194,12 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             foreach (var witness in tx.Witnesses)
             {
+                var settings = TestProtocolSettings.Default with
+                {
+                    Hardforks = TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_Gorgon, 1).SetItem(Hardfork.HF_Huyao, uint.MaxValue)
+                };
                 using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshotCache,
-                    settings: TestProtocolSettings.Default, gas: tx.NetworkFee);
+                    settings: settings, gas: tx.NetworkFee);
                 engine.LoadScript(witness.VerificationScript);
                 engine.LoadScript(witness.InvocationScript);
                 Assert.AreEqual(VMState.HALT, engine.Execute());
@@ -272,8 +276,12 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             foreach (var witness in tx.Witnesses)
             {
+                var settings = TestProtocolSettings.Default with
+                {
+                    Hardforks = TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_Gorgon, 1).SetItem(Hardfork.HF_Huyao, uint.MaxValue)
+                };
                 using var engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshotCache,
-                    settings: TestProtocolSettings.Default, gas: tx.NetworkFee);
+                    settings: settings, gas: tx.NetworkFee);
                 engine.LoadScript(witness.VerificationScript);
                 engine.LoadScript(witness.InvocationScript);
                 Assert.AreEqual(VMState.HALT, engine.Execute());
@@ -380,8 +388,12 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             foreach (var witness in tx.Witnesses)
             {
+                var settings = TestProtocolSettings.Default with
+                {
+                    Hardforks = TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_Gorgon, 1).SetItem(Hardfork.HF_Huyao, uint.MaxValue)
+                };
                 using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshotCache,
-                    settings: TestProtocolSettings.Default, gas: tx.NetworkFee);
+                    settings: settings, gas: tx.NetworkFee);
                 engine.LoadScript(witness.VerificationScript);
                 engine.LoadScript(witness.InvocationScript);
                 Assert.AreEqual(VMState.HALT, engine.Execute());
@@ -462,8 +474,12 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             long verificationGas = 0;
             foreach (var witness in tx.Witnesses)
             {
+                var settings = TestProtocolSettings.Default with
+                {
+                    Hardforks = TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_Gorgon, 1).SetItem(Hardfork.HF_Huyao, uint.MaxValue)
+                };
                 using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshotCache,
-                    settings: TestProtocolSettings.Default, gas: tx.NetworkFee);
+                    settings: settings, gas: tx.NetworkFee);
                 engine.LoadScript(witness.VerificationScript);
                 engine.LoadScript(witness.InvocationScript);
                 Assert.AreEqual(VMState.HALT, engine.Execute());
@@ -549,8 +565,12 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             foreach (var witness in tx.Witnesses)
             {
+                var settings = TestProtocolSettings.Default with
+                {
+                    Hardforks = TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_Gorgon, 1).SetItem(Hardfork.HF_Huyao, uint.MaxValue)
+                };
                 using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshotCache,
-                    settings: TestProtocolSettings.Default, gas: tx.NetworkFee);
+                    settings: settings, gas: tx.NetworkFee);
                 engine.LoadScript(witness.VerificationScript);
                 engine.LoadScript(witness.InvocationScript);
                 Assert.AreEqual(VMState.HALT, engine.Execute());
@@ -683,8 +703,12 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             foreach (var witness in tx.Witnesses)
             {
+                var settings = TestProtocolSettings.Default with
+                {
+                    Hardforks = TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_Gorgon, 1).SetItem(Hardfork.HF_Huyao, uint.MaxValue)
+                };
                 using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshotCache,
-                    settings: TestProtocolSettings.Default, gas: tx.NetworkFee);
+                    settings: settings, gas: tx.NetworkFee);
                 engine.LoadScript(witness.VerificationScript);
                 engine.LoadScript(witness.InvocationScript);
                 Assert.AreEqual(VMState.HALT, engine.Execute());
@@ -1070,8 +1094,12 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             long verificationGas = 0;
             foreach (var witness in tx.Witnesses)
             {
+                var settings = TestProtocolSettings.Default with
+                {
+                    Hardforks = TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_Gorgon, 1).SetItem(Hardfork.HF_Huyao, uint.MaxValue)
+                };
                 using ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshotCache,
-                    settings: TestProtocolSettings.Default, gas: tx.NetworkFee);
+                    settings: settings, gas: tx.NetworkFee);
                 engine.LoadScript(witness.VerificationScript);
                 engine.LoadScript(witness.InvocationScript);
                 Assert.AreEqual(VMState.HALT, engine.Execute());
@@ -1131,6 +1159,57 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             Assert.IsNull(tx.GetAttribute<OracleResponse>());
             Assert.IsNotNull(tx.GetAttribute<HighPriorityAttribute>());
+        }
+
+        [TestMethod]
+        [DataRow(false)]
+        [DataRow(true)]
+        public void Test_Verify_MalformedMultiSigWitness(bool matchingScriptHash)
+        {
+            using var system = TestBlockchain.GetSystem();
+            using var snapshot = system.GetSnapshotCache();
+            using var verification = new ScriptBuilder();
+            verification.EmitPush(1);
+            verification.EmitPush(new byte[33]);
+            verification.EmitPush(1);
+            verification.EmitSysCall(ApplicationEngine.System_Crypto_CheckMultisig);
+            var verificationScript = verification.ToArray();
+            var signer = matchingScriptHash
+                ? verificationScript.ToScriptHash()
+                : new UInt160(Neo.Cryptography.Crypto.Hash160([1, 2, 3]));
+
+            var balance = snapshot.GetAndChange(NativeContract.GAS.CreateStorageKey(20, signer),
+                () => new StorageItem(new AccountState()));
+            balance.GetInteroperable<AccountState>().Balance = 100_00000000;
+            snapshot.Commit();
+
+            using var invocation = new ScriptBuilder();
+            invocation.EmitPush(new byte[64]);
+            var tx = new Transaction
+            {
+                Version = 0,
+                Nonce = 123456,
+                SystemFee = 0,
+                NetworkFee = 1_00000000,
+                ValidUntilBlock = NativeContract.Ledger.CurrentIndex(snapshot) + 10,
+                Signers = [new Signer { Account = signer, Scopes = WitnessScope.Global }],
+                Attributes = [],
+                Script = new byte[] { (byte)OpCode.PUSH1 },
+                Witnesses = [new Witness
+                {
+                    InvocationScript = invocation.ToArray(),
+                    VerificationScript = verificationScript
+                }]
+            };
+            tx = tx.ToArray().AsSerializable<Transaction>();
+            Assert.AreEqual(matchingScriptHash, signer == tx.Witnesses[0].ScriptHash);
+
+            // Nonstandard witnesses are deferred to state-dependent verification.
+            Assert.AreEqual(VerifyResult.Succeed, tx.VerifyStateIndependent(TestProtocolSettings.Default));
+            Assert.AreEqual(VerifyResult.Invalid, tx.VerifyStateDependent(TestProtocolSettings.Default, snapshot, new(), []));
+            Assert.AreEqual(VerifyResult.Invalid, tx.Verify(TestProtocolSettings.Default, snapshot, new(), []));
+            Assert.AreEqual(VerifyResult.Invalid, system.MemPool.TryAdd(tx, snapshot));
+            Assert.AreEqual(0, system.MemPool.VerifiedCount);
         }
 
         [TestMethod]

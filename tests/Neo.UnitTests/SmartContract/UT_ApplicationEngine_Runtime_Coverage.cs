@@ -103,8 +103,13 @@ namespace Neo.UnitTests.SmartContract
         public void GetRandom_IncreasesFeeConsumed()
         {
             // GetRandom returns an unsigned BigInteger, so non-negativity is not a useful assert.
-            // Observable behavior: each call charges fee via AddFee.
-            using var engine = TestEngineRunner.CreateWithScript(_snapshot, new byte[] { (byte)OpCode.NOP }, gas: 100_0000_0000);
+            // Observable behavior: before Huyao each call charges fee via AddFee.
+            var settings = TestProtocolSettings.Default with
+            {
+                Hardforks = TestProtocolSettings.Default.Hardforks.Remove(Hardfork.HF_Huyao)
+            };
+            using var engine = TestEngineRunner.Create(_snapshot, gas: 100_0000_0000, settings: settings);
+            engine.LoadScript(new byte[] { (byte)OpCode.NOP });
             var fee0 = engine.FeeConsumed;
             _ = engine.GetRandom();
             var fee1 = engine.FeeConsumed;

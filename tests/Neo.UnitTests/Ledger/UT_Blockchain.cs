@@ -45,6 +45,58 @@ namespace Neo.UnitTests.Ledger
         }
 
         [TestMethod]
+        [DataRow(0)]
+        [DataRow(1)]
+        [DataRow(2)]
+        public void TestStrictScriptOverflowIsRejected(int scriptLocation)
+        {
+            byte[] overflowScript =
+            [
+                (byte)OpCode.NOP,
+                (byte)OpCode.JMP_L, 0xFF, 0xFF, 0xFF, 0x7F
+            ];
+
+            var verificationScript = scriptLocation == 2 ? overflowScript : new byte[] { (byte)OpCode.PUSH1 };
+            var senderHash = verificationScript.ToScriptHash();
+            var snapshot = _system.GetSnapshotCache();
+            var key = new KeyBuilder(NativeContract.GAS.Id, 20).Add(senderHash);
+            var entry = snapshot.GetAndChange(key, () => new StorageItem(new AccountState()));
+            entry.GetInteroperable<AccountState>().Balance = 100_000_000 * NativeContract.GAS.Factor;
+            snapshot.Commit();
+
+            var txWithOverflowWitness = new Transaction
+            {
+                Version = 0,
+                Nonce = 42,
+                SystemFee = 0,
+                NetworkFee = 1_000_000,
+                ValidUntilBlock = 100,
+                Signers = [new Signer { Account = senderHash, Scopes = WitnessScope.CalledByEntry }],
+                Attributes = [],
+                Script = scriptLocation == 0 ? overflowScript : new byte[] { (byte)OpCode.PUSH1 },
+                Witnesses =
+                [
+                    new Witness
+                    {
+                        InvocationScript = scriptLocation == 1 ? overflowScript : Array.Empty<byte>(),
+                        VerificationScript = verificationScript
+                    }
+                ]
+            };
+
+            // Custom witnesses are checked during state-dependent verification.
+            Assert.AreEqual(scriptLocation == 0 ? VerifyResult.InvalidScript : VerifyResult.Succeed,
+                txWithOverflowWitness.VerifyStateIndependent(_system.Settings));
+            if (scriptLocation != 0)
+                Assert.AreEqual(VerifyResult.Invalid,
+                    txWithOverflowWitness.VerifyStateDependent(_system.Settings, _system.GetSnapshotCache(), new TransactionVerificationContext(), []));
+
+            // Invalid scripts must produce a response instead of faulting the actor.
+            senderProbe.Send(_system.Blockchain, txWithOverflowWitness);
+            senderProbe.ExpectMsg<Blockchain.RelayResult>(p => p.Result == (scriptLocation == 0 ? VerifyResult.InvalidScript : VerifyResult.Invalid), cancellationToken: CancellationToken.None);
+        }
+
+        [TestMethod]
         public void TestValidTransaction()
         {
             var snapshot = _system.GetSnapshotCache();
@@ -155,7 +207,11 @@ namespace Neo.UnitTests.Ledger
                 sb.EmitSysCall(ApplicationEngine.System_Contract_NativeOnPersist);
                 onPersistScript = sb.ToArray();
             }
-            using (ApplicationEngine engine2 = ApplicationEngine.Create(TriggerType.OnPersist, null, snapshot, block, _system.Settings, 0))
+            var settings = _system.Settings with
+            {
+                Hardforks = TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_Gorgon, block.Index + 1)
+            };
+            using (ApplicationEngine engine2 = ApplicationEngine.Create(TriggerType.OnPersist, null, snapshot, block, settings, 0))
             {
                 engine2.LoadScript(onPersistScript);
                 if (engine2.Execute() != VMState.HALT) throw engine2.FaultException;
@@ -171,7 +227,7 @@ namespace Neo.UnitTests.Ledger
                 sb.EmitSysCall(ApplicationEngine.System_Contract_NativePostPersist);
                 postPersistScript = sb.ToArray();
             }
-            using (ApplicationEngine engine2 = ApplicationEngine.Create(TriggerType.PostPersist, null, snapshot, block, _system.Settings, 0))
+            using (ApplicationEngine engine2 = ApplicationEngine.Create(TriggerType.PostPersist, null, snapshot, block, settings, 0))
             {
                 engine2.LoadScript(postPersistScript);
                 if (engine2.Execute() != VMState.HALT) throw engine2.FaultException;

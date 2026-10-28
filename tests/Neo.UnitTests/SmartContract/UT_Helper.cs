@@ -40,6 +40,15 @@ namespace Neo.UnitTests.SmartContract
         }
 
         [TestMethod]
+        public void VerifyWitnesses_NullWitnessReturnsFalse()
+        {
+            var payload = new ExtensiblePayload { Category = "dBFT", Sender = UInt160.Zero, Witness = null! };
+            Assert.IsFalse(payload.VerifyWitnesses(TestProtocolSettings.Default, _snapshotCache, 150000000));
+            Assert.IsFalse(payload.VerifyWitness(TestProtocolSettings.Default, _snapshotCache, UInt160.Zero, null!, 150000000, out var fee));
+            Assert.AreEqual(0L, fee);
+        }
+
+        [TestMethod]
         public void TestGetContractHash()
         {
             var nef = new NefFile()
@@ -78,6 +87,25 @@ namespace Neo.UnitTests.SmartContract
         }
 
         [TestMethod]
+        [DataRow(0)]
+        [DataRow(4)]
+        public void TestIsMultiSigContract_InvalidPublicKey(int prefix)
+        {
+            var publicKey = new byte[33];
+            publicKey[0] = (byte)prefix;
+            using var sb = new ScriptBuilder();
+            sb.EmitPush(1);
+            sb.EmitPush(publicKey);
+            sb.EmitPush(1);
+            sb.EmitSysCall(ApplicationEngine.System_Crypto_CheckMultisig);
+            var script = sb.ToArray();
+
+            Assert.IsFalse(IsMultiSigContract(script, out _, out ECPoint[] _));
+            Assert.IsFalse(IsMultiSigContract(script, out int _, out int _));
+            Assert.IsFalse(IsMultiSigContract(script));
+        }
+
+        [TestMethod]
         // TestIsMultiSigContract_WrongCurve checks that multisignature verification script based on points
         // not from Secp256r1 curve fails IsMultiSigContract check without any exception.
         public void TestIsMultiSigContract_WrongCurve()
@@ -96,13 +124,15 @@ namespace Neo.UnitTests.SmartContract
             const int m = 3;
 
             var badScript = Contract.CreateMultiSigRedeemScript(m, pubs);
-            Assert.IsFalse(IsMultiSigContract(badScript, out _, out ECPoint[] _)); // enforce runtime point decoding by specifying ECPoint[] out variable.
-            Assert.IsTrue(IsMultiSigContract(badScript)); // this overload is unlucky since it doesn't perform ECPoint decoding.
+            Assert.IsFalse(IsMultiSigContract(badScript, out _, out ECPoint[] _));
+            Assert.IsFalse(IsMultiSigContract(badScript));
+            Assert.IsFalse(IsMultiSigContract(badScript, out int _, out int _));
 
-            // Exclude the first special point and check one more time, both methods should return true.
+            // Exclude the first special point and check one more time; all overloads should return true.
             var goodScript = Contract.CreateMultiSigRedeemScript(m, pubs.Skip(1).ToArray());
-            Assert.IsTrue(IsMultiSigContract(goodScript, out _, out ECPoint[] _)); // enforce runtime point decoding by specifying ECPoint[] out variable.
-            Assert.IsTrue(IsMultiSigContract(goodScript)); // this overload is unlucky since it doesn't perform ECPoint decoding.
+            Assert.IsTrue(IsMultiSigContract(goodScript, out _, out ECPoint[] _));
+            Assert.IsTrue(IsMultiSigContract(goodScript));
+            Assert.IsTrue(IsMultiSigContract(goodScript, out int _, out int _));
         }
 
         [TestMethod]
@@ -131,7 +161,11 @@ namespace Neo.UnitTests.SmartContract
             invocationScript.EmitPush(Neo.Wallets.Helper.Sign(tx, _key, TestProtocolSettings.Default.Network));
             tx.Witnesses = new Witness[] { new Witness() { InvocationScript = invocationScript.ToArray(), VerificationScript = contract.Script } };
 
-            using var engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot, null, TestProtocolSettings.Default);
+            var settings = TestProtocolSettings.Default with
+            {
+                Hardforks = TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_Gorgon, 1).SetItem(Hardfork.HF_Huyao, uint.MaxValue)
+            };
+            using var engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot, null, settings);
             engine.LoadScript(contract.Script);
             engine.LoadScript(new Script(invocationScript.ToArray(), true), configureState: p => p.CallFlags = CallFlags.None);
             Assert.AreEqual(VMState.HALT, engine.Execute());
@@ -152,7 +186,11 @@ namespace Neo.UnitTests.SmartContract
             using ScriptBuilder invocationScript = new();
             invocationScript.EmitPush(Neo.Wallets.Helper.Sign(tx, _key, TestProtocolSettings.Default.Network));
 
-            using var engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot, null, TestProtocolSettings.Default);
+            var settings = TestProtocolSettings.Default with
+            {
+                Hardforks = TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_Gorgon, 1).SetItem(Hardfork.HF_Huyao, uint.MaxValue)
+            };
+            using var engine = ApplicationEngine.Create(TriggerType.Verification, tx, snapshot, null, settings);
             engine.LoadScript(contract.Script);
             engine.LoadScript(new Script(invocationScript.ToArray(), true), configureState: p => p.CallFlags = CallFlags.None);
             Assert.AreEqual(VMState.HALT, engine.Execute());

@@ -377,7 +377,7 @@ namespace Neo.Network.P2P.Payloads
             {
                 _ = new Script(Script, true);
             }
-            catch (BadScriptException)
+            catch (Exception)
             {
                 return VerifyResult.InvalidScript;
             }

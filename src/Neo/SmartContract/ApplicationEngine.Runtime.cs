@@ -134,6 +134,17 @@ namespace Neo.SmartContract
         public static readonly InteropDescriptor System_Runtime_Notify = Register("System.Runtime.Notify", nameof(RuntimeNotify), 1 << 15, CallFlags.AllowNotify);
 
         /// <summary>
+        /// The price of System.Runtime.Notify per item visited while copying the arguments since Huyao hardfork,
+        /// in the unit of 1e-11 GAS.
+        /// </summary>
+        private const long NotifyPricePerItem = 30024;
+
+        /// <summary>
+        /// The base price of System.Runtime.Notify since Huyao hardfork, in the unit of 1e-11 GAS.
+        /// </summary>
+        private const long NotifyBasePrice = 2245000;
+
+        /// <summary>
         /// The <see cref="InteropDescriptor"/> of System.Runtime.GetNotifications.
         /// Gets the notifications sent by the specified contract during the execution.
         /// </summary>
@@ -162,6 +173,7 @@ namespace Neo.SmartContract
         /// Gets the name of the current platform.
         /// </summary>
         /// <returns>It always returns "NEO".</returns>
+        [InteropPrice(Hardfork.HF_Huyao, 8867)]
         internal protected static string GetPlatform()
         {
             return "NEO";
@@ -172,6 +184,7 @@ namespace Neo.SmartContract
         /// Gets the magic number of the current network.
         /// </summary>
         /// <returns>The magic number of the current network.</returns>
+        [InteropPrice(Hardfork.HF_Huyao, 9833)]
         internal protected uint GetNetwork()
         {
             return ProtocolSettings.Network;
@@ -182,6 +195,7 @@ namespace Neo.SmartContract
         /// Gets the address version of the current network.
         /// </summary>
         /// <returns>The address version of the current network.</returns>
+        [InteropPrice(Hardfork.HF_Huyao, 8867)]
         internal protected byte GetAddressVersion()
         {
             return ProtocolSettings.AddressVersion;
@@ -192,6 +206,7 @@ namespace Neo.SmartContract
         /// Gets the timestamp of the current block.
         /// </summary>
         /// <returns>The timestamp of the current block.</returns>
+        [InteropPrice(Hardfork.HF_Huyao, 9033)]
         protected internal ulong GetTime()
         {
             if (PersistingBlock is null)
@@ -204,6 +219,7 @@ namespace Neo.SmartContract
         /// Gets the current script container.
         /// </summary>
         /// <returns>The current script container.</returns>
+        [InteropPrice(Hardfork.HF_Huyao, 36533)]
         protected internal StackItem GetScriptContainer()
         {
             if (ScriptContainer is not IInteroperable interop) throw new InvalidOperationException();
@@ -295,6 +311,7 @@ namespace Neo.SmartContract
         /// Gets the number of times the current contract has been called during the execution.
         /// </summary>
         /// <returns>The number of times the current contract has been called during the execution.</returns>
+        [InteropPrice(Hardfork.HF_Huyao, 10267)]
         protected internal int GetInvocationCounter()
         {
             if (!invocationCounter.TryGetValue(CurrentScriptHash!, out var counter))
@@ -309,6 +326,7 @@ namespace Neo.SmartContract
         /// Gets the next random number.
         /// </summary>
         /// <returns>The next random number.</returns>
+        [InteropPrice(Hardfork.HF_Huyao, 15833)]
         protected internal BigInteger GetRandom()
         {
             byte[] buffer;
@@ -324,7 +342,8 @@ namespace Neo.SmartContract
                 buffer = nonceData = Cryptography.Helper.Murmur128(nonceData, ProtocolSettings.Network);
                 price = 1 << 4;
             }
-            AddFee(price * _execFeeFactor, false);
+            if (!IsHardforkEnabled(Hardfork.HF_Huyao))
+                AddFee(price * _execFeeFactor, false);
             return new BigInteger(buffer, isUnsigned: true);
         }
 
@@ -333,6 +352,7 @@ namespace Neo.SmartContract
         /// Writes a log.
         /// </summary>
         /// <param name="state">The message of the log.</param>
+        [InteropPrice(Hardfork.HF_Huyao, 31767)]
         protected internal void RuntimeLog(byte[] state)
         {
             if (state.Length > MaxNotificationSize)
@@ -354,6 +374,7 @@ namespace Neo.SmartContract
         /// </summary>
         /// <param name="eventName">The name of the event.</param>
         /// <param name="state">The arguments of the event.</param>
+        [InteropPrice(Hardfork.HF_Huyao, 0)]
         protected internal void RuntimeNotify(byte[] eventName, Array state)
         {
             if (!IsHardforkEnabled(Hardfork.HF_Basilisk))
@@ -382,7 +403,12 @@ namespace Neo.SmartContract
             using MemoryStream ms = new(MaxNotificationSize);
             using BinaryWriter writer = new(ms, Utility.StrictUTF8, true);
             BinarySerializer.Serialize(writer, state, MaxNotificationSize, Limits.MaxStackSize);
-            SendNotification(CurrentScriptHash!, name, state);
+            SendNotification(CurrentScriptHash!, name, state, out var count);
+            if (IsHardforkEnabled(Hardfork.HF_Huyao))
+            {
+                var price = NotifyPricePerItem * count + NotifyBasePrice;
+                AddFemtoGas(price * _execFeeFactor, false);
+            }
         }
 
         protected internal void RuntimeNotifyV1(byte[] eventName, Array state)
@@ -405,6 +431,18 @@ namespace Neo.SmartContract
         /// <param name="state">The arguments of the event.</param>
         protected internal void SendNotification(UInt160 hash, string eventName, Array state)
         {
+            SendNotification(hash, eventName, state, out _);
+        }
+
+        /// <summary>
+        /// Sends a notification for the specified contract.
+        /// </summary>
+        /// <param name="hash">The hash of the specified contract.</param>
+        /// <param name="eventName">The name of the event.</param>
+        /// <param name="state">The arguments of the event.</param>
+        /// <param name="count">The number of items visited while copying the arguments.</param>
+        private void SendNotification(UInt160 hash, string eventName, Array state, out int count)
+        {
             notifications ??= new List<NotifyEventArgs>();
             // Restrict the number of notifications for Application executions. Do not check
             // persisting triggers to avoid native persist failure. Do not check verification
@@ -413,7 +451,7 @@ namespace Neo.SmartContract
             {
                 throw new InvalidOperationException($"Maximum number of notifications `{MaxNotificationCount}` is reached.");
             }
-            NotifyEventArgs notification = new(ScriptContainer, hash, eventName, (Array)state.DeepCopy(asImmutable: true));
+            NotifyEventArgs notification = new(ScriptContainer, hash, eventName, (Array)state.DeepCopy(asImmutable: true, out count));
             Notify?.Invoke(this, notification);
             notifications.Add(notification);
             CurrentContext!.GetState<ExecutionContextState>().NotificationCount++;
@@ -445,6 +483,7 @@ namespace Neo.SmartContract
         /// Burning GAS to benefit the NEO ecosystem.
         /// </summary>
         /// <param name="datoshi">The amount of GAS to burn, in the unit of datoshi, 1 datoshi = 1e-8 GAS</param>
+        [InteropPrice(Hardfork.HF_Huyao, 3067)]
         protected internal void BurnGas(long datoshi)
         {
             if (datoshi <= 0)
