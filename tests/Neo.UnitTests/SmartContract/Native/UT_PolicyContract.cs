@@ -52,8 +52,12 @@ namespace Neo.UnitTests.SmartContract.Native
             {
                 Header = new Header
                 {
-                    Index = 1000, Timestamp = 1_000_000, Witness = Witness.Empty,
-                    PrevHash = UInt256.Zero, MerkleRoot = UInt256.Zero, NextConsensus = UInt160.Zero
+                    Index = 1000,
+                    Timestamp = 1_000_000,
+                    Witness = Witness.Empty,
+                    PrevHash = UInt256.Zero,
+                    MerkleRoot = UInt256.Zero,
+                    NextConsensus = UInt160.Zero
                 },
                 Transactions = []
             };
