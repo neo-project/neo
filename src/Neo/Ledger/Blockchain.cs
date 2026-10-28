@@ -152,7 +152,10 @@ namespace Neo.Ledger
                 foreach (var unverifiedBlock in list.Blocks)
                 {
                     if (block.Hash == unverifiedBlock.Hash)
+                    {
+                        list.Nodes.Add(Sender);
                         return;
+                    }
                 }
 
                 if (!list.Nodes.Add(Sender))
@@ -163,16 +166,38 @@ namespace Neo.Ledger
                 }
             }
 
-            if (!TryMakeRoomForUnverifiedBlock(block)) return;
+            if (!TryMakeRoomForUnverifiedBlock(block))
+            {
+                RestartUnverifiedBlock(block);
+                return;
+            }
 
             if (!_blockCacheUnverified.TryGetValue(block.Index, out list))
             {
                 list = new UnverifiedBlocksList();
                 _blockCacheUnverified.Add(block.Index, list);
             }
+            list.Nodes.Add(Sender);
             list.Blocks.Add(block);
             _unverifiedBlockCount++;
             _unverifiedBlockCacheSize += block.Size;
+        }
+
+        private void RestartUnverifiedBlock(Block block)
+        {
+            if (Sender == ActorRefs.NoSender) return;
+            _system.TaskManager.Tell(new TaskManager.RestartTasks(
+                InvPayload.Create(InventoryType.Block, block.Hash), Sender));
+        }
+
+        private void RestartUnverifiedBlocks(UnverifiedBlocksList list)
+        {
+            var hashes = list.Blocks.Select(p => p.Hash).ToArray();
+            if (hashes.Length == 0) return;
+
+            var payload = InvPayload.Create(InventoryType.Block, hashes);
+            foreach (var node in list.Nodes)
+                _system.TaskManager.Tell(new TaskManager.RestartTasks(payload, node));
         }
 
         private bool TryMakeRoomForUnverifiedBlock(Block block)
@@ -189,14 +214,16 @@ namespace Neo.Ledger
                 // requested again after the missing headers have been processed.
                 uint farthestIndex = _blockCacheUnverified.Keys.Max();
                 if (block.Index >= farthestIndex) return false;
-                RemoveUnverifiedBlocksFromCache(farthestIndex);
+                RemoveUnverifiedBlocksFromCache(farthestIndex, restartTasks: true);
             }
             return true;
         }
 
-        private void RemoveUnverifiedBlocksFromCache(uint index)
+        private void RemoveUnverifiedBlocksFromCache(uint index, bool restartTasks = false)
         {
             if (!_blockCacheUnverified.Remove(index, out var list)) return;
+            if (restartTasks)
+                RestartUnverifiedBlocks(list);
             _unverifiedBlockCount -= list.Blocks.Count;
             _unverifiedBlockCacheSize -= list.Blocks.Sum(p => (long)p.Size);
         }
