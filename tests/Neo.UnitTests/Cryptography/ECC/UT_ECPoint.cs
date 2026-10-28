@@ -340,6 +340,7 @@ namespace Neo.UnitTests.Cryptography.ECC
                 Assert.AreEqual(ECCurve.Secp256k1.G, ECPoint.FromBytes(input, ECCurve.Secp256k1));
             }
         }
+
         [TestMethod]
         public void TestGetSize()
         {
