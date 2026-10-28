@@ -92,11 +92,9 @@ namespace Neo.Cryptography.ECC
                             throw new FormatException($"Invalid uncompressed ECPoint encoding length: expected {2 * curve.ExpectedECPointLength + 1} bytes, but got {encoded.Length} bytes. Uncompressed points must be exactly {2 * curve.ExpectedECPointLength + 1} bytes long.");
                         var x1 = new BigInteger(encoded[1..(1 + curve.ExpectedECPointLength)], isUnsigned: true, isBigEndian: true);
                         var y1 = new BigInteger(encoded[(1 + curve.ExpectedECPointLength)..], isUnsigned: true, isBigEndian: true);
-                        var x = new ECFieldElement(x1, curve);
-                        var y = new ECFieldElement(y1, curve);
                         if (!curve.IsOnCurve(x1, y1))
                             throw new FormatException("Invalid uncompressed ECPoint: the point is not on the curve.");
-                        return new ECPoint(x, y, curve)
+                        return new ECPoint(new ECFieldElement(x1, curve), new ECFieldElement(y1, curve), curve)
                         {
                             _uncompressedPoint = encoded.ToArray()
                         };
