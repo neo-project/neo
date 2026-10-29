@@ -102,6 +102,55 @@ namespace Neo.UnitTests.SmartContract
             ExecuteAndAssertFault<InvalidOperationException>(script, settings, index: 30u);
         }
 
+        [TestMethod]
+        public void TestSETITEM_WithDifferentHF()
+        {
+            using var sb = new ScriptBuilder();
+
+            sb.Emit(OpCode.PUSH1);
+            sb.Emit(OpCode.NEWBUFFER);
+            sb.Emit(OpCode.DUP);
+            sb.Emit(OpCode.PUSH0);
+            sb.Emit(OpCode.PUSHM1);
+            sb.Emit(OpCode.SETITEM);
+
+            var script = sb.ToArray();
+
+            const uint GorgonEnable = 10u;
+            const uint HuyaoEnable = 20u;
+            // Hardfork heights:
+            // Gorgon at 10, Huyao at 20
+            //  - index=5 => pre-Gorgon (NotGorgonJumpTable)
+            //  - index=15 => Gorgon enabled, Huyao not enabled (NotHuyaoJumpTable)
+            //  - index=30 => Huyao enabled (DefaultJumpTable)
+            var settings = ProtocolSettings.Default with
+            {
+                Hardforks = ProtocolSettings.Default.Hardforks
+                    .SetItem(Hardfork.HF_Gorgon, GorgonEnable)
+                    .SetItem(Hardfork.HF_Huyao, HuyaoEnable)
+            };
+
+            Assert.IsFalse(settings.IsHardforkEnabled(Hardfork.HF_Gorgon, 5u));
+            Assert.IsTrue(settings.IsHardforkEnabled(Hardfork.HF_Gorgon, 15u));
+            Assert.IsTrue(settings.IsHardforkEnabled(Hardfork.HF_Gorgon, 30u));
+            Assert.IsFalse(settings.IsHardforkEnabled(Hardfork.HF_Huyao, 15u));
+            Assert.IsTrue(settings.IsHardforkEnabled(Hardfork.HF_Huyao, 30u));
+
+            // Case A: pre-Gorgon => no exception.
+            var engine = Execute(script, settings, index: 5u);
+            Assert.AreEqual(VMState.HALT, engine.State);
+            Assert.AreEqual(1, engine.ResultStack.Count);
+
+            // Case B: Gorgon enabled but pre-Huyao => exception.
+            ExecuteAndAssertFault<OverflowException>(script, settings, index: 15u);
+
+
+            // Case C: Huyao enabled: no exception.
+            engine = Execute(script, settings, index: 30u);
+            Assert.AreEqual(VMState.HALT, engine.State);
+            Assert.AreEqual(1, engine.ResultStack.Count);
+        }
+
         private static byte[] BuildHasKeyLargeIndexScript()
         {
             // HASKEY pops: key (PrimitiveType), then x (Array/Map/Buffer/ByteString)
