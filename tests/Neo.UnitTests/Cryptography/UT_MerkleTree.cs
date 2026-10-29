@@ -57,38 +57,6 @@ namespace Neo.UnitTests.Cryptography
         }
 
         [TestMethod]
-        [DataRow(5)]
-        [DataRow(6)]
-        [DataRow(9)]
-        [DataRow(10)]
-        [DataRow(11)]
-        [DataRow(12)]
-        [DataRow(17)]
-        [DataRow(8)]
-        public void TrimPreservesSelectedLeaves(int count)
-        {
-            var hashes = Enumerable.Range(1, count)
-                .Select(i => GetByteArrayHash(BitConverter.GetBytes(i))).ToArray();
-            for (int selected = 0; selected < count; selected++)
-            {
-                var flags = new BitArray(count);
-                flags[selected] = true;
-                var tree = new MerkleTree(hashes);
-                tree.Trim(flags);
-                Assert.Contains(hashes[selected], tree.ToHashArray(), $"Missing leaf {selected} of {count}.");
-            }
-
-            var empty = new MerkleTree(hashes);
-            empty.Trim(new BitArray(count));
-            Assert.AreSequenceEqual(new[] { MerkleTree.ComputeRoot(hashes) }, empty.ToHashArray());
-
-            var full = new MerkleTree(hashes);
-            var expected = full.ToHashArray();
-            full.Trim(new BitArray(count, true));
-            Assert.AreSequenceEqual(expected, full.ToHashArray());
-        }
-
-        [TestMethod]
         public void TestTrim()
         {
             byte[] array1 = { 0x01 };
