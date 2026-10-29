@@ -51,6 +51,7 @@ namespace Neo.SmartContract.Native
         private const byte Prefix_GasPerBlock = 29;
         private const byte Prefix_RegisterPrice = 13;
         private const byte Prefix_VoterRewardPerCommittee = 23;
+        private const byte Prefix_DeferredGas = 24;
 
         private const byte NeoHolderRewardRatio = 10;
         private const byte CommitteeRewardRatio = 10;
@@ -86,9 +87,7 @@ namespace Neo.SmartContract.Native
         internal override void OnBalanceChanging(ApplicationEngine engine, UInt160 account, NeoAccountState state, BigInteger amount)
         {
             GasDistribution? distribution = DistributeGas(engine, account, state);
-            // Settle the old balance's reward height even when blocked, but do not mint GAS.
-            if (distribution is not null &&
-                (!engine.IsHardforkEnabled(Hardfork.HF_Huyao) || !Policy.IsBlocked(engine.SnapshotCache, account)))
+            if (distribution is not null)
             {
                 var list = engine.CurrentContext!.GetState<List<GasDistribution>>();
                 list.Add(distribution);
@@ -104,6 +103,15 @@ namespace Neo.SmartContract.Native
 
         private protected override async ContractTask PostTransferAsync(ApplicationEngine engine, UInt160? from, UInt160? to, BigInteger amount, StackItem data, bool callOnPayment)
         {
+            // A full balance transfer removes the NEO account record, but deferred GAS
+            // must remain claimable with a zero-value transfer after unblocking.
+            if (engine.IsHardforkEnabled(Hardfork.HF_Huyao) && from is not null &&
+                !engine.SnapshotCache.Contains(CreateStorageKey(Prefix_Account, from)))
+            {
+                var distribution = DistributeGas(engine, from, new NeoAccountState());
+                if (distribution is not null)
+                    engine.CurrentContext!.GetState<List<GasDistribution>>().Add(distribution);
+            }
             await base.PostTransferAsync(engine, from, to, amount, data, callOnPayment);
             var list = engine.CurrentContext!.GetState<List<GasDistribution>>();
             foreach (var distribution in list)
@@ -122,7 +130,7 @@ namespace Neo.SmartContract.Native
             }
         }
 
-        private GasDistribution? DistributeGas(ApplicationEngine engine, UInt160 account, NeoAccountState state)
+        private GasDistribution? DistributeGas(ApplicationEngine engine, UInt160 account, NeoAccountState state, bool defer = false)
         {
             // PersistingBlock is null when running under the debugger
             if (engine.PersistingBlock is null) return null;
@@ -135,6 +143,23 @@ namespace Neo.SmartContract.Native
                 var keyLastest = CreateStorageKey(Prefix_VoterRewardPerCommittee, state.VoteTo);
                 var latestGasPerVote = engine.SnapshotCache.TryGet(keyLastest) ?? BigInteger.Zero;
                 state.LastGasPerVote = latestGasPerVote;
+            }
+            if (engine.IsHardforkEnabled(Hardfork.HF_Huyao))
+            {
+                var key = CreateStorageKey(Prefix_DeferredGas, account);
+                if (defer || Policy.IsBlocked(engine.SnapshotCache, account))
+                {
+                    // Settle before clearing votes or changing the balance, without
+                    // losing either reward or invoking a blocked contract.
+                    if (datoshi != 0)
+                        engine.SnapshotCache.GetAndChange(key, () => new StorageItem(BigInteger.Zero)).Add(datoshi);
+                    return null;
+                }
+                if (engine.SnapshotCache.TryGet(key) is { } pending)
+                {
+                    datoshi += (BigInteger)pending;
+                    engine.SnapshotCache.Delete(key);
+                }
             }
             if (datoshi == 0) return null;
             return new GasDistribution
@@ -364,9 +389,10 @@ namespace Neo.SmartContract.Native
             var expectEnd = engine.PersistingBlock?.Index ?? Ledger.CurrentIndex(engine.SnapshotCache) + 1;
             ArgumentOutOfRangeException.ThrowIfNotEqual(end, expectEnd);
             StorageItem? storage = engine.SnapshotCache.TryGet(CreateStorageKey(Prefix_Account, account));
-            if (storage is null) return BigInteger.Zero;
-            NeoAccountState state = storage.GetInteroperable<NeoAccountState>();
-            return CalculateBonus(engine.SnapshotCache, state, end);
+            var bonus = storage is null ? BigInteger.Zero : CalculateBonus(engine.SnapshotCache, storage.GetInteroperable<NeoAccountState>(), end);
+            if (engine.IsHardforkEnabled(Hardfork.HF_Huyao))
+                bonus += engine.SnapshotCache.TryGet(CreateStorageKey(Prefix_DeferredGas, account)) ?? BigInteger.Zero;
+            return bonus;
         }
 
         /// <summary>
@@ -487,7 +513,7 @@ namespace Neo.SmartContract.Native
                 else
                     item.Add(-stateAccount.Balance);
             }
-            GasDistribution? gasDistribution = claimGas ? DistributeGas(engine, account, stateAccount) : null;
+            GasDistribution? gasDistribution = DistributeGas(engine, account, stateAccount, defer: !claimGas);
             if (stateAccount.VoteTo != null)
             {
                 StorageKey key = CreateStorageKey(Prefix_Candidate, stateAccount.VoteTo);

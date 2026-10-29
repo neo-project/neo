@@ -74,7 +74,8 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.IsTrue(NativeContract.Policy.IsBlocked(snapshot, account));
             Assert.AreEqual(activated, NativeContract.GAS.BalanceOf(snapshot, account).IsZero);
             var state = snapshot.TryGet(key)!.GetInteroperable<NeoToken.NeoAccountState>();
-            Assert.AreEqual(activated ? 0u : 1000u, state.BalanceHeight);
+            Assert.AreEqual(1000u, state.BalanceHeight);
+            Assert.AreEqual(activated, NativeContract.NEO.UnclaimedGas(engine, account, block.Index) > 0);
         }
 
         [TestMethod]
@@ -265,10 +266,20 @@ namespace Neo.UnitTests.SmartContract.Native
             }
             else
             {
+                var pending = NativeContract.NEO.UnclaimedGas(engine, benignContract.Hash, blockFinish.Index);
+                Assert.IsGreaterThan(BigInteger.Zero, pending);
                 Recover();
                 Assert.AreEqual(BigInteger.Zero, NativeContract.NEO.BalanceOf(snapshot, benignContract.Hash));
                 Assert.AreEqual(treasuryBefore + 50, NativeContract.NEO.BalanceOf(snapshot, NativeContract.Treasury.Hash));
                 Assert.AreEqual(gasBefore, NativeContract.GAS.BalanceOf(snapshot, benignContract.Hash));
+                Assert.AreEqual(pending, NativeContract.NEO.UnclaimedGas(engine, benignContract.Hash, blockFinish.Index));
+                NativeContract.Policy.Call(snapshot,
+                    new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), blockFinish, "unblockAccount",
+                    new ContractParameter(ContractParameterType.Hash160) { Value = benignContract.Hash });
+                Assert.IsTrue(NativeContract.NEO.Transfer(snapshot, benignContract.Hash.ToArray(), benignContract.Hash.ToArray(),
+                    0, true, blockFinish));
+                Assert.AreEqual(gasBefore + pending, NativeContract.GAS.BalanceOf(snapshot, benignContract.Hash));
+                Assert.AreEqual(BigInteger.Zero, NativeContract.NEO.UnclaimedGas(engine, benignContract.Hash, blockFinish.Index));
             }
         }
 
@@ -298,6 +309,9 @@ namespace Neo.UnitTests.SmartContract.Native
             };
             NativeContract.Policy.Call(snapshot, committee, block, "blockAccount",
                 new ContractParameter(ContractParameterType.Hash160) { Value = account });
+            using var query = ApplicationEngine.Create(TriggerType.Application, null, snapshot, block, TestProtocolSettings.Default);
+            var pending = NativeContract.NEO.UnclaimedGas(query, account, block.Index);
+            Assert.IsGreaterThan(BigInteger.Zero, pending);
             var result = NativeContract.NEO.Call(snapshot,
                 new Nep17NativeContractExtensions.ManualWitness(sender), block, "transfer",
                 new ContractParameter(ContractParameterType.Hash160) { Value = sender },
@@ -317,13 +331,79 @@ namespace Neo.UnitTests.SmartContract.Native
             using var engine = ApplicationEngine.Create(TriggerType.Application,
                 new Nep17NativeContractExtensions.ManualWitness(account), snapshot, block, TestProtocolSettings.Default);
             var expected = NativeContract.NEO.UnclaimedGas(engine, account, block.Index);
-            Assert.IsGreaterThan(BigInteger.Zero, expected);
+            // 50 NEO for 1000 blocks, then 100 NEO for one block. Newly received
+            // NEO must not earn retroactive rewards, and the old rewards must survive.
+            Assert.AreEqual(pending + pending / 500, expected);
             result = NativeContract.NEO.Call(engine, "transfer",
                 new ContractParameter(ContractParameterType.Hash160) { Value = account },
                 new ContractParameter(ContractParameterType.Hash160) { Value = account },
                 new ContractParameter(ContractParameterType.Integer) { Value = 0 },
                 new ContractParameter(ContractParameterType.Any));
             Assert.IsTrue(result.GetBoolean());
+            Assert.AreEqual(expected, NativeContract.GAS.BalanceOf(snapshot, account));
+        }
+
+        [TestMethod]
+        [DataRow(false)]
+        [DataRow(true)]
+        public void BlockAccount_PreservesHolderAndVotingRewardsUntilUnblock(bool emptyBalance)
+        {
+            var snapshot = _snapshotCache.CloneCache();
+            var account = UInt160.Parse("0x0000000000000000000000000000000000001234");
+            var receiver = UInt160.Parse("0x0000000000000000000000000000000000005678");
+            var candidate = NativeContract.NEO.GetCommittee(snapshot)[0];
+            var accountKey = NativeContract.NEO.CreateStorageKey(20, account);
+            snapshot.Add(accountKey, new StorageItem(new NeoToken.NeoAccountState
+            {
+                Balance = 100,
+                BalanceHeight = 0,
+                VoteTo = candidate,
+                LastGasPerVote = 100_00000000L
+            }));
+            snapshot.GetAndChange(NativeContract.NEO.CreateStorageKey(33, candidate),
+                () => new StorageItem(new NeoToken.CandidateState())).FromReplica(
+                    new StorageItem(new NeoToken.CandidateState { Registered = true, Votes = 100 }));
+            snapshot.GetAndChange(NativeContract.NEO.CreateStorageKey(1)).Add(100);
+            snapshot.GetAndChange(NativeContract.NEO.CreateStorageKey(23, candidate),
+                () => new StorageItem(BigInteger.Zero)).Set(new BigInteger(103_00000000L));
+            var block = new Block
+            {
+                Header = new Header
+                {
+                    Index = 1000, Timestamp = 1_000_000, Witness = Witness.Empty,
+                    PrevHash = UInt256.Zero, MerkleRoot = UInt256.Zero, NextConsensus = UInt160.Zero
+                },
+                Transactions = []
+            };
+            var committee = new Nep17NativeContractExtensions.ManualWitness(NativeContract.NEO.GetCommitteeAddress(snapshot));
+            using var query = ApplicationEngine.Create(TriggerType.Application, null, snapshot, block, TestProtocolSettings.Default);
+            var expected = NativeContract.NEO.UnclaimedGas(query, account, block.Index);
+            Assert.IsGreaterThan(new BigInteger(300), expected);
+            NativeContract.Policy.Call(snapshot, committee, block, "blockAccount",
+                new ContractParameter(ContractParameterType.Hash160) { Value = account });
+            Assert.AreEqual(BigInteger.Zero, NativeContract.GAS.BalanceOf(snapshot, account));
+            Assert.IsNull(snapshot.TryGet(accountKey).GetInteroperable<NeoToken.NeoAccountState>().VoteTo);
+            Assert.AreEqual(expected, NativeContract.NEO.UnclaimedGas(query, account, block.Index));
+            // Clearing the vote preserves the old reward, without earning later
+            // increases in the candidate's reward accumulator.
+            snapshot.GetAndChange(NativeContract.NEO.CreateStorageKey(23, candidate)).Add(100_00000000L);
+            Assert.AreEqual(expected, NativeContract.NEO.UnclaimedGas(query, account, block.Index));
+
+            // Repeated settlement while blocked must neither mint nor duplicate pending GAS.
+            Assert.IsTrue(NativeContract.NEO.Transfer(snapshot, account.ToArray(), receiver.ToArray(),
+                emptyBalance ? 100 : 0, true, block));
+            Assert.IsTrue(NativeContract.NEO.Transfer(snapshot, account.ToArray(), receiver.ToArray(), 0, true, block));
+            Assert.AreEqual(BigInteger.Zero, NativeContract.GAS.BalanceOf(snapshot, account));
+            Assert.AreEqual(expected, NativeContract.NEO.UnclaimedGas(query, account, block.Index));
+            if (emptyBalance) Assert.IsNull(snapshot.TryGet(accountKey));
+
+            NativeContract.Policy.Call(snapshot, committee, block, "unblockAccount",
+                new ContractParameter(ContractParameterType.Hash160) { Value = account });
+            Assert.AreEqual(BigInteger.Zero, NativeContract.GAS.BalanceOf(snapshot, account));
+            Assert.IsTrue(NativeContract.NEO.Transfer(snapshot, account.ToArray(), receiver.ToArray(), 0, true, block));
+            Assert.AreEqual(expected, NativeContract.GAS.BalanceOf(snapshot, account));
+            Assert.AreEqual(BigInteger.Zero, NativeContract.NEO.UnclaimedGas(query, account, block.Index));
+            Assert.IsTrue(NativeContract.NEO.Transfer(snapshot, account.ToArray(), receiver.ToArray(), 0, true, block));
             Assert.AreEqual(expected, NativeContract.GAS.BalanceOf(snapshot, account));
         }
 
