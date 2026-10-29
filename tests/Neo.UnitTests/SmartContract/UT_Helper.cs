@@ -241,15 +241,57 @@ namespace Neo.UnitTests.SmartContract
         [DataRow(true, 10u, 305001)]
         public void TestContractCostMatchesWitnessExecutionAcrossHuyao(bool multisig, uint verificationHeight, int execFeeFactor)
         {
-            var snapshot = _snapshotCache.CloneCache();
             var settings = TestProtocolSettings.Default with
             {
                 Hardforks = TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_Faun, 0).SetItem(Hardfork.HF_Huyao, 10)
             };
-            snapshot.GetAndChange(StorageKey.Create(NativeContract.Ledger.Id, 12))!
-                .GetInteroperable<HashIndexState>().Index = verificationHeight - 1;
-            snapshot.GetAndChange(StorageKey.Create(NativeContract.Policy.Id, 18))!.Set(execFeeFactor);
+            var snapshot = CreateSnapshot(verificationHeight - 1, execFeeFactor);
+            var (tx, verification, signWitness) = CreateStandardTransaction(settings, verificationHeight, multisig);
+            var account = verification.ToScriptHash();
 
+            Assert.IsTrue(tx.VerifyWitness(settings, snapshot, account, tx.Witnesses[0], ApplicationEngine.TestModeGas, out var executionFee));
+            var requiredFee = executionFee + tx.Size * NativeContract.Policy.GetFeePerByte(snapshot);
+
+            Assert.AreEqual(requiredFee, tx.CalculateNetworkFee(snapshot, settings, hash => hash.Equals(account) ? verification : null));
+            AssertNetworkFeeIsExact(settings, snapshot, tx, signWitness, requiredFee);
+        }
+
+        [TestMethod]
+        [DataRow(9u)]
+        [DataRow(10u)]
+        [DataRow(11u)]
+        public void TestCalculateNetworkFeeMatchesVerificationAcrossFaun(uint verificationHeight)
+        {
+            var settings = TestProtocolSettings.Default with
+            {
+                Hardforks = TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_Faun, 10).SetItem(Hardfork.HF_Huyao, uint.MaxValue)
+            };
+            var persistedHeight = verificationHeight - 1;
+            // The factor is stored with the decimals only after OnPersist of the Faun block.
+            var snapshot = CreateSnapshot(persistedHeight,
+                settings.IsHardforkEnabled(Hardfork.HF_Faun, persistedHeight) ? 30 * ApplicationEngine.FeeFactor : 30);
+            var (tx, verification, signWitness) = CreateStandardTransaction(settings, verificationHeight, false);
+            var account = verification.ToScriptHash();
+
+            var networkFee = tx.CalculateNetworkFee(snapshot, settings, hash => hash.Equals(account) ? verification : null);
+            // (8.000 * 2 + 0 + 32768.000) * 30.0000 = 983520.0000000.
+            Assert.AreEqual(983520 + tx.Size * NativeContract.Policy.GetFeePerByte(snapshot), networkFee);
+            AssertNetworkFeeIsExact(settings, snapshot, tx, signWitness, networkFee);
+        }
+
+        private DataCache CreateSnapshot(uint persistedHeight, BigInteger storedExecFeeFactor)
+        {
+            var snapshot = _snapshotCache.CloneCache();
+            snapshot.GetAndChange(StorageKey.Create(NativeContract.Ledger.Id, 12))!
+                .GetInteroperable<HashIndexState>().Index = persistedHeight;
+            snapshot.GetAndChange(StorageKey.Create(NativeContract.Policy.Id, 18))!.Set(storedExecFeeFactor);
+            return snapshot;
+        }
+
+        // Creates a transaction signed by a single-signature or 2-of-3 multi-signature account.
+        private static (Transaction Tx, byte[] Verification, Func<Witness> SignWitness) CreateStandardTransaction(
+            ProtocolSettings settings, uint verificationHeight, bool multisig)
+        {
             var keys = Enumerable.Range(1, multisig ? 3 : 1).Select(i =>
             {
                 var privateKey = new byte[32];
@@ -259,11 +301,10 @@ namespace Neo.UnitTests.SmartContract
             var verification = multisig
                 ? Contract.CreateMultiSigRedeemScript(2, keys.Select(key => key.PublicKey).ToArray())
                 : Contract.CreateSignatureRedeemScript(keys[0].PublicKey);
-            var account = verification.ToScriptHash();
             var tx = new Transaction
             {
                 Script = new[] { (byte)OpCode.PUSH1 },
-                Signers = [new Signer { Account = account, Scopes = WitnessScope.CalledByEntry }],
+                Signers = [new Signer { Account = verification.ToScriptHash(), Scopes = WitnessScope.CalledByEntry }],
                 Attributes = [],
                 ValidUntilBlock = verificationHeight,
                 Witnesses = []
@@ -278,19 +319,18 @@ namespace Neo.UnitTests.SmartContract
             }
 
             tx.Witnesses = [SignWitness()];
-            Assert.IsTrue(tx.VerifyWitness(settings, snapshot, account, tx.Witnesses[0], ApplicationEngine.TestModeGas, out var executionFee));
+            return (tx, verification, SignWitness);
+        }
 
-            var requiredFee = executionFee + tx.Size * NativeContract.Policy.GetFeePerByte(snapshot);
-            tx.NetworkFee = requiredFee;
-            tx.Witnesses = [SignWitness()];
-            Assert.IsTrue(tx.VerifyWitness(settings, snapshot, account, tx.Witnesses[0], executionFee, out var finalExecutionFee));
-            Assert.AreEqual(executionFee, finalExecutionFee);
-
+        private static void AssertNetworkFeeIsExact(ProtocolSettings settings, DataCache snapshot, Transaction tx, Func<Witness> signWitness, long networkFee)
+        {
+            tx.NetworkFee = networkFee;
+            tx.Witnesses = [signWitness()];
             Assert.AreEqual(VerifyResult.Succeed, tx.VerifyStateDependent(settings, snapshot, null!, []));
-            tx.NetworkFee--;
-            tx.Witnesses = [SignWitness()];
+
+            tx.NetworkFee = networkFee - 1;
+            tx.Witnesses = [signWitness()];
             Assert.AreEqual(VerifyResult.InsufficientFunds, tx.VerifyStateDependent(settings, snapshot, null!, []));
-            Assert.AreEqual(requiredFee, tx.CalculateNetworkFee(snapshot, settings, hash => hash.Equals(account) ? verification : null));
         }
     }
 }

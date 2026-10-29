@@ -117,8 +117,9 @@ namespace Neo.Wallets
             int size = Transaction.HeaderSize + tx.Signers.GetVarSize() + tx.Attributes.GetVarSize()
                 + tx.Script.GetVarSize() + hashes.Length.GetVarSize();
             int index = -1;
-            var verificationIndex = NativeContract.Ledger.CurrentIndex(snapshot) + 1;
-            var execFeeFactor = NativeContract.Policy.GetExecFeeFactorWithDecimals(settings, snapshot, verificationIndex);
+            var currentIndex = NativeContract.Ledger.CurrentIndex(snapshot);
+            var execFeeFactor = NativeContract.Policy.GetExecFeeFactorWithDecimals(settings, snapshot, currentIndex);
+            var verificationIndex = currentIndex + 1;
             BigInteger networkFee = 0;
             foreach (var hash in hashes)
             {
