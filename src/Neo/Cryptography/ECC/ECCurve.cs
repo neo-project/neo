@@ -83,6 +83,19 @@ namespace Neo.Cryptography.ECC
             "secp256r1"
         );
 
+        /// <summary>
+        /// Determines whether the coordinates represent a finite point on this curve.
+        /// </summary>
+        /// <param name="x">The X coordinate.</param>
+        /// <param name="y">The Y coordinate.</param>
+        /// <returns>True if both coordinates are in the field and satisfy the curve equation.</returns>
+        public bool IsOnCurve(BigInteger x, BigInteger y)
+        {
+            if (x.Sign < 0 || y.Sign < 0 || x >= Q || y >= Q)
+                return false;
+            return (y * y).Mod(Q) == (x * (x * x + A.Value) + B.Value).Mod(Q);
+        }
+
         public override int GetHashCode()
         {
             return _hashCode;
