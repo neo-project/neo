@@ -555,14 +555,60 @@ namespace Neo.UnitTests.SmartContract.Native
             };
         }
 
+        [TestMethod]
+        [DataRow(0)]
+        [DataRow(1)]
+        [DataRow(ApplicationEngine.MaxStorageValueSize)]
+        public void StoragePrice_ExistingRecordPaysFullLease(int valueSize)
+        {
+            var snapshot = _snapshotCache.CloneCache();
+            const ulong now = 1_000_000;
+            var block = CreatePersistingBlock(snapshot, now);
+            byte[] key = new byte[ApplicationEngine.MaxStorageKeySize];
+            byte[] value = new byte[valueSize];
+            var recordKey = MakeRecordStorageKey(key);
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, block, TestProtocolSettings.Default, TestGas);
+            var fullPrice = (long)(recordKey.Key.Length + value.Length) * engine.StoragePrice;
+            var initial = NativeContract.TemporaryStorage.CalculateStoragePrice(engine, recordKey.Key, value, 0, out _);
+            Assert.AreEqual(fullPrice / 10, initial);
+            PutRawRecord(snapshot, key, value, now);
+            var renewal = NativeContract.TemporaryStorage.CalculateStoragePrice(engine, recordKey.Key, value,
+                PolicyContract.MaxTemporaryStorageMaxTTL, out var old);
+            Assert.IsNotNull(old);
+            Assert.AreEqual(fullPrice, renewal);
+            Assert.IsTrue(initial + renewal >= fullPrice);
+            Assert.AreEqual(fullPrice / 10, NativeContract.TemporaryStorage.CalculateStoragePrice(
+                engine, recordKey.Key, value, 1, out _));
+        }
+
+        [TestMethod]
+        public void Put_RejectsPastExpirationWithoutCreatingEntries()
+        {
+            var snapshot = _snapshotCache.CloneCache();
+            const ulong now = 1_000_000;
+            var block = CreatePersistingBlock(snapshot, now);
+            byte[] key = [0x99];
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => CallFromContract(snapshot, block, NativeContract.GAS.Hash, "put",
+                new ContractParameter(ContractParameterType.ByteArray) { Value = key },
+                new ContractParameter(ContractParameterType.ByteArray) { Value = System.Array.Empty<byte>() },
+                new ContractParameter(ContractParameterType.Integer) { Value = BigInteger.Zero }));
+            Assert.IsNull(snapshot.TryGet(MakeRecordStorageKey(key)));
+            Assert.IsNull(snapshot.TryGet(MakeValidTillStorageKey(0, key)));
+            CallFromContract(snapshot, block, NativeContract.GAS.Hash, "put",
+                new ContractParameter(ContractParameterType.ByteArray) { Value = key },
+                new ContractParameter(ContractParameterType.ByteArray) { Value = System.Array.Empty<byte>() },
+                new ContractParameter(ContractParameterType.Integer) { Value = (BigInteger)now });
+            Assert.IsNotNull(snapshot.TryGet(MakeRecordStorageKey(key)));
+        }
+
         private static StorageKey MakeRecordStorageKey(byte[] key)
         {
-            return new KeyBuilder(NativeContract.TemporaryStorage.Id, PrefixRecord).AddLittleEndian(NativeContract.GAS.Id).Add(key);
+            return new KeyBuilder(NativeContract.TemporaryStorage.Id, PrefixRecord, 4 + key.Length).AddLittleEndian(NativeContract.GAS.Id).Add(key);
         }
 
         private static StorageKey MakeValidTillStorageKey(ulong validTill, byte[] key)
         {
-            return new KeyBuilder(NativeContract.TemporaryStorage.Id, PrefixValidTill).AddBigEndian(validTill).AddLittleEndian(NativeContract.GAS.Id).Add(key);
+            return new KeyBuilder(NativeContract.TemporaryStorage.Id, PrefixValidTill, 12 + key.Length).AddBigEndian(validTill).AddLittleEndian(NativeContract.GAS.Id).Add(key);
         }
 
         private static void PutRawRecord(DataCache snapshot, byte[] key, byte[] value, ulong validTill)
