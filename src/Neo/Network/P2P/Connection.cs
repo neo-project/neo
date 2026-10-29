@@ -47,12 +47,7 @@ namespace Neo.Network.P2P
 
         private ICancelable timer;
         private readonly IActorRef? tcp;
-        private bool _disconnected = false;
-
-        /// <summary>
-        /// Indicates whether disconnection has been requested.
-        /// </summary>
-        protected bool IsDisconnected => _disconnected;
+        private bool disconnected = false;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Connection"/> class.
@@ -77,9 +72,9 @@ namespace Neo.Network.P2P
         /// Disconnect from the remote node.
         /// </summary>
         /// <param name="abort">Indicates whether the TCP ABORT command should be sent.</param>
-        public virtual void Disconnect(bool abort = false)
+        public void Disconnect(bool abort = false)
         {
-            _disconnected = true;
+            disconnected = true;
             if (tcp != null)
             {
                 tcp.Tell(abort ? Tcp.Abort.Instance : Tcp.Close.Instance);
@@ -128,7 +123,7 @@ namespace Neo.Network.P2P
 
         protected override void PostStop()
         {
-            if (!_disconnected)
+            if (!disconnected)
                 tcp?.Tell(Tcp.Close.Instance);
             timer.CancelIfNotNull();
             base.PostStop();
