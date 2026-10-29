@@ -51,7 +51,7 @@ namespace Neo.SmartContract
         {
             var (prices, multiplier) = GetOpCodePrices(settings, index);
             long fee = (prices[(byte)OpCode.PUSHDATA1] * 2 + prices[(byte)OpCode.SYSCALL]) * multiplier;
-            fee += ApplicationEngine.CheckSigPrice * ApplicationEngine.OpcodePriceMultiplier;
+            fee += GetCheckSigPrice(settings, index);
             return ApplyExecFeeFactor(execFeeFactor, fee);
         }
 
@@ -75,7 +75,8 @@ namespace Neo.SmartContract
                 fee += prices[sb.EmitPush(n).ToArray()[0]];
             fee += prices[(byte)OpCode.SYSCALL];
             fee *= multiplier;
-            fee += ApplicationEngine.CheckSigPrice * ApplicationEngine.OpcodePriceMultiplier * n;
+            // CheckMultisig charges the price of a single signature check per public key.
+            fee += GetCheckSigPrice(settings, index) * n;
             return ApplyExecFeeFactor(execFeeFactor, fee);
         }
 
@@ -85,6 +86,10 @@ namespace Neo.SmartContract
             settings.IsHardforkEnabled(Hardfork.HF_Huyao, index)
                 ? (ApplicationEngine.StaticCoefficients, 1)
                 : (ApplicationEngine.OpCodePriceTable, ApplicationEngine.OpcodePriceMultiplier);
+
+        // In the unit of 1e-11 GAS, selected by hardfork the same way as for the System.Crypto.CheckSig syscall.
+        private static long GetCheckSigPrice(ProtocolSettings settings, uint index) =>
+            ApplicationEngine.System_Crypto_CheckSig.GetPrice(hardfork => settings.IsHardforkEnabled(hardfork, index));
 
         // The full factor is applied and the result is rounded up, the same way as ApplicationEngine.FeeConsumed does.
         private static long ApplyExecFeeFactor(BigInteger execFeeFactor, long cost) =>

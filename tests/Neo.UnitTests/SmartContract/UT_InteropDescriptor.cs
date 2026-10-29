@@ -62,5 +62,22 @@ namespace Neo.UnitTests.SmartContract
             Assert.AreEqual(Hardfork.HF_Aspidochelone, descriptor.Hardfork);
             Assert.AreSame(method, descriptor.Handler);
         }
+
+        [TestMethod]
+        public void GetPrice_SelectsLatestEnabledHardfork()
+        {
+            var method = typeof(UT_InteropDescriptor).GetMethod(nameof(SampleHandler), BindingFlags.Public | BindingFlags.Static)!;
+            var descriptor = new InteropDescriptor
+            {
+                Name = "Test.Method",
+                Handler = method,
+                Prices = [new(Hardfork.HF_Huyao, 3), new(Hardfork.HF_Faun, 2), new(null, 1)],
+                RequiredCallFlags = CallFlags.None
+            };
+
+            Assert.AreEqual(1, descriptor.GetPrice(_ => false));
+            Assert.AreEqual(2, descriptor.GetPrice(hardfork => hardfork == Hardfork.HF_Faun));
+            Assert.AreEqual(3, descriptor.GetPrice(_ => true));
+        }
     }
 }
