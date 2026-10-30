@@ -9,9 +9,9 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Akka.TestKit;
-using Akka.TestKit.MsTest;
+using Akka.Actor;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.Cryptography;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
@@ -21,12 +21,11 @@ using Neo.UnitTests.Extensions;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
-using System.Threading;
 
 namespace Neo.UnitTests.SmartContract.Native
 {
     [TestClass]
-    public class UT_LedgerContract_Queries : TestKit
+    public class UT_LedgerContract_Queries
     {
         private DataCache _snapshot;
 
@@ -83,33 +82,37 @@ namespace Neo.UnitTests.SmartContract.Native
             }
         }
 
-        private static Transaction MakeTransaction(UInt160 sender, byte[] script)
-        {
-            var tx = TestUtils.GetTransaction(sender);
-            tx.Script = script;
-            tx.Nonce = 1;
-            tx.ValidUntilBlock = 100;
-            tx.SystemFee = 0;
-            tx.NetworkFee = 0;
-            // Re-sign (re-assign witnesses) after the script change so the hash covers the final content.
-            tx.Witnesses = [Witness.Empty];
-            return tx;
-        }
-
-        private (NeoSystem System, Transaction Tx) PersistTransaction(byte[] script)
+        private static (NeoSystem System, Transaction Tx) PersistTransaction(bool fault)
         {
             var system = TestBlockchain.GetSystem();
-            var sender = Contract.GetBFTAddress(TestProtocolSettings.Default.StandbyValidators);
-            var tx = MakeTransaction(sender, script);
-
             var snapshot = system.GetSnapshotCache();
+            var wallet = TestUtils.GenerateTestWallet("123");
+            var account = wallet.CreateAccount();
+
+            // Fund the account.
+            var key = new KeyBuilder(NativeContract.GAS.Id, 20).Add(account.ScriptHash);
+            var entry = snapshot.GetAndChange(key, () => new StorageItem(new AccountState()));
+            entry.GetInteroperable<AccountState>().Balance = 100_000_000 * NativeContract.GAS.Factor;
+            snapshot.Commit();
+
+            var tx = TestUtils.CreateValidTx(snapshot, wallet, account.ScriptHash, 0);
+            if (fault)
+            {
+                tx.Script = new[] { (byte)OpCode.ABORT };
+                tx.Witnesses = [];
+                var data = new ContractParametersContext(snapshot, tx, TestProtocolSettings.Default.Network);
+                Assert.IsTrue(wallet.Sign(data));
+                Assert.IsTrue(data.Completed);
+                tx.Witnesses = data.GetWitnesses();
+            }
+
             var block = TestUtils.MakeBlock(snapshot, NativeContract.Ledger.CurrentHash(snapshot), 0);
             block.Transactions = [tx];
-            block.Header.MerkleRoot = Neo.Cryptography.MerkleTree.ComputeRoot([tx.Hash]);
+            block.Header.MerkleRoot = MerkleTree.ComputeRoot([tx.Hash]);
 
-            var probe = CreateTestProbe();
-            probe.Send(system.Blockchain, new Blockchain.Import([block], Verify: false));
-            probe.ExpectMsg<Blockchain.ImportCompleted>(TimeSpan.FromSeconds(10), cancellationToken: CancellationToken.None);
+            var inbox = Inbox.Create(system.ActorSystem);
+            inbox.Send(system.Blockchain, new Blockchain.Import([block], Verify: false));
+            Assert.IsInstanceOfType<Blockchain.ImportCompleted>(inbox.Receive(TimeSpan.FromSeconds(10)));
             return (system, tx);
         }
 
@@ -124,14 +127,14 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void GetTransactionVMState_PersistedHalt()
         {
-            var (system, tx) = PersistTransaction([(byte)OpCode.PUSH1]);
+            var (system, tx) = PersistTransaction(false);
             AssertVMState(system, tx.Hash, VMState.HALT);
         }
 
         [TestMethod]
         public void GetTransactionVMState_PersistedFault()
         {
-            var (system, tx) = PersistTransaction([(byte)OpCode.ABORT]);
+            var (system, tx) = PersistTransaction(true);
             Assert.IsNotNull(NativeContract.Ledger.GetTransactionState(system.StoreView, tx.Hash));
             AssertVMState(system, tx.Hash, VMState.FAULT);
         }
