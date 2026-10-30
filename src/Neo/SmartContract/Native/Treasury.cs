@@ -44,23 +44,28 @@ namespace Neo.SmartContract.Native
         /// <summary>
         /// OnNEP17Payment callback.
         /// </summary>
-        /// <param name="engine">ApplicationEngine</param>
         /// <param name="from">GAS sender</param>
         /// <param name="amount">The amount of GAS sent</param>
         /// <param name="data">Optional data</param>
-        [ContractMethod(CpuFee = 1 << 5, RequiredCallFlags = CallFlags.None)]
-        private void OnNEP17Payment(ApplicationEngine engine, UInt160 from, BigInteger amount, StackItem data) { }
+        [ContractMethod(true, Hardfork.HF_Huyao, CpuFee = 1 << 5, RequiredCallFlags = CallFlags.None)]
+        private void OnNEP17Payment(UInt160 from, BigInteger amount, StackItem data) { }
+
+        // Mint callbacks have no sender. Keep the old parameter conversion until Huyao.
+        [ContractMethod(Hardfork.HF_Huyao, Name = "onNEP17Payment", CpuFee = 1 << 5, RequiredCallFlags = CallFlags.None)]
+        private void OnNEP17PaymentV2(UInt160? from, BigInteger amount, StackItem data) { }
 
         /// <summary>
         /// OnNEP11Payment callback.
         /// </summary>
-        /// <param name="engine">ApplicationEngine</param>
         /// <param name="from">GAS sender</param>
         /// <param name="amount">The amount of GAS sent</param>
         /// <param name="tokenId">Nep11 token Id</param>
         /// <param name="data">Optional data</param>
-        [ContractMethod(CpuFee = 1 << 5, RequiredCallFlags = CallFlags.None)]
-        private void OnNEP11Payment(ApplicationEngine engine, UInt160 from, BigInteger amount, byte[] tokenId, StackItem data) { }
+        [ContractMethod(true, Hardfork.HF_Huyao, CpuFee = 1 << 5, RequiredCallFlags = CallFlags.None)]
+        private void OnNEP11Payment(UInt160 from, BigInteger amount, byte[] tokenId, StackItem data) { }
+
+        [ContractMethod(Hardfork.HF_Huyao, Name = "onNEP11Payment", CpuFee = 1 << 5, RequiredCallFlags = CallFlags.None)]
+        private void OnNEP11PaymentV2(UInt160? from, BigInteger amount, byte[] tokenId, StackItem data) { }
     }
 }
 
