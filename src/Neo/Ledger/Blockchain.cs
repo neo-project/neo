@@ -438,6 +438,7 @@ namespace Neo.Ledger
                     using var engine = ApplicationEngine.Create(TriggerType.Application, tx, clonedSnapshot, block, _system.Settings, tx.SystemFee);
                     engine.LoadScript(tx.Script);
                     transactionState.State = engine.Execute();
+                    NativeContract.Ledger.UpdateTransactionVMState(snapshot, tx.Hash, transactionState.State);
                     if (transactionState.State == VMState.HALT)
                     {
                         clonedSnapshot.Commit();
