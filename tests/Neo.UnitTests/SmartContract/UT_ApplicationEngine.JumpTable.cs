@@ -45,6 +45,7 @@ namespace Neo.UnitTests.SmartContract
                     Hardforks = ProtocolSettings.Default.Hardforks
                         .SetItem(Hardfork.HF_Echidna, EchidnaEnable)
                         .SetItem(Hardfork.HF_Gorgon, GorgonEnable)
+                        .Remove(Hardfork.HF_Huyao)
                 };
 
                 Assert.IsFalse(settings.IsHardforkEnabled(Hardfork.HF_Echidna, 5u));
@@ -84,6 +85,7 @@ namespace Neo.UnitTests.SmartContract
                 Hardforks = ProtocolSettings.Default.Hardforks
                     .SetItem(Hardfork.HF_Echidna, EchidnaEnable)
                     .SetItem(Hardfork.HF_Gorgon, GorgonEnable)
+                    .Remove(Hardfork.HF_Huyao)
             };
 
             Assert.IsFalse(settings.IsHardforkEnabled(Hardfork.HF_Echidna, 5u));
