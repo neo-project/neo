@@ -146,7 +146,6 @@ namespace Neo.UnitTests.SmartContract
             // Case B: Gorgon enabled but pre-Huyao => exception.
             ExecuteAndAssertFault<OverflowException>(script, settings, index: 15u);
 
-
             // Case C: Huyao enabled: no exception.
             engine = Execute(script, settings, index: 30u);
             Assert.AreEqual(VMState.HALT, engine.State);
