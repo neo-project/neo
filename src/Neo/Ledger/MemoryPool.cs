@@ -400,8 +400,6 @@ namespace Neo.Ledger
         /// <returns>True if transaction fits the pool, otherwise false.</returns>
         private bool CheckConflicts(Transaction tx, out List<PoolItem> conflictsList)
         {
-            var payer = GetPayer(tx, out var isSponsored);
-            UInt160 author = isSponsored ? payer.Secondary! : payer.Primary;
             conflictsList = new();
             long conflictsFeeSum = 0;
             // Step 1: check if `tx` was in Conflicts attributes of unsorted transactions.
@@ -410,7 +408,8 @@ namespace Neo.Ledger
                 foreach (var hash in conflicting)
                 {
                     var unsortedTx = _unsortedTransactions[hash];
-                    if (ContainsAccount(unsortedTx.Tx.Signers, author))
+                    // Sharing the Notary contract alone must not make a fallback's fee count.
+                    if (HasCommonSigner(tx.Signers, unsortedTx.Tx.Signers, NativeContract.Notary.Hash))
                         conflictsFeeSum += unsortedTx.Tx.NetworkFee;
                     conflictsList.Add(unsortedTx);
                 }
@@ -726,11 +725,11 @@ namespace Neo.Ledger
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static bool HasCommonSigner(Signer[] left, Signer[] right)
+        internal static bool HasCommonSigner(Signer[] left, Signer[] right, UInt160? excluded = null)
         {
             for (int i = 0; i < left.Length; i++)
             {
-                if (ContainsAccount(right, left[i].Account))
+                if (left[i].Account != excluded && ContainsAccount(right, left[i].Account))
                     return true;
             }
             return false;
