@@ -9,11 +9,16 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+using Akka.Actor;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.Cryptography;
+using Neo.Ledger;
+using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.UnitTests.Extensions;
+using Neo.VM;
 using Neo.VM.Types;
 using System;
 
@@ -75,6 +80,97 @@ namespace Neo.UnitTests.SmartContract.Native
             {
                 // Acceptable: native throws on invalid tx index.
             }
+        }
+
+        private static (NeoSystem System, Transaction Tx) PersistTransaction(bool fault, uint jackalopeHeight = 0)
+        {
+            var settings = TestProtocolSettings.Default with
+            {
+                Hardforks = TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_Jackalope, jackalopeHeight)
+            };
+            var system = new TestBlockchain.TestNeoSystem(settings);
+            var snapshot = system.GetSnapshotCache();
+            var wallet = TestUtils.GenerateTestWallet("123");
+            var account = wallet.CreateAccount();
+
+            // Fund the account.
+            var key = new KeyBuilder(NativeContract.GAS.Id, 20).Add(account.ScriptHash);
+            var entry = snapshot.GetAndChange(key, () => new StorageItem(new AccountState()));
+            entry.GetInteroperable<AccountState>().Balance = 100_000_000 * NativeContract.GAS.Factor;
+            snapshot.Commit();
+
+            var tx = TestUtils.CreateValidTx(snapshot, wallet, account.ScriptHash, 0);
+            if (fault)
+            {
+                tx.Script = new[] { (byte)OpCode.ABORT };
+                tx.Witnesses = [];
+                var data = new ContractParametersContext(snapshot, tx, TestProtocolSettings.Default.Network);
+                Assert.IsTrue(wallet.Sign(data));
+                Assert.IsTrue(data.Completed);
+                tx.Witnesses = data.GetWitnesses();
+            }
+
+            var block = TestUtils.MakeBlock(snapshot, NativeContract.Ledger.CurrentHash(snapshot), 0);
+            block.Transactions = [tx];
+            block.Header.MerkleRoot = MerkleTree.ComputeRoot([tx.Hash]);
+
+            var inbox = Inbox.Create(system.ActorSystem);
+            inbox.Send(system.Blockchain, new Blockchain.Import([block], Verify: false));
+            Assert.IsInstanceOfType<Blockchain.ImportCompleted>(inbox.Receive(TimeSpan.FromSeconds(10)));
+            return (system, tx);
+        }
+
+        private static void AssertVMState(NeoSystem system, UInt256 hash, VMState expected)
+        {
+            Assert.AreEqual(expected, NativeContract.Ledger.GetTransactionState(system.StoreView, hash)?.State ?? VMState.NONE);
+            var result = NativeContract.Ledger.Call(system.GetSnapshotCache(), "getTransactionVMState",
+                new ContractParameter(ContractParameterType.Hash256) { Value = hash });
+            Assert.AreEqual((int)expected, (int)result.GetInteger());
+        }
+
+        [TestMethod]
+        public void GetTransactionVMState_PersistedHalt()
+        {
+            var (system, tx) = PersistTransaction(false);
+            AssertVMState(system, tx.Hash, VMState.HALT);
+        }
+
+        [TestMethod]
+        public void GetTransactionVMState_PersistedFault()
+        {
+            var (system, tx) = PersistTransaction(true);
+            Assert.IsNotNull(NativeContract.Ledger.GetTransactionState(system.StoreView, tx.Hash));
+            AssertVMState(system, tx.Hash, VMState.FAULT);
+        }
+
+        [TestMethod]
+        public void GetTransactionVMState_BeforeJackalope_Halt_ReturnsNone()
+        {
+            var (system, tx) = PersistTransaction(false, 2);
+            Assert.IsNotNull(NativeContract.Ledger.GetTransactionState(system.StoreView, tx.Hash));
+            AssertVMState(system, tx.Hash, VMState.NONE);
+        }
+
+        [TestMethod]
+        public void GetTransactionVMState_BeforeJackalope_Fault_ReturnsNone()
+        {
+            var (system, tx) = PersistTransaction(true, 2);
+            Assert.IsNotNull(NativeContract.Ledger.GetTransactionState(system.StoreView, tx.Hash));
+            AssertVMState(system, tx.Hash, VMState.NONE);
+        }
+
+        [TestMethod]
+        public void GetTransactionVMState_AtJackalopeActivation_Halt_ReturnsHalt()
+        {
+            var (system, tx) = PersistTransaction(false, 1);
+            AssertVMState(system, tx.Hash, VMState.HALT);
+        }
+
+        [TestMethod]
+        public void GetTransactionVMState_Missing_ReturnsNone()
+        {
+            var system = TestBlockchain.GetSystem();
+            AssertVMState(system, UInt256.Zero, VMState.NONE);
         }
     }
 }
