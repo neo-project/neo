@@ -147,7 +147,7 @@ namespace Neo.SmartContract.Native
             if (engine.IsHardforkEnabled(Hardfork.HF_Huyao))
             {
                 var key = CreateStorageKey(Prefix_DeferredGas, account);
-                if (defer || Policy.IsBlocked(engine.SnapshotCache, account))
+                if (defer)
                 {
                     // Settle before clearing votes or changing the balance, without
                     // losing either reward or invoking a blocked contract.
