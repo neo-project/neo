@@ -1322,7 +1322,7 @@ namespace Neo.SmartContract
                 return false;
 
             var persistingIndex = GetPersistingIndex();
-            return ProtocolSettings.IsHardforkEnabled(hardfork, persistingIndex);
+            return PolicyContract.IsHardforkEnabled(ProtocolSettings, SnapshotCache, hardfork, persistingIndex);
         }
 
         /// <summary>
