@@ -1081,5 +1081,416 @@ namespace Neo.UnitTests.Network.P2P
 
             Sys.Stop(taskManager);
         }
+
+        [TestMethod]
+        public void ReannouncedBlock_DoesNotDuplicateSessionAssignment()
+        {
+            using var neoSystem = TestBlockchain.GetSystem();
+            var height = NativeContract.Ledger.CurrentIndex(neoSystem.StoreView);
+            var taskManager = ActorOfAsTestActorRef(() => new TaskManager(neoSystem));
+            var peer = RegisterPeer(taskManager, height);
+            var hash = CreateBlock(height + 1).Hash;
+            var announcement = new TaskManager.NewTasks(InvPayload.Create(InventoryType.Block, hash));
+            peer.Send(taskManager, announcement);
+            peer.FishForMessage<Message>(m => m.Command == MessageCommand.GetData, TimeSpan.FromSeconds(3), cancellationToken: CancellationToken.None);
+            var session = GetSessions(taskManager)[peer.Ref];
+            var assignedAt = session.InvTasks[hash];
+
+            peer.Send(taskManager, announcement);
+            peer.Send(taskManager, announcement);
+            Assert.AreEqual(1, GetGlobalInvTasks(taskManager)[hash]);
+            Assert.AreEqual(assignedAt, session.InvTasks[hash]);
+            Assert.IsFalse(session.AvailableTasks.Contains(hash));
+            peer.ExpectNoMsg(TimeSpan.FromMilliseconds(100), CancellationToken.None);
+
+            // Also discard a queued hash if it is already assigned to this session.
+            session.AvailableTasks.Add(hash);
+            SendTimer(taskManager);
+            Assert.AreEqual(1, GetGlobalInvTasks(taskManager)[hash]);
+            Assert.IsFalse(session.AvailableTasks.Contains(hash));
+
+            var other = RegisterPeer(taskManager, height);
+            other.Send(taskManager, announcement);
+            other.FishForMessage<Message>(m => m.Command == MessageCommand.GetData, TimeSpan.FromSeconds(3), cancellationToken: CancellationToken.None);
+            Assert.AreEqual(2, GetGlobalInvTasks(taskManager)[hash]);
+            Sys.Stop(peer.Ref);
+            Sys.Stop(other.Ref);
+            AwaitAssert(() => Assert.IsFalse(GetGlobalInvTasks(taskManager).ContainsKey(hash)), TimeSpan.FromSeconds(3), cancellationToken: CancellationToken.None);
+            Sys.Stop(taskManager);
+        }
+
+        [TestMethod]
+        public void SaturatedBlockTasks_DoNotPreventHeaderRequests()
+        {
+            using var neoSystem = TestBlockchain.GetSystem();
+            var height = NativeContract.Ledger.CurrentIndex(neoSystem.StoreView);
+            var taskManager = ActorOfAsTestActorRef(() => new TaskManager(neoSystem));
+            var hash = CreateBlock(height + 1).Hash;
+            var announcement = new TaskManager.NewTasks(InvPayload.Create(InventoryType.Block, hash));
+            for (int i = 0; i < 3; i++)
+            {
+                var owner = RegisterPeer(taskManager, height);
+                owner.Send(taskManager, announcement);
+                owner.FishForMessage<Message>(m => m.Command == MessageCommand.GetData, TimeSpan.FromSeconds(3), cancellationToken: CancellationToken.None);
+            }
+            var peer = RegisterPeer(taskManager, height);
+            peer.Send(taskManager, new TaskManager.Update(height + 10));
+            peer.Send(taskManager, announcement);
+            Assert.IsTrue(HoldsHeaderTask(taskManager, peer));
+            ExpectGetHeaders(peer);
+            Assert.IsTrue(GetSessions(taskManager)[peer.Ref].AvailableTasks.Contains(hash));
+            Assert.AreEqual(3, GetGlobalInvTasks(taskManager)[hash]);
+            Sys.Stop(taskManager);
+        }
+
+        [TestMethod]
+        [DataRow(false)]
+        [DataRow(true)]
+        public void RestartTasks_ClearsOldAssignmentsBeforeReassignment(bool timeout)
+        {
+            using var neoSystem = TestBlockchain.GetSystem();
+            var height = NativeContract.Ledger.CurrentIndex(neoSystem.StoreView);
+            var taskManager = ActorOfAsTestActorRef(() => new TaskManager(neoSystem));
+            var first = RegisterPeer(taskManager, height);
+            var second = RegisterPeer(taskManager, height);
+            var hash = CreateTransaction(99).Hash;
+            var payload = InvPayload.Create(InventoryType.TX, hash);
+            first.Send(taskManager, new TaskManager.NewTasks(payload));
+            var oldSession = GetSessions(taskManager)[first.Ref];
+            oldSession.InvTasks[hash] = TimeProvider.Current.UtcNow.AddMinutes(-5);
+            GetSessions(taskManager)[second.Ref].AvailableTasks.Add(hash);
+
+            taskManager.Tell(new TaskManager.RestartTasks(payload));
+            Assert.IsFalse(GetGlobalInvTasks(taskManager).ContainsKey(hash));
+            foreach (var session in GetSessions(taskManager).Values)
+            {
+                Assert.IsFalse(session.InvTasks.ContainsKey(hash));
+                Assert.IsFalse(session.AvailableTasks.Contains(hash));
+            }
+            second.Send(taskManager, new TaskManager.NewTasks(payload));
+            Assert.AreEqual(1, GetGlobalInvTasks(taskManager)[hash]);
+            if (timeout)
+                SendTimer(taskManager);
+            else
+            {
+                Sys.Stop(first.Ref);
+                AwaitAssert(() => Assert.IsFalse(GetSessions(taskManager).ContainsKey(first.Ref)), TimeSpan.FromSeconds(3), cancellationToken: CancellationToken.None);
+            }
+            Assert.AreEqual(1, GetGlobalInvTasks(taskManager)[hash]);
+            Assert.IsTrue(GetSessions(taskManager)[second.Ref].InvTasks.ContainsKey(hash));
+            Sys.Stop(taskManager);
+        }
+
+        private static void SendTimer(Akka.TestKit.TestActorRef<TaskManager> taskManager)
+        {
+            var timerType = typeof(TaskManager).GetNestedType("Timer", BindingFlags.NonPublic)!;
+            taskManager.Tell(Activator.CreateInstance(timerType, true)!);
+        }
+
+        private static Header[] CreateHeaders(uint firstIndex, int count)
+            => [.. Enumerable.Range(0, count).Select(i => CreateBlock(firstIndex + (uint)i).Header)];
+
+        private static int HeaderRefs(Akka.TestKit.TestActorRef<TaskManager> taskManager)
+            => GetGlobalInvTasks(taskManager).GetValueOrDefault(UInt256.Zero);
+
+        private static bool HoldsHeaderTask(Akka.TestKit.TestActorRef<TaskManager> taskManager, Akka.TestKit.TestProbe peer)
+            => GetSessions(taskManager)[peer.Ref].InvTasks.ContainsKey(UInt256.Zero);
+
+        private static void ExpectGetHeaders(Akka.TestKit.TestProbe peer)
+            => peer.FishForMessage<Message>(m => m.Command == MessageCommand.GetHeaders, TimeSpan.FromSeconds(3));
+
+        // Fails if the peer receives a GetHeaders while draining its queue.
+        private static void ExpectNoGetHeaders(Akka.TestKit.TestProbe peer, string message)
+        {
+            while (peer.ReceiveOne(TimeSpan.FromMilliseconds(100)) is { } received)
+                Assert.IsFalse(received is Message { Command: MessageCommand.GetHeaders }, message);
+        }
+
+        private void AwaitNoHeaderRefs(Akka.TestKit.TestActorRef<TaskManager> taskManager)
+        {
+            AwaitAssert(
+                () => Assert.IsFalse(GetGlobalInvTasks(taskManager).ContainsKey(UInt256.Zero), "Header references were not released."),
+                TimeSpan.FromSeconds(3),
+                cancellationToken: CancellationToken.None);
+        }
+
+        private void AwaitHeaderRefs(Akka.TestKit.TestActorRef<TaskManager> taskManager, int expected)
+        {
+            AwaitAssert(
+                () => Assert.AreEqual(expected, HeaderRefs(taskManager)),
+                TimeSpan.FromSeconds(3),
+                cancellationToken: CancellationToken.None);
+        }
+
+        [TestMethod]
+        public void RequestTasks_DoesNotLeakHeaderTaskReferenceCount_AcrossRepeatedTriggers()
+        {
+            using var neoSystem = TestBlockchain.GetSystem();
+            var currentHeight = NativeContract.Ledger.CurrentIndex(neoSystem.StoreView);
+            var taskManager = ActorOfAsTestActorRef(() => new TaskManager(neoSystem));
+
+            var peer1 = RegisterPeer(taskManager, currentHeight + 10);
+            ExpectGetHeaders(peer1);
+            Assert.AreEqual(1, HeaderRefs(taskManager));
+
+            for (int i = 0; i < 5; i++) SendTimer(taskManager);
+            Assert.AreEqual(1, HeaderRefs(taskManager), "Repeated triggers inflated the counter.");
+            ExpectNoGetHeaders(peer1, "Duplicate GetHeaders sent to peer1.");
+
+            var peer2 = RegisterPeer(taskManager, currentHeight + 10);
+            ExpectGetHeaders(peer2);
+            Assert.AreEqual(2, HeaderRefs(taskManager));
+
+            for (int i = 0; i < 5; i++) SendTimer(taskManager);
+            Assert.AreEqual(2, HeaderRefs(taskManager), "Repeated triggers inflated the counter.");
+            ExpectNoGetHeaders(peer1, "Duplicate GetHeaders sent to peer1.");
+            ExpectNoGetHeaders(peer2, "Duplicate GetHeaders sent to peer2.");
+
+            Sys.Stop(peer1.Ref);
+            Sys.Stop(peer2.Ref);
+            AwaitNoHeaderRefs(taskManager);
+
+            Sys.Stop(taskManager);
+        }
+
+        [TestMethod]
+        public void HeadersResponse_ReleasesPreviousAssignmentAndSchedulesSingleReplacement()
+        {
+            using var neoSystem = TestBlockchain.GetSystem();
+            var currentHeight = NativeContract.Ledger.CurrentIndex(neoSystem.StoreView);
+            var taskManager = ActorOfAsTestActorRef(() => new TaskManager(neoSystem));
+
+            var peer1 = RegisterPeer(taskManager, currentHeight + 10);
+            var peer2 = RegisterPeer(taskManager, currentHeight + 10);
+            ExpectGetHeaders(peer1);
+            ExpectGetHeaders(peer2);
+            Assert.AreEqual(2, HeaderRefs(taskManager));
+
+            // peer1 is still behind, so it gets a new request. A leaked reference would make this 3.
+            peer1.Send(taskManager, CreateHeaders(currentHeight + 1, 3));
+
+            ExpectGetHeaders(peer1);
+            Assert.AreEqual(2, HeaderRefs(taskManager), "Expected one release and one new assignment.");
+            Assert.IsTrue(HoldsHeaderTask(taskManager, peer1));
+            Assert.IsTrue(HoldsHeaderTask(taskManager, peer2));
+
+            // Same again for a second response
+            peer1.Send(taskManager, CreateHeaders(currentHeight + 1, 3));
+            ExpectGetHeaders(peer1);
+            Assert.AreEqual(2, HeaderRefs(taskManager));
+
+            Sys.Stop(peer1.Ref);
+            AwaitHeaderRefs(taskManager, 1);
+            Sys.Stop(peer2.Ref);
+            AwaitNoHeaderRefs(taskManager);
+
+            Sys.Stop(taskManager);
+        }
+
+        [TestMethod]
+        public void TaskTimeout_ReleasesExpiredHeaderReferenceAndSchedulesReplacement()
+        {
+            using var neoSystem = TestBlockchain.GetSystem();
+            var currentHeight = NativeContract.Ledger.CurrentIndex(neoSystem.StoreView);
+            var taskManager = ActorOfAsTestActorRef(() => new TaskManager(neoSystem));
+
+            var peer1 = RegisterPeer(taskManager, currentHeight + 10);
+            var peer2 = RegisterPeer(taskManager, currentHeight + 10);
+            ExpectGetHeaders(peer1);
+            ExpectGetHeaders(peer2);
+            Assert.AreEqual(2, HeaderRefs(taskManager));
+
+            var expiredAt = TimeProvider.Current.UtcNow.AddMinutes(-5);
+            var session1 = GetSessions(taskManager)[peer1.Ref];
+            session1.InvTasks[UInt256.Zero] = expiredAt;
+
+            SendTimer(taskManager);
+
+            // The expired entry is dropped and peer1 gets a fresh one
+            ExpectGetHeaders(peer1);
+            Assert.AreEqual(2, HeaderRefs(taskManager), "Expected one release and one new assignment.");
+            Assert.IsTrue(session1.InvTasks.TryGetValue(UInt256.Zero, out var assignedAt));
+            Assert.IsTrue(assignedAt > expiredAt, "The expired assignment was not replaced.");
+            ExpectNoGetHeaders(peer2, "Duplicate GetHeaders sent to peer2.");
+
+            Sys.Stop(peer1.Ref);
+            AwaitHeaderRefs(taskManager, 1);
+            Sys.Stop(peer2.Ref);
+            AwaitNoHeaderRefs(taskManager);
+
+            Sys.Stop(taskManager);
+        }
+
+        [TestMethod]
+        public void RequestTasks_HeaderTasksLimitedToMaxConcurrentAcrossDistinctSessions()
+        {
+            using var neoSystem = TestBlockchain.GetSystem();
+            var currentHeight = NativeContract.Ledger.CurrentIndex(neoSystem.StoreView);
+            var taskManager = ActorOfAsTestActorRef(() => new TaskManager(neoSystem));
+
+            var peers = Enumerable.Range(0, 4).Select(_ => RegisterPeer(taskManager, currentHeight + 10)).ToArray();
+
+            for (int i = 0; i < 3; i++) ExpectGetHeaders(peers[i]);
+            ExpectNoGetHeaders(peers[3], "All slots are taken, peer 4 should not get GetHeaders.");
+            Assert.AreEqual(3, HeaderRefs(taskManager));
+            Assert.IsFalse(HoldsHeaderTask(taskManager, peers[3]));
+
+            for (int i = 0; i < 5; i++) SendTimer(taskManager);
+            Assert.AreEqual(3, HeaderRefs(taskManager), "Counter went above the limit.");
+            Assert.IsFalse(HoldsHeaderTask(taskManager, peers[3]));
+            foreach (var p in peers) ExpectNoGetHeaders(p, "Unexpected GetHeaders.");
+
+            // Once a slot is free the fourth peer can take it
+            Sys.Stop(peers[0].Ref);
+            AwaitHeaderRefs(taskManager, 2);
+            SendTimer(taskManager);
+            ExpectGetHeaders(peers[3]);
+            Assert.AreEqual(3, HeaderRefs(taskManager));
+
+            foreach (var p in peers.Skip(1)) Sys.Stop(p.Ref);
+            AwaitNoHeaderRefs(taskManager);
+
+            Sys.Stop(taskManager);
+        }
+
+        [TestMethod]
+        public void NewTasks_MixedKnownAndNewHash_AssignsOnlyTheNewHash()
+        {
+            using var neoSystem = TestBlockchain.GetSystem();
+            var height = NativeContract.Ledger.CurrentIndex(neoSystem.StoreView);
+            var taskManager = ActorOfAsTestActorRef(() => new TaskManager(neoSystem));
+            var peer = RegisterPeer(taskManager, height);
+            var knownHash = CreateBlock(height + 1).Hash;
+            var newHash = CreateBlock(height + 2).Hash;
+
+            peer.Send(taskManager, new TaskManager.NewTasks(InvPayload.Create(InventoryType.Block, knownHash)));
+            peer.FishForMessage<Message>(
+                m => m.Command == MessageCommand.GetData,
+                TimeSpan.FromSeconds(3),
+                cancellationToken: CancellationToken.None);
+
+            var session = GetSessions(taskManager)[peer.Ref];
+            var assignedAt = session.InvTasks[knownHash];
+
+            peer.Send(taskManager, new TaskManager.NewTasks(InvPayload.Create(InventoryType.Block, knownHash, newHash)));
+            var getData = peer.FishForMessage<Message>(
+                m => m.Command == MessageCommand.GetData,
+                TimeSpan.FromSeconds(3),
+                cancellationToken: CancellationToken.None);
+            var inv = (InvPayload)getData.Payload!;
+
+            Assert.AreEqual(InventoryType.Block, inv.Type);
+            Assert.AreEqual(1, inv.Hashes.Length);
+            Assert.AreEqual(newHash, inv.Hashes[0]);
+            Assert.AreEqual(1, GetGlobalInvTasks(taskManager)[knownHash]);
+            Assert.AreEqual(1, GetGlobalInvTasks(taskManager)[newHash]);
+            Assert.AreEqual(assignedAt, session.InvTasks[knownHash]);
+            Assert.IsTrue(session.InvTasks.ContainsKey(newHash));
+            Assert.IsFalse(session.AvailableTasks.Contains(knownHash));
+            Assert.IsFalse(session.AvailableTasks.Contains(newHash));
+            peer.ExpectNoMsg(TimeSpan.FromMilliseconds(100), CancellationToken.None);
+
+            Sys.Stop(taskManager);
+        }
+
+        [TestMethod]
+        public void SaturatedBlockTask_ReassignsFreedSlotWithoutExceedingLimit()
+        {
+            using var neoSystem = TestBlockchain.GetSystem();
+            var height = NativeContract.Ledger.CurrentIndex(neoSystem.StoreView);
+            var taskManager = ActorOfAsTestActorRef(() => new TaskManager(neoSystem));
+            var hash = CreateBlock(height + 1).Hash;
+            var announcement = new TaskManager.NewTasks(InvPayload.Create(InventoryType.Block, hash));
+
+            var owners = Enumerable.Range(0, 3).Select(_ => RegisterPeer(taskManager, height)).ToArray();
+            foreach (var owner in owners)
+            {
+                owner.Send(taskManager, announcement);
+                owner.FishForMessage<Message>(
+                    m => m.Command == MessageCommand.GetData,
+                    TimeSpan.FromSeconds(3),
+                    cancellationToken: CancellationToken.None);
+            }
+            Assert.AreEqual(3, GetGlobalInvTasks(taskManager)[hash]);
+
+            var waiter = RegisterPeer(taskManager, height);
+            waiter.Send(taskManager, announcement);
+            Assert.AreEqual(3, GetGlobalInvTasks(taskManager)[hash]);
+            Assert.IsTrue(GetSessions(taskManager)[waiter.Ref].AvailableTasks.Contains(hash));
+            Assert.IsFalse(GetSessions(taskManager)[waiter.Ref].InvTasks.ContainsKey(hash));
+
+            Sys.Stop(owners[0].Ref);
+            AwaitAssert(
+                () => Assert.AreEqual(2, GetGlobalInvTasks(taskManager)[hash]),
+                TimeSpan.FromSeconds(3),
+                cancellationToken: CancellationToken.None);
+
+            SendTimer(taskManager);
+
+            var getData = waiter.FishForMessage<Message>(
+                m => m.Command == MessageCommand.GetData,
+                TimeSpan.FromSeconds(3),
+                cancellationToken: CancellationToken.None);
+            var inv = (InvPayload)getData.Payload!;
+            Assert.AreEqual(InventoryType.Block, inv.Type);
+            Assert.AreEqual(1, inv.Hashes.Length);
+            Assert.AreEqual(hash, inv.Hashes[0]);
+            Assert.AreEqual(3, GetGlobalInvTasks(taskManager)[hash], "A freed slot must be reused, not stacked past the limit.");
+            Assert.IsTrue(GetSessions(taskManager)[waiter.Ref].InvTasks.ContainsKey(hash));
+            Assert.IsFalse(GetSessions(taskManager)[waiter.Ref].AvailableTasks.Contains(hash));
+
+            foreach (var owner in owners.Skip(1))
+                owner.ExpectNoMsg(TimeSpan.FromMilliseconds(100), CancellationToken.None);
+
+            var extra = RegisterPeer(taskManager, height);
+            extra.FishForMessage<Message>(
+                m => m.Command == MessageCommand.Mempool,
+                TimeSpan.FromSeconds(3),
+                cancellationToken: CancellationToken.None);
+            extra.Send(taskManager, announcement);
+            Assert.AreEqual(3, GetGlobalInvTasks(taskManager)[hash]);
+            Assert.IsFalse(GetSessions(taskManager)[extra.Ref].InvTasks.ContainsKey(hash));
+            Assert.IsTrue(GetSessions(taskManager)[extra.Ref].AvailableTasks.Contains(hash));
+            extra.ExpectNoMsg(TimeSpan.FromMilliseconds(100), CancellationToken.None);
+
+            Sys.Stop(taskManager);
+        }
+
+        [TestMethod]
+        public void PendingHeaderTask_TimerRequestsASingleBlockBatch()
+        {
+            using var neoSystem = TestBlockchain.GetSystem();
+            var currentHeight = NativeContract.Ledger.CurrentIndex(neoSystem.StoreView);
+            var taskManager = ActorOfAsTestActorRef(() => new TaskManager(neoSystem));
+            var peer = RegisterPeer(taskManager, currentHeight + 10);
+
+            ExpectGetHeaders(peer);
+            Assert.AreEqual(1, HeaderRefs(taskManager));
+
+            SendTimer(taskManager);
+
+            var request = peer.FishForMessage<Message>(
+                m => m.Command == MessageCommand.GetBlockByIndex,
+                TimeSpan.FromSeconds(3),
+                cancellationToken: CancellationToken.None);
+            var payload = (GetBlockByIndexPayload)request.Payload!;
+            Assert.AreEqual(currentHeight + 1, payload.IndexStart);
+            Assert.AreEqual(10, payload.Count);
+            Assert.AreEqual(1, HeaderRefs(taskManager));
+            Assert.IsTrue(HoldsHeaderTask(taskManager, peer));
+
+            var session = GetSessions(taskManager)[peer.Ref];
+            Assert.AreEqual(10, session.IndexTasks.Count);
+            peer.ExpectNoMsg(TimeSpan.FromMilliseconds(100), CancellationToken.None);
+
+            SendTimer(taskManager);
+
+            peer.ExpectNoMsg(TimeSpan.FromMilliseconds(100), CancellationToken.None);
+            Assert.AreEqual(1, HeaderRefs(taskManager));
+            Assert.IsTrue(HoldsHeaderTask(taskManager, peer));
+            Assert.AreEqual(10, session.IndexTasks.Count);
+
+            Sys.Stop(taskManager);
+        }
     }
 }
