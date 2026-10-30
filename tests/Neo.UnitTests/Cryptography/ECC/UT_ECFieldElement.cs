@@ -95,9 +95,9 @@ namespace Neo.UnitTests.Cryptography.ECC
             var testCruve = constructor.Invoke([
                 BigInteger.Parse("00FFFFFFFF00000001000000000000000000000000FFFFFFFFFFFFFFFFFFFFFFF0", NumberStyles.AllowHexSpecifier),
                 BigInteger.Parse("00FFFFFFFF00000001000000000000000000000000FFFFFFFFFFFFFFFFFFFFFF00", NumberStyles.AllowHexSpecifier),
-                BigInteger.Parse("005AC635D8AA3A93E7B3EBBD55769886BC651D06B0CC53B0F63BCE3C3E27D2604B", NumberStyles.AllowHexSpecifier),
+                BigInteger.One,
                 BigInteger.Parse("00FFFFFFFF00000000FFFFFFFFFFFFFFFFBCE6FAADA7179E84F3B9CAC2FC632551", NumberStyles.AllowHexSpecifier),
-                ("04" + "6B17D1F2E12C4247F8BCE6E563A440F277037D812DEB33A0F4A13945D898C296" + "4FE342E2FE1A7F9B8EE7EB4A7C0F9E162BCE33576B315ECECBB6406837BF51F5").HexToBytes(),
+                ("04" + new string('0', 127) + "1").HexToBytes(), // (0, 1) lies on the test curve with B = 1.
                 "secp256k1"]) as ECCurve;
             element = new ECFieldElement(new BigInteger(200), testCruve);
             Assert.IsNull(element.Sqrt());
