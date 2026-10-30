@@ -82,9 +82,13 @@ namespace Neo.UnitTests.SmartContract.Native
             }
         }
 
-        private static (NeoSystem System, Transaction Tx) PersistTransaction(bool fault)
+        private static (NeoSystem System, Transaction Tx) PersistTransaction(bool fault, uint jackalopeHeight = 0)
         {
-            var system = TestBlockchain.GetSystem();
+            var settings = TestProtocolSettings.Default with
+            {
+                Hardforks = TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_Jackalope, jackalopeHeight)
+            };
+            var system = new TestBlockchain.TestNeoSystem(settings);
             var snapshot = system.GetSnapshotCache();
             var wallet = TestUtils.GenerateTestWallet("123");
             var account = wallet.CreateAccount();
@@ -137,6 +141,29 @@ namespace Neo.UnitTests.SmartContract.Native
             var (system, tx) = PersistTransaction(true);
             Assert.IsNotNull(NativeContract.Ledger.GetTransactionState(system.StoreView, tx.Hash));
             AssertVMState(system, tx.Hash, VMState.FAULT);
+        }
+
+        [TestMethod]
+        public void GetTransactionVMState_BeforeJackalope_Halt_ReturnsNone()
+        {
+            var (system, tx) = PersistTransaction(false, 2);
+            Assert.IsNotNull(NativeContract.Ledger.GetTransactionState(system.StoreView, tx.Hash));
+            AssertVMState(system, tx.Hash, VMState.NONE);
+        }
+
+        [TestMethod]
+        public void GetTransactionVMState_BeforeJackalope_Fault_ReturnsNone()
+        {
+            var (system, tx) = PersistTransaction(true, 2);
+            Assert.IsNotNull(NativeContract.Ledger.GetTransactionState(system.StoreView, tx.Hash));
+            AssertVMState(system, tx.Hash, VMState.NONE);
+        }
+
+        [TestMethod]
+        public void GetTransactionVMState_AtJackalopeActivation_Halt_ReturnsHalt()
+        {
+            var (system, tx) = PersistTransaction(false, 1);
+            AssertVMState(system, tx.Hash, VMState.HALT);
         }
 
         [TestMethod]
