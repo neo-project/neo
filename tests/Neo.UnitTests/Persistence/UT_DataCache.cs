@@ -106,6 +106,47 @@ namespace Neo.UnitTests.Persistence
         }
 
         [TestMethod]
+        [DataRow(TrackState.Added, false)]
+        [DataRow(TrackState.Changed, false)]
+        [DataRow(TrackState.None, false)]
+        [DataRow(TrackState.Added, true)]
+        [DataRow(TrackState.Changed, true)]
+        [DataRow(TrackState.None, true)]
+        public void DuplicateAddPreservesItemAndCommittedValue(TrackState state, bool cloned)
+        {
+            using var store = new MemoryStore();
+            byte[] originalValue = [0x11];
+            if (state != TrackState.Added)
+                store.Put(s_key1.ToArray(), originalValue);
+            using var parent = new StoreCache(store.GetSnapshot());
+            var cache = cloned ? parent.CloneCache() : parent;
+            if (state == TrackState.Added)
+                cache.Add(s_key1, new StorageItem(originalValue));
+            else if (state == TrackState.Changed)
+            {
+                originalValue = [0x33];
+                cache.GetAndChange(s_key1).Value = originalValue;
+            }
+            var original = cache[s_key1];
+            var changes = cache.GetChangeSet().ToArray();
+
+            Assert.ThrowsExactly<ArgumentException>(() => cache.Add(s_key1, new StorageItem([0x22])));
+
+            Assert.AreSame(original, cache[s_key1]);
+            Assert.AreSequenceEqual(originalValue, cache[s_key1].Value.ToArray());
+            Assert.AreEqual(changes.Length, cache.GetChangeSet().Count());
+            if (state != TrackState.None)
+                Assert.AreEqual(state, cache.GetChangeSet().Single().Value.State);
+            cache.Commit();
+            if (cloned)
+            {
+                Assert.AreSequenceEqual(originalValue, parent[s_key1].Value.ToArray());
+                parent.Commit();
+            }
+            Assert.AreSequenceEqual(originalValue, store.TryGet(s_key1.ToArray()));
+        }
+
+        [TestMethod]
         public void TestCommit()
         {
             using var store = new MemoryStore();
