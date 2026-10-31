@@ -104,10 +104,31 @@ namespace Neo.SmartContract
         public static readonly InteropDescriptor System_Runtime_LoadScript = Register("System.Runtime.LoadScript", nameof(RuntimeLoadScript), 1 << 15, CallFlags.AllowCall);
 
         /// <summary>
+        /// The price of System.Runtime.LoadScript per script byte since Huyao hardfork, in the unit of 1e-11 GAS.
+        /// </summary>
+        private const long LoadScriptPricePerByte = 187;
+
+        /// <summary>
+        /// The base price of System.Runtime.LoadScript since Huyao hardfork, in the unit of 1e-11 GAS.
+        /// </summary>
+        private const long LoadScriptBasePrice = 700000;
+
+        /// <summary>
         /// The <see cref="InteropDescriptor"/> of System.Runtime.CheckWitness.
         /// Determines whether the specified account has witnessed the current transaction.
         /// </summary>
         public static readonly InteropDescriptor System_Runtime_CheckWitness = Register("System.Runtime.CheckWitness", nameof(CheckWitness), 1 << 10, CallFlags.None);
+
+        /// <summary>
+        /// The price of System.Runtime.CheckWitness per checked witness rule since Huyao hardfork,
+        /// in the unit of 1e-11 GAS.
+        /// </summary>
+        private const long CheckWitnessPricePerRule = 297286;
+
+        /// <summary>
+        /// The base price of System.Runtime.CheckWitness since Huyao hardfork, in the unit of 1e-11 GAS.
+        /// </summary>
+        private const long CheckWitnessBasePrice = 1035000;
 
         /// <summary>
         /// The <see cref="InteropDescriptor"/> of System.Runtime.GetInvocationCounter.
@@ -166,7 +187,18 @@ namespace Neo.SmartContract
         /// The <see cref="InteropDescriptor"/> of System.Runtime.CurrentSigners.
         /// Get the Signers of the current transaction.
         /// </summary>
-        public static readonly InteropDescriptor System_Runtime_CurrentSigners = Register("System.Runtime.CurrentSigners", nameof(GetCurrentSigners), 1 << 4, CallFlags.None);
+        public static readonly InteropDescriptor System_Runtime_CurrentSigners = Register("System.Runtime.CurrentSigners", nameof(RuntimeCurrentSigners), 1 << 4, CallFlags.None);
+
+        /// <summary>
+        /// The price of System.Runtime.CurrentSigners per reference pushed onto the stack since Huyao hardfork,
+        /// in the unit of 1e-11 GAS.
+        /// </summary>
+        private const long CurrentSignersPricePerRef = 2892;
+
+        /// <summary>
+        /// The base price of System.Runtime.CurrentSigners since Huyao hardfork, in the unit of 1e-11 GAS.
+        /// </summary>
+        private const long CurrentSignersBasePrice = 18429;
 
         /// <summary>
         /// The implementation of System.Runtime.Platform.
@@ -230,10 +262,16 @@ namespace Neo.SmartContract
         /// The implementation of System.Runtime.LoadScript.
         /// Loads a script at rumtime.
         /// </summary>
+        [InteropPrice(Hardfork.HF_Huyao, 0)]
         protected internal void RuntimeLoadScript(byte[] script, CallFlags callFlags, Array args)
         {
             if ((callFlags & ~CallFlags.All) != 0)
                 throw new ArgumentOutOfRangeException(nameof(callFlags), $"Invalid call flags: {callFlags}");
+            if (IsHardforkEnabled(Hardfork.HF_Huyao))
+            {
+                var price = LoadScriptPricePerByte * script.Length + LoadScriptBasePrice;
+                AddFemtoGas(price * _execFeeFactor, false);
+            }
 
             ExecutionContextState state = CurrentContext!.GetState<ExecutionContextState>();
             ExecutionContext context = LoadScript(new Script(script, true), configureState: p =>
@@ -253,6 +291,7 @@ namespace Neo.SmartContract
         /// </summary>
         /// <param name="hashOrPubkey">The hash or public key of the account.</param>
         /// <returns><see langword="true"/> if the account has witnessed the current transaction; otherwise, <see langword="false"/>.</returns>
+        [InteropPrice(Hardfork.HF_Huyao, 0)]
         protected internal bool CheckWitness(byte[] hashOrPubkey)
         {
             UInt160 hash = hashOrPubkey.Length switch
@@ -261,7 +300,10 @@ namespace Neo.SmartContract
                 33 => Contract.CreateSignatureRedeemScript(ECPoint.DecodePoint(hashOrPubkey, ECCurve.Secp256r1)).ToScriptHash(),
                 _ => throw new ArgumentException("Invalid hashOrPubkey length", nameof(hashOrPubkey))
             };
-            return CheckWitnessInternal(hash);
+            var result = CheckWitnessInternal(hash, out var rulesCount);
+            if (IsHardforkEnabled(Hardfork.HF_Huyao))
+                AddFemtoGas((CheckWitnessPricePerRule * rulesCount + CheckWitnessBasePrice) * _execFeeFactor, false);
+            return result;
         }
 
         /// <summary>
@@ -271,6 +313,18 @@ namespace Neo.SmartContract
         /// <returns><see langword="true"/> if the account has witnessed the current transaction; otherwise, <see langword="false"/>.</returns>
         protected internal bool CheckWitnessInternal(UInt160 hash)
         {
+            return CheckWitnessInternal(hash, out _);
+        }
+
+        /// <summary>
+        /// Determines whether the specified account has witnessed the current transaction.
+        /// </summary>
+        /// <param name="hash">The hash of the account.</param>
+        /// <param name="rulesCount">The number of checked <see cref="Signer.Rules"/>.</param>
+        /// <returns><see langword="true"/> if the account has witnessed the current transaction; otherwise, <see langword="false"/>.</returns>
+        private bool CheckWitnessInternal(UInt160 hash, out int rulesCount)
+        {
+            rulesCount = 0;
             if (hash.Equals(CallingScriptHash)) return true;
 
             if (ScriptContainer is Transaction tx)
@@ -288,10 +342,22 @@ namespace Neo.SmartContract
                 }
                 Signer? signer = signers.FirstOrDefault(p => p.Account.Equals(hash));
                 if (signer is null) return false;
-                foreach (WitnessRule rule in signer.GetAllRules())
+                foreach (WitnessRule rule in signer.GetScopeRules())
                 {
                     if (rule.Condition.Match(this))
                         return rule.Action == WitnessRuleAction.Allow;
+                }
+                if (signer.Scopes.HasFlag(WitnessScope.WitnessRules))
+                {
+                    for (int i = 0; i < signer.Rules!.Length; i++)
+                    {
+                        if (signer.Rules[i].Condition.Match(this))
+                        {
+                            rulesCount = i + 1;
+                            return signer.Rules[i].Action == WitnessRuleAction.Allow;
+                        }
+                    }
+                    rulesCount = signer.Rules.Length;
                 }
                 return false;
             }
@@ -501,6 +567,22 @@ namespace Neo.SmartContract
                 return tx.Signers;
 
             return null;
+        }
+
+        /// <summary>
+        /// The implementation of System.Runtime.CurrentSigners.
+        /// Pushes the Signers of the current transaction, or null if is not related to a transaction execution.
+        /// </summary>
+        [InteropPrice(Hardfork.HF_Huyao, 0)]
+        protected internal void RuntimeCurrentSigners()
+        {
+            var r = ReferenceCounter.Count;
+            Push(Convert(GetCurrentSigners()));
+            if (IsHardforkEnabled(Hardfork.HF_Huyao))
+            {
+                var price = CurrentSignersPricePerRef * (ReferenceCounter.Count - r) + CurrentSignersBasePrice;
+                AddFemtoGas(price * _execFeeFactor, false);
+            }
         }
 
         private static bool CheckItemType(StackItem item, ContractParameterType type)

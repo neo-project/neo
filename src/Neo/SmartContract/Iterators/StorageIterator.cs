@@ -40,7 +40,7 @@ namespace Neo.SmartContract.Iterators
             return enumerator.MoveNext();
         }
 
-        public StackItem Value()
+        public StackItem Value(out int bytesDeserialized)
         {
             ReadOnlyMemory<byte> key = enumerator.Current.Key.Key;
             ReadOnlyMemory<byte> value = enumerator.Current.Value.Value;
@@ -48,9 +48,10 @@ namespace Neo.SmartContract.Iterators
             if (options.HasFlag(FindOptions.RemovePrefix))
                 key = key[prefixLength..];
 
-            StackItem item = options.HasFlag(FindOptions.DeserializeValues)
-                ? BinarySerializer.Deserialize(value, ExecutionEngineLimits.Default)
-                : value;
+            bytesDeserialized = 0;
+            StackItem item = value;
+            if (options.HasFlag(FindOptions.DeserializeValues))
+                item = BinarySerializer.Deserialize(value, ExecutionEngineLimits.Default, out bytesDeserialized);
 
             if (options.HasFlag(FindOptions.PickField0))
                 item = ((Array)item)[0];
