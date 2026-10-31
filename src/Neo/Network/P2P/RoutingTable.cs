@@ -122,13 +122,28 @@ public sealed class RoutingTable
         ArgumentOutOfRangeException.ThrowIfNegative(count);
         if (count == 0) return Array.Empty<NodeContact>();
 
-        var candidates = EnumerateAllContacts().ToList();
+        var farthestFirst = Comparer<UInt256>.Create((x, y) => y.CompareTo(x));
+        var candidates = new PriorityQueue<NodeContact, UInt256>(farthestFirst);
 
-        // Sort by XOR distance to target.
-        candidates.Sort((a, b) => CompareDistance(a.NodeId, b.NodeId, targetId));
+        foreach (var contact in EnumerateAllContacts())
+        {
+            var distance = contact.NodeId ^ targetId;
+            if (candidates.Count < count)
+            {
+                candidates.Enqueue(contact, distance);
+                continue;
+            }
 
-        if (candidates.Count <= count) return candidates;
-        return candidates.GetRange(0, count);
+            candidates.TryPeek(out _, out var farthestDistance);
+            if (distance.CompareTo(farthestDistance) >= 0) continue;
+
+            candidates.Dequeue();
+            candidates.Enqueue(contact, distance);
+        }
+
+        var result = candidates.UnorderedItems.ToList();
+        result.Sort((a, b) => a.Priority.CompareTo(b.Priority));
+        return result.Select(static item => item.Element).ToList();
     }
 
     /// <summary>
@@ -186,10 +201,4 @@ public sealed class RoutingTable
         return msb; // -1..255
     }
 
-    static int CompareDistance(UInt256 a, UInt256 b, UInt256 target)
-    {
-        var da = a ^ target;
-        var db = b ^ target;
-        return da.CompareTo(db);
-    }
 }
