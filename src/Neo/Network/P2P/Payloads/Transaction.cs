@@ -321,8 +321,10 @@ public class Transaction : IEquatable<Transaction>, IInventory, IInteroperable
     public virtual VerifyResult VerifyStateDependent(ProtocolSettings settings, DataCache snapshot, TransactionVerificationContext context, IEnumerable<Transaction> conflictsList)
     {
         uint height = NativeContract.Ledger.CurrentIndex(snapshot);
-        if (ValidUntilBlock <= height || ValidUntilBlock > height + settings.MaxValidUntilBlockIncrement)
+        if (ValidUntilBlock <= height)
             return VerifyResult.Expired;
+        if (ValidUntilBlock > height + settings.MaxValidUntilBlockIncrement)
+            return VerifyResult.NotYetValid;
         UInt160[] hashes = GetScriptHashesForVerifying(snapshot);
         foreach (UInt160 hash in hashes)
             if (NativeContract.Policy.IsBlocked(snapshot, hash))

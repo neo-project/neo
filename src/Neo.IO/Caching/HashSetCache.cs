@@ -22,13 +22,14 @@ namespace Neo.IO.Caching;
 /// <typeparam name="T">The type of the items in the cache.</typeparam>
 internal class HashSetCache<T> : ICollection<T> where T : IEquatable<T>
 {
-    private class Items(int initialCapacity) : KeyedCollectionSlim<T, T>(initialCapacity)
+    private sealed class Items(int initialCapacity) : KeyedCollectionSlim<T, Tuple<T, DateTime?>>(initialCapacity)
     {
-        protected sealed override T GetKeyForItem(T item) => item;
+        protected sealed override T GetKeyForItem(Tuple<T, DateTime?> item) => item.Item1;
     }
 
     private readonly int _capacity;
     private readonly Items _items;
+    private readonly Func<DateTime>? _timeProvider;
 
     /// <summary>
     /// Gets the number of items in the cache.
@@ -41,14 +42,17 @@ internal class HashSetCache<T> : ICollection<T> where T : IEquatable<T>
     /// Initializes a new instance of the <see cref="HashSetCache{T}"/> class.
     /// </summary>
     /// <param name="capacity">The maximum number of items in the cache.</param>
+    /// <param name="timeProvider">A function that provides the current time. If null, pruning is disabled.</param>
     /// <exception cref="ArgumentOutOfRangeException"><paramref name="capacity"/> is less than 0.</exception>
-    public HashSetCache(int capacity)
+    public HashSetCache(int capacity, Func<DateTime>? timeProvider = null)
     {
         if (capacity <= 0) throw new ArgumentOutOfRangeException(nameof(capacity), $"{capacity} less than 0.");
 
         _capacity = capacity;
+        _timeProvider = timeProvider;
+
         // Avoid allocating a large memory at initialization
-        _items = new(Math.Min(capacity, 4096));
+        _items = new Items(Math.Min(capacity, 4096));
     }
 
     /// <summary>
@@ -61,7 +65,7 @@ internal class HashSetCache<T> : ICollection<T> where T : IEquatable<T>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool TryAdd(T item)
     {
-        if (!_items.TryAdd(item)) return false;
+        if (!_items.TryAdd(new(item, _timeProvider?.Invoke()))) return false;
         if (_items.Count > _capacity) _items.RemoveFirst();
         return true;
     }
@@ -96,7 +100,7 @@ internal class HashSetCache<T> : ICollection<T> where T : IEquatable<T>
     /// Returns an enumerator that iterates through the cache.
     /// </summary>
     /// <returns>An enumerator that can be used to iterate through the cache.</returns>
-    public IEnumerator<T> GetEnumerator() => _items.GetEnumerator();
+    public IEnumerator<T> GetEnumerator() => _items.Select(u => u.Item1).GetEnumerator();
 
     /// <summary>
     /// Returns an enumerator that iterates through the cache.
@@ -128,6 +132,23 @@ internal class HashSetCache<T> : ICollection<T> where T : IEquatable<T>
         foreach (var item in this)
         {
             array[i++] = item;
+        }
+    }
+
+    /// <summary>
+    /// Removes all cache entries with timestamps earlier than the specified time.
+    /// </summary>
+    /// <param name="lessThan">The DateTime threshold. Entries with timestamps before this value are removed.</param>
+    /// <exception cref="InvalidOperationException">Thrown when pruning is not allowed for this cache.</exception>
+    public void Prune(DateTime lessThan)
+    {
+        if (_timeProvider == null) throw new InvalidOperationException("Pruning is not allowed for this cache.");
+
+        while (Count > 0)
+        {
+            var (_, time) = _items.FirstOrDefault!;
+            if (lessThan <= time) break;
+            if (!_items.RemoveFirst()) break;
         }
     }
 }

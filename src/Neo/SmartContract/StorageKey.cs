@@ -138,7 +138,6 @@ public sealed record StorageKey
 
     public override string ToString()
     {
-        var keyArray = Key.ToArray();
-        return $"Id = {Id}, Prefix = 0x{keyArray[0]:x02}, Key = {{ {string.Join(", ", keyArray[1..].Select(static s => $"0x{s:x02}"))} }}";
+        return _key.IsEmpty ? $"StorageKey{{Id={Id}}}" : $"StorageKey{{Id={Id},Key={_key.ToHexString()}}}";
     }
 }
