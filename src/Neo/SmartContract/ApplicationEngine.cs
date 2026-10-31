@@ -21,7 +21,6 @@ using Neo.VM.Types;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Diagnostics;
 using System.Linq;
 using System.Numerics;
 using System.Reflection;
@@ -1180,14 +1179,7 @@ namespace Neo.SmartContract
         /// <returns>The price in the unit of femtoGAS.</returns>
         private BigInteger GetSysCallPrice(InteropDescriptor descriptor)
         {
-            var prices = descriptor.Prices;
-            for (int i = 0; i < prices.Count; i++)
-            {
-                var (hardfork, price) = prices[i];
-                if (hardfork is null || IsHardforkEnabled(hardfork.Value))
-                    return price * _execFeeFactor;
-            }
-            throw new UnreachableException($"Price of {descriptor.Name} isn't found.");
+            return descriptor.GetPrice(IsHardforkEnabled) * _execFeeFactor;
         }
 
         protected override void PreExecuteInstruction(Instruction instruction)
