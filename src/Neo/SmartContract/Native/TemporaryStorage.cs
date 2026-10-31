@@ -90,7 +90,7 @@ namespace Neo.SmartContract.Native
 
             int callingContractId = GetContractId(engine.SnapshotCache, engine.CallingScriptHash!);
             StorageKey recordKey = MakeRecordStorageKey(callingContractId, key);
-            ulong lifetime = (ulong)Math.Max(1, (long)(validTill - currTimestamp));
+            ulong lifetime = Math.Max(1UL, validTill - currTimestamp);
             engine.AddFee(CalculateStoragePrice(engine, recordKey.Key, value, lifetime, out var old), true);
             if (old is not null)
             {
@@ -368,11 +368,11 @@ namespace Neo.SmartContract.Native
                 Id = Id,
                 Key = key
             };
-            var permanentPrice = new BigInteger(engine.CalculateChargableSize(skey, value, (StorageItem item, out int chargableValueSize) =>
-            {
-                chargableValueSize = item.Value.Length - 8; // 8-bytes TTL prefix is not charged.
-                return IsTraceable(engine, item, out var _);
-            }, out item)) * engine.StoragePrice;
+            item = engine.SnapshotCache.TryGet(skey);
+            // Each lease pays for the full key and value. Permanent storage's overwrite
+            // discount must not discount additional temporary storage lifetime.
+            // The 8-byte TTL prefix remains excluded from the storage fee.
+            var permanentPrice = (new BigInteger(key.Length) + value.Length) * engine.StoragePrice;
             var min = permanentPrice / 10;
             var actual = permanentPrice * new BigInteger(Math.Min(lifetime, PolicyContract.MaxTemporaryStorageMaxTTL)) / PolicyContract.MaxTemporaryStorageMaxTTL;
             if (actual < min)
@@ -381,7 +381,7 @@ namespace Neo.SmartContract.Native
         }
 
         /// <summary>
-        /// Ensures the provided validTill value fits the limit of [0, timestamp + MaxTTL].
+        /// Ensures the provided validTill value fits the limit of [timestamp, timestamp + MaxTTL].
         /// </summary>
         /// <param name="engine">The engine used to read data.</param>
         /// <param name="validTill">The expiration timestamp in milliseconds.</param>
@@ -389,6 +389,8 @@ namespace Neo.SmartContract.Native
         /// <exception cref="ArgumentOutOfRangeException"></exception>
         private static void ValidateValidTill(ApplicationEngine engine, ulong validTill, ulong timestamp)
         {
+            if (validTill < timestamp)
+                throw new ArgumentOutOfRangeException(nameof(validTill), $"validTill precedes current timestamp: {validTill} vs {timestamp}");
             ulong maxValidTill = checked(timestamp + Policy.GetTemporaryStorageMaxTTL(engine.SnapshotCache));
             if (validTill > maxValidTill)
                 throw new ArgumentOutOfRangeException(nameof(validTill), $"validTill exceeds max limit: {validTill} vs {maxValidTill}");
