@@ -147,7 +147,9 @@ namespace Neo.Cryptography
             else
             {
                 Trim(node.LeftChild, index * 2, depth - 1, flags);
-                Trim(node.RightChild!, index * 2 + 1, depth - 1, flags);
+                // Odd levels reuse the left subtree; padded flags must not trim it again.
+                if (!ReferenceEquals(node.LeftChild, node.RightChild))
+                    Trim(node.RightChild!, index * 2 + 1, depth - 1, flags);
                 if (node.LeftChild.LeftChild == null && node.RightChild!.RightChild == null)
                 {
                     node.LeftChild = null;
