@@ -193,6 +193,11 @@ namespace Neo.SmartContract
                     }
                 case JNumber num:
                     {
+                        // HF_Huyao: only the NEW exact BigInteger storage path (outside safe range).
+                        // Double-backed numbers keep the historical Basilisk / cast path unchanged.
+                        if (engine.IsHardforkEnabled(Hardfork.HF_Huyao) && num.TryGetExactBigInteger(out var exact))
+                            return exact;
+
                         if ((num.Value % 1) != 0) throw new FormatException("Decimal value is not allowed");
                         if (engine.IsHardforkEnabled(Hardfork.HF_Basilisk))
                         {
