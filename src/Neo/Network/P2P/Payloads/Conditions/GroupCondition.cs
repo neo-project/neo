@@ -43,7 +43,7 @@ namespace Neo.Network.P2P.Payloads.Conditions
             if (other is null) return false;
             return
                 Type == other.Type &&
-                Group == other.Group;
+                Equals(Group, other.Group);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -87,9 +87,9 @@ namespace Neo.Network.P2P.Payloads.Conditions
             return json;
         }
 
-        public override StackItem ToStackItem(IReferenceCounter? referenceCounter)
+        public override StackItem ToStackItem()
         {
-            var result = (Array)base.ToStackItem(referenceCounter);
+            var result = (Array)base.ToStackItem();
             result.Add(Group.ToArray());
             return result;
         }

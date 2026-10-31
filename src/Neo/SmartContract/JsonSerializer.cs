@@ -164,15 +164,14 @@ namespace Neo.SmartContract
         /// <param name="engine">The <see cref="ApplicationEngine"/> used.</param>
         /// <param name="json">The <see cref="JToken"/> to deserialize.</param>
         /// <param name="limits">The limits for the deserialization.</param>
-        /// <param name="referenceCounter">The <see cref="IReferenceCounter"/> used by the <see cref="StackItem"/>.</param>
         /// <returns>The deserialized <see cref="StackItem"/>.</returns>
-        public static StackItem Deserialize(ApplicationEngine engine, JToken json, ExecutionEngineLimits limits, IReferenceCounter? referenceCounter = null)
+        public static StackItem Deserialize(ApplicationEngine engine, JToken json, ExecutionEngineLimits limits)
         {
             uint maxStackSize = limits.MaxStackSize;
-            return Deserialize(engine, json, ref maxStackSize, referenceCounter);
+            return Deserialize(engine, json, ref maxStackSize);
         }
 
-        private static StackItem Deserialize(ApplicationEngine engine, JToken? json, ref uint maxStackSize, IReferenceCounter? referenceCounter)
+        private static StackItem Deserialize(ApplicationEngine engine, JToken? json, ref uint maxStackSize)
         {
             if (maxStackSize-- == 0) throw new FormatException("Max stack size reached");
             switch (json)
@@ -185,8 +184,8 @@ namespace Neo.SmartContract
                     {
                         List<StackItem> list = new(array.Count);
                         foreach (JToken? obj in array)
-                            list.Add(Deserialize(engine, obj, ref maxStackSize, referenceCounter));
-                        return new Array(referenceCounter, list);
+                            list.Add(Deserialize(engine, obj, ref maxStackSize));
+                        return new Array(list);
                     }
                 case JString str:
                     {
@@ -207,14 +206,14 @@ namespace Neo.SmartContract
                     }
                 case JObject obj:
                     {
-                        var item = new Map(referenceCounter);
+                        var item = new Map();
 
                         foreach (var entry in obj.Properties)
                         {
                             if (maxStackSize-- == 0) throw new FormatException("Max stack size reached");
 
                             var key = entry.Key;
-                            var value = Deserialize(engine, entry.Value, ref maxStackSize, referenceCounter);
+                            var value = Deserialize(engine, entry.Value, ref maxStackSize);
 
                             item[key] = value;
                         }

@@ -36,7 +36,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             var test = FilterLoadPayload.Create(new BloomFilter(8, 10, 123456));
             var clone = test.ToArray().AsSerializable<FilterLoadPayload>();
 
-            CollectionAssert.AreEqual(test.Filter.ToArray(), clone.Filter.ToArray());
+            Assert.AreSequenceEqual(test.Filter.ToArray(), clone.Filter.ToArray());
             Assert.AreEqual(test.K, clone.K);
             Assert.AreEqual(test.Tweak, clone.Tweak);
 

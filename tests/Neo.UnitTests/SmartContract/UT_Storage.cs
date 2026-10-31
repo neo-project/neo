@@ -33,9 +33,9 @@ namespace Neo.UnitTests.SmartContract
             Assert.AreEqual(keyA.Id, keyB.Id);
             Assert.AreEqual(keyB.Id, keyC.Id);
 
-            CollectionAssert.AreEqual(new byte[] { 0x12 }, keyA.Key.Span.ToArray());
-            CollectionAssert.AreEqual(keyA.Key.Span.ToArray(), keyB.Key.Span.ToArray());
-            CollectionAssert.AreEqual(keyB.Key.Span.ToArray(), keyC.Key.Span.ToArray());
+            Assert.AreSequenceEqual(new byte[] { 0x12 }, keyA.Key.Span.ToArray());
+            Assert.AreSequenceEqual(keyA.Key.Span.ToArray(), keyB.Key.Span.ToArray());
+            Assert.AreSequenceEqual(keyB.Key.Span.ToArray(), keyC.Key.Span.ToArray());
         }
 
         [TestMethod]
@@ -54,6 +54,8 @@ namespace Neo.UnitTests.SmartContract
             StorageKey storageKeyFromMemory = keyMemory;
             Assert.AreEqual(0, storageKeyFromMemory.Id);
             Assert.IsTrue(keyMemory.Span.ToArray().Skip(sizeof(int)).SequenceEqual(storageKeyFromMemory.Key.Span.ToArray()));
+            Assert.AreEqual("StorageKey{Id=0,Key=12}", storageKeyFromMemory.ToString());
+            Assert.AreEqual("StorageKey{Id=0}", new StorageKey().ToString());
 
             // Test CreateSearchPrefix method
             byte[] prefix = { 0xAA };

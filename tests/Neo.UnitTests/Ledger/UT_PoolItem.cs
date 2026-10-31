@@ -14,13 +14,14 @@ using Moq;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
 using System;
+using System.Threading;
 
 namespace Neo.UnitTests.Ledger
 {
     [TestClass]
     public class UT_PoolItem
     {
-        private static readonly Random TestRandom = new Random(1337); // use fixed seed for guaranteed determinism
+        private static readonly ThreadLocal<Random> TestRandom = new(() => new Random(1337));// use fixed seed for guaranteed determinism
 
         [TestInitialize]
         public void TestSetup()
@@ -141,7 +142,7 @@ namespace Neo.UnitTests.Ledger
         {
             Transaction tx = new Transaction
             {
-                Nonce = (uint)TestRandom.Next(),
+                Nonce = (uint)TestRandom.Value!.Next(),
                 Script = overrideScriptBytes ?? ReadOnlyMemory<byte>.Empty,
                 NetworkFee = networkFee,
                 Attributes = [],

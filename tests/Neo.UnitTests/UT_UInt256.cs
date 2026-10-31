@@ -75,11 +75,12 @@ namespace Neo.UnitTests.IO
             using var writer = new BinaryWriter(stream);
             writer.Write(new byte[20]);
             UInt256 uInt256 = new();
-            Assert.ThrowsExactly<FormatException>(() =>
+            void Act()
             {
                 MemoryReader reader = new(stream.ToArray());
                 ((ISerializable)uInt256).Deserialize(ref reader);
-            });
+            }
+            Assert.ThrowsExactly<FormatException>(Act);
         }
 
         [TestMethod]
@@ -183,11 +184,11 @@ namespace Neo.UnitTests.IO
 
             data = new byte[UInt256.Length];
             value.Serialize(data.AsSpan());
-            CollectionAssert.AreEqual(data, value.ToArray());
+            Assert.AreSequenceEqual(data, value.ToArray());
 
             data = new byte[UInt256.Length];
             ((ISerializableSpan)value).Serialize(data.AsSpan());
-            CollectionAssert.AreEqual(data, value.ToArray());
+            Assert.AreSequenceEqual(data, value.ToArray());
         }
 
         [TestMethod]
@@ -197,17 +198,17 @@ namespace Neo.UnitTests.IO
 
             var value = new UInt256(data);
             var spanLittleEndian = value.GetSpanLittleEndian();
-            CollectionAssert.AreEqual(data, spanLittleEndian.ToArray());
+            Assert.AreSequenceEqual(data, spanLittleEndian.ToArray());
 
             // Check that Serialize LittleEndian and Serialize BigEndian are equals
             var dataLittleEndian = new byte[UInt256.Length];
             value.SafeSerialize(dataLittleEndian.AsSpan());
-            CollectionAssert.AreEqual(value.ToArray(), dataLittleEndian);
+            Assert.AreSequenceEqual(value.ToArray(), dataLittleEndian);
 
             // Check that Serialize LittleEndian and Serialize BigEndian are equals
             var dataSerialized = new byte[UInt256.Length];
             value.Serialize(dataSerialized.AsSpan());
-            CollectionAssert.AreEqual(value.ToArray(), dataSerialized);
+            Assert.AreSequenceEqual(value.ToArray(), dataSerialized);
 
             var shortBuffer = new byte[UInt256.Length - 1];
             Assert.ThrowsExactly<ArgumentException>(() => value.Serialize(shortBuffer.AsSpan()));

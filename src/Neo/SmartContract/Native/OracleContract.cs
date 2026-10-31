@@ -103,8 +103,8 @@ namespace Neo.SmartContract.Native
             if (response == null) throw new ArgumentException("Oracle response not found");
             OracleRequest? request = GetRequest(engine.SnapshotCache, response.Id);
             if (request == null) throw new ArgumentException("Oracle request not found");
-            engine.SendNotification(Hash, "OracleResponse", new Array(engine.ReferenceCounter) { response.Id, request.OriginalTxid.ToArray() });
-            StackItem userData = BinarySerializer.Deserialize(request.UserData, engine.Limits, engine.ReferenceCounter);
+            engine.SendNotification(Hash, "OracleResponse", new Array() { response.Id, request.OriginalTxid.ToArray() });
+            StackItem userData = BinarySerializer.Deserialize(request.UserData, engine.Limits);
             return engine.CallFromNativeContractAsync(Hash, request.CallbackContract, request.CallbackMethod, request.Url, userData, (int)response.Code, response.Result);
         }
 
@@ -237,13 +237,14 @@ namespace Neo.SmartContract.Native
             if (callback.StartsWith('_'))
                 throw new ArgumentException("Callback cannot start with underscore.");
 
-            if (gasForResponse < 0_10000000)
-                throw new ArgumentException($"gasForResponse {gasForResponse} must be at least 0.1 datoshi.");
+            const long MinGasForResponse = 0_10000000;
+            if (gasForResponse < MinGasForResponse)
+                throw new ArgumentException($"gasForResponse {gasForResponse} must be at least {MinGasForResponse} Datoshi.");
 
-            engine.AddFee(GetPrice(engine.SnapshotCache) * ApplicationEngine.FeeFactor);
+            engine.AddFee(GetPrice(engine.SnapshotCache), true);
 
             //Mint gas for the response
-            engine.AddFee(gasForResponse * ApplicationEngine.FeeFactor);
+            engine.AddFee(gasForResponse, true);
             await GAS.Mint(engine, Hash, gasForResponse, false);
 
             //Increase the request id
@@ -251,9 +252,9 @@ namespace Neo.SmartContract.Native
             var id = (ulong)(BigInteger)itemId;
             itemId.Add(1);
 
-            //Put the request to storage
+            // Put the request to storage
             if (!ContractManagement.IsContract(engine.SnapshotCache, engine.CallingScriptHash!))
-                throw new InvalidOperationException();
+                throw new InvalidOperationException("Only contracts can make Oracle requests");
             var request = new OracleRequest
             {
                 OriginalTxid = GetOriginalTxid(engine),
@@ -276,7 +277,7 @@ namespace Neo.SmartContract.Native
                 list.Add(id);
             }
 
-            engine.SendNotification(Hash, "OracleRequest", new Array(engine.ReferenceCounter) {
+            engine.SendNotification(Hash, "OracleRequest", new Array() {
                 id,
                 engine.CallingScriptHash!.ToArray(),
                 url,
@@ -298,7 +299,7 @@ namespace Neo.SmartContract.Native
                 return (ulong)item.GetInteger();
             }
 
-            protected override StackItem ElementToStackItem(ulong element, IReferenceCounter? referenceCounter)
+            protected override StackItem ElementToStackItem(ulong element)
             {
                 return element;
             }

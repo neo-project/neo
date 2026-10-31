@@ -11,8 +11,10 @@
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
+using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using Neo.SmartContract.Manifest;
+using Neo.SmartContract.Native;
 using Neo.UnitTests.Extensions;
 using Neo.VM;
 using System;
@@ -74,6 +76,33 @@ namespace Neo.UnitTests.SmartContract
             Assert.AreEqual(0u, engine.PersistingBlock.Version);
             Assert.AreEqual(system.GenesisBlock.Hash, engine.PersistingBlock.PrevHash);
             Assert.AreEqual(new UInt256(), engine.PersistingBlock.MerkleRoot);
+        }
+
+        [TestMethod]
+        public void TestGetPersistingIndex()
+        {
+            // With persisting block.
+            var persistingBlock = new Block
+            {
+                Header = new Header
+                {
+                    PrevHash = UInt256.Zero,
+                    MerkleRoot = null!,
+                    Index = 10,
+                    NextConsensus = null!,
+                    Witness = null!
+                },
+                Transactions = null!
+            };
+            var snapshotCache = TestBlockchain.GetTestSnapshotCache();
+            var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, persistingBlock, settings: TestProtocolSettings.Default);
+            Assert.AreEqual(10u, engine.GetPersistingIndex());
+
+            // With snapshot.
+            var storageKey = new KeyBuilder(NativeContract.Ledger.Id, 12); // mock current block in the Ledger contract.
+            snapshotCache.Add(storageKey, new(new HashIndexState { Hash = UInt256.Zero, Index = 10 }));
+            engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, null, settings: TestProtocolSettings.Default);
+            Assert.AreEqual(11u, engine.GetPersistingIndex());
         }
 
         [TestMethod]
@@ -221,6 +250,82 @@ namespace Neo.UnitTests.SmartContract
                 var res = (Boolean)engine.ResultStack.Pop();
                 Assert.IsTrue(res.GetBoolean());
             }
+        }
+
+        private static ApplicationEngine CreateHuyaoGatingEngine(bool huyaoEnabled, byte[] script)
+        {
+            var persistingBlock = new Block
+            {
+                Header = new Header
+                {
+                    PrevHash = UInt256.Zero,
+                    MerkleRoot = null!,
+                    Index = 10,
+                    NextConsensus = null!,
+                    Witness = null!
+                },
+                Transactions = null!
+            };
+
+            var settings = TestProtocolSettings.Default with
+            {
+                Hardforks = TestProtocolSettings.Default.Hardforks.SetItem(
+                    Hardfork.HF_Huyao, huyaoEnabled ? 0u : uint.MaxValue)
+            };
+
+            var snapshotCache = TestBlockchain.GetTestSnapshotCache();
+            var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, persistingBlock, settings: settings);
+            engine.LoadScript(script);
+            return engine;
+        }
+
+        [TestMethod]
+        public void TestHuyaoGating_Disabled_UsesLegacyStaticPricing()
+        {
+            using var script = new ScriptBuilder();
+            script.Emit(OpCode.PUSH1);
+
+            using var engine = CreateHuyaoGatingEngine(huyaoEnabled: false, script.ToArray());
+            Assert.AreEqual(VMState.HALT, engine.Execute());
+
+            var expectedFemtoGas = engine.ExecFeePicoFactor * ApplicationEngine.OpCodePriceTable[(byte)OpCode.PUSH1] * ApplicationEngine.OpcodePriceMultiplier;
+            var expectedFee = (long)expectedFemtoGas.DivideCeiling(ApplicationEngine.FeeFactor * ApplicationEngine.OpcodePriceMultiplier);
+            Assert.AreEqual(expectedFee, engine.FeeConsumed);
+        }
+
+        [TestMethod]
+        public void TestHuyaoGating_Enabled_UsesV1DynamicPricing()
+        {
+            using var script = new ScriptBuilder();
+            script.Emit(OpCode.PUSH1);
+
+            using var engine = CreateHuyaoGatingEngine(huyaoEnabled: true, script.ToArray());
+            Assert.AreEqual(VMState.HALT, engine.Execute());
+
+            // Dynamic (V1) path: AddFemtoGas(OpcodeV1(execFeeFactor, opcode, stats)) directly, no extra multiplier.
+            var expectedFemtoGas = engine.OpcodeV1((long)engine.ExecFeePicoFactor, OpCode.PUSH1, new RunStats());
+            var expectedFee = (long)((System.Numerics.BigInteger)expectedFemtoGas).DivideCeiling(ApplicationEngine.FeeFactor * ApplicationEngine.OpcodePriceMultiplier);
+            Assert.AreEqual(expectedFee, engine.FeeConsumed);
+        }
+
+        [TestMethod]
+        public void TestHuyaoGating_Enabled_SyntheticRetIsFree()
+        {
+            using var scriptWithoutRet = new ScriptBuilder();
+            scriptWithoutRet.Emit(OpCode.PUSH1);
+
+            using var scriptWithRet = new ScriptBuilder();
+            scriptWithRet.Emit(OpCode.PUSH1);
+            scriptWithRet.Emit(OpCode.RET);
+
+            using var engineWithoutRet = CreateHuyaoGatingEngine(huyaoEnabled: true, scriptWithoutRet.ToArray());
+            Assert.AreEqual(VMState.HALT, engineWithoutRet.Execute());
+
+            using var engineWithRet = CreateHuyaoGatingEngine(huyaoEnabled: true, scriptWithRet.ToArray());
+            Assert.AreEqual(VMState.HALT, engineWithRet.Execute());
+
+            // The synthetic RET the VM inserts at script end must not be charged, unlike an explicit RET.
+            Assert.IsLessThan(engineWithRet.FeeConsumed, engineWithoutRet.FeeConsumed);
         }
     }
 }

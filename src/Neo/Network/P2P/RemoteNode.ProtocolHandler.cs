@@ -30,11 +30,6 @@ namespace Neo.Network.P2P
     partial class RemoteNode
     {
         private class Timer { }
-        private class PendingKnownHashesCollection : KeyedCollectionSlim<UInt256, Tuple<UInt256, DateTime>>
-        {
-            protected override UInt256 GetKeyForItem(Tuple<UInt256, DateTime> item) => item.Item1;
-        }
-
         public static event MessageReceivedHandler MessageReceived
         {
             add => s_handlers.Add(value);
@@ -42,7 +37,7 @@ namespace Neo.Network.P2P
         }
 
         private static readonly List<MessageReceivedHandler> s_handlers = new();
-        private readonly PendingKnownHashesCollection _pendingKnownHashes = new();
+        private readonly HashSetCache<UInt256> _pendingKnownHashes;
         private readonly HashSetCache<UInt256> _knownHashes;
         private readonly HashSetCache<UInt256> _sentHashes;
         private bool _verack = false;
@@ -324,13 +319,23 @@ namespace Neo.Network.P2P
             switch (inventory)
             {
                 case Transaction transaction:
-                    if (!(_system.ContainsTransaction(transaction.Hash) != ContainsTransactionType.NotExist || _system.ContainsConflictHash(transaction.Hash, transaction.Signers.Select(s => s.Account))))
+                    if (!(_system.ContainsTransaction(transaction.Hash) != ContainsTransactionType.NotExist ||
+                        _system.ContainsConflictHash(transaction.Hash, transaction.Signers.Select(s => s.Account))))
+                    {
                         _system.TxRouter.Tell(new TransactionRouter.Preverify(transaction, true));
+                    }
                     break;
                 case Block block:
+                    var currentHeight = NativeContract.Ledger.CurrentIndex(_system.StoreView);
+                    if (block.Index > currentHeight &&
+                        block.Index - currentHeight > InvPayload.MaxHashesCount)
+                    {
+                        // Out of the accepted synchronization window: TaskManager was
+                        // already notified above so a matching task can still complete.
+                        break;
+                    }
                     UpdateLastBlockIndex(block.Index);
-                    if (block.Index > NativeContract.Ledger.CurrentIndex(_system.StoreView) + InvPayload.MaxHashesCount) return;
-                    _system.Blockchain.Tell(inventory);
+                    _system.Blockchain.Tell(block);
                     break;
                 default:
                     _system.Blockchain.Tell(inventory);
@@ -365,7 +370,7 @@ namespace Neo.Network.P2P
             }
             if (hashes.Length == 0) return;
             foreach (var hash in hashes)
-                _pendingKnownHashes.TryAdd(Tuple.Create(hash, TimeProvider.Current.UtcNow));
+                _pendingKnownHashes.TryAdd(hash);
             _system.TaskManager.Tell(new TaskManager.NewTasks(InvPayload.Create(payload.Type, hashes)));
         }
 
@@ -421,12 +426,7 @@ namespace Neo.Network.P2P
         private void OnTimer()
         {
             var oneMinuteAgo = TimeProvider.Current.UtcNow.AddMinutes(-1);
-            while (_pendingKnownHashes.Count > 0)
-            {
-                var (_, time) = _pendingKnownHashes.FirstOrDefault!;
-                if (oneMinuteAgo <= time) break;
-                if (!_pendingKnownHashes.RemoveFirst()) break;
-            }
+            _pendingKnownHashes.Prune(oneMinuteAgo);
             if (oneMinuteAgo > _lastSent)
                 EnqueueMessage(Message.Create(MessageCommand.Ping, PingPayload.Create(NativeContract.Ledger.CurrentIndex(_system.StoreView))));
         }

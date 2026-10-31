@@ -192,7 +192,8 @@ namespace Neo.SmartContract
                 if (script[++i] != 33) return false;
                 try
                 {
-                    points?.Add(ECPoint.DecodePoint(script.Slice(i + 1, 33), ECCurve.Secp256r1));
+                    var point = ECPoint.DecodePoint(script.Slice(i + 1, 33), ECCurve.Secp256r1);
+                    points?.Add(point);
                 }
                 catch (Exception) // Script may contain any data, thus exceptions are allowed on point decoding.
                 {
@@ -321,12 +322,13 @@ namespace Neo.SmartContract
         internal static bool VerifyWitness(this IVerifiable verifiable, ProtocolSettings settings, DataCache snapshot, UInt160 hash, Witness witness, long datoshi, out long fee)
         {
             fee = 0;
+            if (witness is null) return false;
             Script invocationScript;
             try
             {
                 invocationScript = new Script(witness.InvocationScript, true);
             }
-            catch (BadScriptException)
+            catch (Exception)
             {
                 return false;
             }
@@ -350,7 +352,7 @@ namespace Neo.SmartContract
                     {
                         verificationScript = new Script(witness.VerificationScript, true);
                     }
-                    catch (BadScriptException)
+                    catch (Exception)
                     {
                         return false;
                     }

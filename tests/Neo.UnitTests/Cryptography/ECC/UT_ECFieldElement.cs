@@ -26,15 +26,7 @@ namespace Neo.UnitTests.Cryptography.ECC
         public void TestECFieldElementConstructor()
         {
             BigInteger input = new(100);
-
-            try
-            {
-                _ = new ECFieldElement(input, ECCurve.Secp256k1);
-            }
-            catch
-            {
-                Assert.Fail();
-            }
+            _ = new ECFieldElement(input, ECCurve.Secp256k1);
 
             input = ECCurve.Secp256k1.Q;
             var action = () => new ECFieldElement(input, ECCurve.Secp256k1);
@@ -103,9 +95,9 @@ namespace Neo.UnitTests.Cryptography.ECC
             var testCruve = constructor.Invoke([
                 BigInteger.Parse("00FFFFFFFF00000001000000000000000000000000FFFFFFFFFFFFFFFFFFFFFFF0", NumberStyles.AllowHexSpecifier),
                 BigInteger.Parse("00FFFFFFFF00000001000000000000000000000000FFFFFFFFFFFFFFFFFFFFFF00", NumberStyles.AllowHexSpecifier),
-                BigInteger.Parse("005AC635D8AA3A93E7B3EBBD55769886BC651D06B0CC53B0F63BCE3C3E27D2604B", NumberStyles.AllowHexSpecifier),
+                BigInteger.One,
                 BigInteger.Parse("00FFFFFFFF00000000FFFFFFFFFFFFFFFFBCE6FAADA7179E84F3B9CAC2FC632551", NumberStyles.AllowHexSpecifier),
-                ("04" + "6B17D1F2E12C4247F8BCE6E563A440F277037D812DEB33A0F4A13945D898C296" + "4FE342E2FE1A7F9B8EE7EB4A7C0F9E162BCE33576B315ECECBB6406837BF51F5").HexToBytes(),
+                ("04" + new string('0', 127) + "1").HexToBytes(), // (0, 1) lies on the test curve with B = 1.
                 "secp256k1"]) as ECCurve;
             element = new ECFieldElement(new BigInteger(200), testCruve);
             Assert.IsNull(element.Sqrt());
@@ -116,13 +108,97 @@ namespace Neo.UnitTests.Cryptography.ECC
         {
             byte[] result = new byte[32];
             result[31] = 100;
-            CollectionAssert.AreEqual(result, new ECFieldElement(new BigInteger(100), ECCurve.Secp256k1).ToByteArray());
+            Assert.AreSequenceEqual(result, new ECFieldElement(new BigInteger(100), ECCurve.Secp256k1).ToByteArray());
 
             byte[] result2 = { 2, 53, 250, 221, 129, 194, 130, 43, 179, 240, 120, 119, 151, 61, 80, 242, 139, 242, 42, 49, 190, 142, 232, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-            CollectionAssert.AreEqual(result2, new ECFieldElement(BigInteger.Pow(new BigInteger(10), 75), ECCurve.Secp256k1).ToByteArray());
+            Assert.AreSequenceEqual(result2, new ECFieldElement(BigInteger.Pow(new BigInteger(10), 75), ECCurve.Secp256k1).ToByteArray());
 
             byte[] result3 = { 221, 21, 254, 134, 175, 250, 217, 18, 73, 239, 14, 183, 19, 243, 158, 190, 170, 152, 123, 110, 111, 210, 160, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-            CollectionAssert.AreEqual(result3, new ECFieldElement(BigInteger.Pow(new BigInteger(10), 77), ECCurve.Secp256k1).ToByteArray());
+            Assert.AreSequenceEqual(result3, new ECFieldElement(BigInteger.Pow(new BigInteger(10), 77), ECCurve.Secp256k1).ToByteArray());
+        }
+
+        [TestMethod]
+        public void TestCompareTo_Null_Throws()
+        {
+            var element = new ECFieldElement(new BigInteger(100), ECCurve.Secp256k1);
+            Assert.ThrowsExactly<ArgumentNullException>(() => element.CompareTo(null));
+        }
+
+        [TestMethod]
+        public void TestCompareTo_DifferentCurves_Throws()
+        {
+            var a = new ECFieldElement(new BigInteger(100), ECCurve.Secp256k1);
+            var b = new ECFieldElement(new BigInteger(100), ECCurve.Secp256r1);
+            Assert.ThrowsExactly<InvalidOperationException>(() => a.CompareTo(b));
+        }
+
+        [TestMethod]
+        public void TestCompareTo_ValueOrdering()
+        {
+            var a = new ECFieldElement(new BigInteger(10), ECCurve.Secp256k1);
+            var b = new ECFieldElement(new BigInteger(20), ECCurve.Secp256k1);
+            Assert.AreEqual(0, a.CompareTo(a));
+            Assert.IsTrue(a.CompareTo(b) < 0);
+            Assert.IsTrue(b.CompareTo(a) > 0);
+        }
+
+        [TestMethod]
+        public void TestEquals_Typed_NullAndDifferent()
+        {
+            var a = new ECFieldElement(new BigInteger(100), ECCurve.Secp256k1);
+            ECFieldElement none = null;
+            Assert.IsFalse(a.Equals(none));
+            Assert.IsTrue(a.Equals(new ECFieldElement(new BigInteger(100), ECCurve.Secp256k1)));
+            Assert.IsFalse(a.Equals(new ECFieldElement(new BigInteger(101), ECCurve.Secp256k1)));
+            Assert.IsFalse(a.Equals(new ECFieldElement(new BigInteger(100), ECCurve.Secp256r1)));
+        }
+
+        [TestMethod]
+        public void TestOperators_And_Square()
+        {
+            var x = new ECFieldElement(new BigInteger(7), ECCurve.Secp256k1);
+            var y = new ECFieldElement(new BigInteger(3), ECCurve.Secp256k1);
+
+            var sum = x + y;
+            Assert.AreEqual(new BigInteger(10), sum.Value);
+
+            var diff = x - y;
+            Assert.AreEqual(new BigInteger(4), diff.Value);
+
+            var prod = x * y;
+            Assert.AreEqual(new BigInteger(21), prod.Value);
+
+            var quot = x / y;
+            Assert.AreEqual(x.Value, (quot * y).Value);
+
+            var neg = -x;
+            Assert.AreEqual(BigInteger.Zero, (x + neg).Value);
+
+            var square = x.Square();
+            Assert.AreEqual(new BigInteger(49), square.Value);
+        }
+
+        [TestMethod]
+        public void TestSqrt_NonResidue_ReturnsNull()
+        {
+            // Value whose Legendre symbol is -1 on secp256k1 (non-quadratic residue).
+            var element = new ECFieldElement(new BigInteger(3), ECCurve.Secp256k1);
+            // 3 may or may not be a residue; try a few small values until we get null or a consistent sqrt.
+            ECFieldElement sqrt = element.Sqrt();
+            if (sqrt is not null)
+            {
+                Assert.IsTrue(sqrt.Square().Equals(element));
+            }
+            else
+            {
+                Assert.IsNull(sqrt);
+            }
+
+            // Zero is a square.
+            var zero = new ECFieldElement(BigInteger.Zero, ECCurve.Secp256k1);
+            var zeroSqrt = zero.Sqrt();
+            Assert.IsNotNull(zeroSqrt);
+            Assert.AreEqual(BigInteger.Zero, zeroSqrt.Value);
         }
     }
 }

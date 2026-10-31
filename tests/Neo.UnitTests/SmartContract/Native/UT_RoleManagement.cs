@@ -43,10 +43,12 @@ namespace Neo.UnitTests.SmartContract.Native
             var privateKey1 = new byte[32];
             var rng1 = RandomNumberGenerator.Create();
             rng1.GetBytes(privateKey1);
+
             var key1 = new KeyPair(privateKey1);
             var privateKey2 = new byte[32];
             var rng2 = RandomNumberGenerator.Create();
             rng2.GetBytes(privateKey2);
+
             var key2 = new KeyPair(privateKey2);
             var publicKeys = new ECPoint[2];
             publicKeys[0] = key1.PublicKey;
@@ -57,30 +59,64 @@ namespace Neo.UnitTests.SmartContract.Native
             foreach (var role in roles)
             {
                 var system = new TestBlockchain.TestNeoSystem(TestProtocolSettings.Default);
-
                 var snapshot1 = system.GetTestSnapshotCache(false);
                 var committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot1);
-                List<NotifyEventArgs> notifications = [];
+                var notifications = new List<NotifyEventArgs>();
                 void Ev(ApplicationEngine o, NotifyEventArgs e) => notifications.Add(e);
 
-                var ret = NativeContract.RoleManagement.Call(
-                    snapshot1,
-                    new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr),
-                    new Block
-                    {
-                        Header = (Header)RuntimeHelpers.GetUninitializedObject(typeof(Header)),
-                        Transactions = []
-                    },
-                    "designateAsRole", Ev,
-                    new ContractParameter(ContractParameterType.Integer) { Value = new BigInteger((int)role) },
-                    new ContractParameter(ContractParameterType.Array) { Value = publicKeys.Select(p => new ContractParameter(ContractParameterType.ByteArray) { Value = p.ToArray() }).ToList() }
+                var nodes = new List<ContractParameter>();
+                Assert.ThrowsExactly<ArgumentException>(() =>  // Cannot be empty.
+                {
+                    NativeContract.RoleManagement.Call(
+                        snapshot1,
+                        new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr),
+                        new Block { Header = (Header)RuntimeHelpers.GetUninitializedObject(typeof(Header)), Transactions = [] },
+                        "designateAsRole", Ev,
+                        new ContractParameter(ContractParameterType.Integer) { Value = new BigInteger((int)role) },
+                        new ContractParameter(ContractParameterType.Array) { Value = nodes }
+                    );
+                });
+
+                nodes = [new(ContractParameterType.ByteArray) { Value = publicKeys[0].ToArray() },
+                    new(ContractParameterType.ByteArray) { Value = publicKeys[0].ToArray() }];
+                Assert.ThrowsExactly<InvalidOperationException>(() =>  // Cannot contain duplicate elements.
+                {
+                    NativeContract.RoleManagement.Call(
+                        snapshot1,
+                        new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr),
+                        new Block { Header = (Header)RuntimeHelpers.GetUninitializedObject(typeof(Header)), Transactions = [] },
+                        "designateAsRole", Ev,
+                        new ContractParameter(ContractParameterType.Integer) { Value = new BigInteger((int)role) },
+                        new ContractParameter(ContractParameterType.Array) { Value = nodes }
+                    );
+                });
+
+                nodes = [.. publicKeys.Select(p => new ContractParameter(ContractParameterType.ByteArray) { Value = p.ToArray() })];
+                var ret = NativeContract.RoleManagement.Call( // Designate role.
+                   snapshot1,
+                   new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr),
+                   new Block { Header = (Header)RuntimeHelpers.GetUninitializedObject(typeof(Header)), Transactions = [] },
+                   "designateAsRole", Ev,
+                   new ContractParameter(ContractParameterType.Integer) { Value = new BigInteger((int)role) },
+                   new ContractParameter(ContractParameterType.Array) { Value = nodes }
                 );
                 snapshot1.Commit();
                 Assert.HasCount(1, notifications);
                 Assert.AreEqual("Designation", notifications[0].EventName);
 
-                var snapshot2 = system.GetTestSnapshotCache(false);
+                Assert.ThrowsExactly<InvalidOperationException>(() =>  // Cannot re-designate the same role.
+                {
+                    NativeContract.RoleManagement.Call(
+                        snapshot1,
+                        new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr),
+                        new Block { Header = (Header)RuntimeHelpers.GetUninitializedObject(typeof(Header)), Transactions = [] },
+                        "designateAsRole", Ev,
+                        new ContractParameter(ContractParameterType.Integer) { Value = new BigInteger((int)role) },
+                        new ContractParameter(ContractParameterType.Array) { Value = nodes }
+                    );
+                });
 
+                var snapshot2 = system.GetTestSnapshotCache(false);
                 ret = NativeContract.RoleManagement.Call(
                     snapshot2,
                     "getDesignatedByRole",
@@ -101,11 +137,6 @@ namespace Neo.UnitTests.SmartContract.Native
                 Assert.IsInstanceOfType<Array>(ret);
                 Assert.IsEmpty(ret as Array);
             }
-        }
-
-        private void ApplicationEngine_Notify(object sender, NotifyEventArgs e)
-        {
-            throw new NotImplementedException();
         }
     }
 }

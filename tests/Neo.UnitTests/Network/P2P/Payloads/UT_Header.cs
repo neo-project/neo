@@ -75,8 +75,8 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             Assert.AreEqual(uut.Timestamp, header.Timestamp);
             Assert.AreEqual(uut.Index, header.Index);
             Assert.AreEqual(uut.NextConsensus, header.NextConsensus);
-            CollectionAssert.AreEqual(uut.Witness.InvocationScript.ToArray(), header.Witness.InvocationScript.ToArray());
-            CollectionAssert.AreEqual(uut.Witness.VerificationScript.ToArray(), header.Witness.VerificationScript.ToArray());
+            Assert.AreSequenceEqual(uut.Witness.InvocationScript.ToArray(), header.Witness.InvocationScript.ToArray());
+            Assert.AreSequenceEqual(uut.Witness.VerificationScript.ToArray(), header.Witness.VerificationScript.ToArray());
             Assert.IsEmpty(trim.Hashes);
         }
 
@@ -93,10 +93,10 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         {
             var uut = TestUtils.MakeHeader(null, UInt256.Zero);
             var clone = uut.Clone();
-            CollectionAssert.AreEqual(uut.ToArray(), clone.ToArray());
+            Assert.AreSequenceEqual(uut.ToArray(), clone.ToArray());
             // Check not referenced
             uut.Witness.InvocationScript = new byte[123];
-            CollectionAssert.AreNotEqual(clone.Witness.InvocationScript.ToArray(), uut.Witness.InvocationScript.ToArray());
+            Assert.AreNotSequenceEqual(clone.Witness.InvocationScript.ToArray(), uut.Witness.InvocationScript.ToArray());
         }
 
         [TestMethod]

@@ -18,6 +18,7 @@ using Neo.Json;
 using Neo.VM.Types;
 using System;
 using System.Globalization;
+using System.Linq;
 using System.Numerics;
 
 namespace Neo.SmartContract.Native
@@ -40,7 +41,7 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 14)]
         private static StackItem Deserialize(ApplicationEngine engine, byte[] data)
         {
-            return BinarySerializer.Deserialize(data, engine.Limits, engine.ReferenceCounter);
+            return BinarySerializer.Deserialize(data, engine.Limits);
         }
 
         [ContractMethod(CpuFee = 1 << 12)]
@@ -54,7 +55,7 @@ namespace Neo.SmartContract.Native
         {
             JToken? token = JToken.Parse(json, 10);
             if (token is null) return StackItem.Null;
-            return JsonSerializer.Deserialize(engine, token, engine.Limits, engine.ReferenceCounter);
+            return JsonSerializer.Deserialize(engine, token, engine.Limits);
         }
 
         /// <summary>
@@ -79,8 +80,8 @@ namespace Neo.SmartContract.Native
         {
             return @base switch
             {
-                10 => value.ToString(),
-                16 => value.ToString("x"),
+                10 => value.ToString(CultureInfo.InvariantCulture),
+                16 => value.ToString("x", CultureInfo.InvariantCulture),
                 _ => throw new ArgumentOutOfRangeException(nameof(@base), $"Invalid base: {@base}")
             };
         }
@@ -260,11 +261,16 @@ namespace Neo.SmartContract.Native
         }
 
         [ContractMethod(CpuFee = 1 << 8)]
-        private static int StrLen([MaxLength(MaxInputLength)] string str)
+        private static int StrLen(ApplicationEngine engine, [MaxLength(MaxInputLength)] string str)
         {
-            // return the length of the string in elements
-            // it should return 1 for both  "🦆" and "ã"
+            // Starting from Huyao return the number of codepoints in the string -- it doesn't depend
+            // from the Unicode or the platform version.
+            if (engine.IsHardforkEnabled(Hardfork.HF_Huyao))
+            {
+                return str.EnumerateRunes().Count();
+            }
 
+            // Prior to Huyao return the number of grapheme clusters in the string.
             TextElementEnumerator enumerator = StringInfo.GetTextElementEnumerator(str);
             int count = 0;
 

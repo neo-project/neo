@@ -4,6 +4,9 @@
   <PropertyGroup>
     <LangVersion>latest</LangVersion>
     <IsPackable>false</IsPackable>
+    <!-- Console apps / BenchmarkDotNet — not unit-test projects. Prevents VS Test
+         from treating them as tests and building with an empty TargetFramework. -->
+    <IsTestProject>false</IsTestProject>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <WarningLevel>4</WarningLevel>
     <AnalysisLevel>latest</AnalysisLevel>

@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Neo.VM;
+using Neo.VM.Types;
 
 namespace Neo.SmartContract
 {
@@ -21,5 +22,6 @@ namespace Neo.SmartContract
         void ContextUnloaded(ExecutionContext context);
         void PreExecuteInstruction(Instruction instruction);
         void PostExecuteInstruction(Instruction instruction);
+        void CallFromNative(UInt160 hash, string method, StackItem[] args);
     }
 }

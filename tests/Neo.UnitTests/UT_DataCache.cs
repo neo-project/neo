@@ -48,7 +48,7 @@ namespace Neo.UnitTests
                 new StorageItem() { Value = ReadOnlyMemory<byte>.Empty }
             );
 
-            CollectionAssert.AreEqual(
+            Assert.AreSequenceEqual(
                 cache.Find(new byte[5]).Select(u => u.Key.Key.Span[1]).ToArray(),
                 new byte[] { 0x01, 0x02, 0x03 }
             );
@@ -77,7 +77,7 @@ namespace Neo.UnitTests
                 new StorageKey() { Key = new byte[] { 0x01, 0x02 }, Id = 0 },
                 new StorageItem() { Value = ReadOnlyMemory<byte>.Empty }
             );
-            CollectionAssert.AreEqual(
+            Assert.AreSequenceEqual(
                 cache.Find(new byte[5]).Select(u => u.Key.Key.Span[1]).ToArray(),
                 new byte[] { 0x01, 0x02 }
              );
@@ -99,7 +99,7 @@ namespace Neo.UnitTests
                 new StorageItem() { Value = ReadOnlyMemory<byte>.Empty }
             );
 
-            CollectionAssert.AreEqual(
+            Assert.AreSequenceEqual(
                 cache.Find(new byte[5]).Select(u => u.Key.Key.Span[1]).ToArray(),
                 new byte[] { 0x02 }
             );

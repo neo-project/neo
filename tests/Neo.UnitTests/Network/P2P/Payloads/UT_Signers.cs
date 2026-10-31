@@ -110,7 +110,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             };
 
             var hex = "000000000000000000000000000000000000000080";
-            CollectionAssert.AreEqual(attr.ToArray(), hex.HexToBytes());
+            Assert.AreSequenceEqual(attr.ToArray(), hex.HexToBytes());
 
             var copy = hex.HexToBytes().AsSerializable<Signer>();
 
@@ -128,7 +128,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             };
 
             var hex = "000000000000000000000000000000000000000001";
-            CollectionAssert.AreEqual(attr.ToArray(), hex.HexToBytes());
+            Assert.AreSequenceEqual(attr.ToArray(), hex.HexToBytes());
 
             var copy = hex.HexToBytes().AsSerializable<Signer>();
 
@@ -169,7 +169,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             };
 
             var hex = "00000000000000000000000000000000000000004001010201020102010001";
-            CollectionAssert.AreEqual(attr.ToArray(), hex.HexToBytes());
+            Assert.AreSequenceEqual(attr.ToArray(), hex.HexToBytes());
 
             Assert.ThrowsExactly<FormatException>(() => _ = hex.HexToBytes().AsSerializable<Signer>());
         }
@@ -207,7 +207,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             };
 
             var hex = "00000000000000000000000000000000000000004001010301030103010001";
-            CollectionAssert.AreEqual(attr.ToArray(), hex.HexToBytes());
+            Assert.AreSequenceEqual(attr.ToArray(), hex.HexToBytes());
 
             Assert.ThrowsExactly<FormatException>(() => _ = hex.HexToBytes().AsSerializable<Signer>());
         }
@@ -223,12 +223,12 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             };
 
             var hex = "000000000000000000000000000000000000000010010000000000000000000000000000000000000000";
-            CollectionAssert.AreEqual(attr.ToArray(), hex.HexToBytes());
+            Assert.AreSequenceEqual(attr.ToArray(), hex.HexToBytes());
 
             var copy = hex.HexToBytes().AsSerializable<Signer>();
 
             Assert.AreEqual(attr.Scopes, copy.Scopes);
-            CollectionAssert.AreEqual(attr.AllowedContracts, copy.AllowedContracts);
+            Assert.AreSequenceEqual(attr.AllowedContracts, copy.AllowedContracts);
             Assert.AreEqual(attr.Account, copy.Account);
         }
 
@@ -243,12 +243,12 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             };
 
             var hex = "0000000000000000000000000000000000000000200103b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c";
-            CollectionAssert.AreEqual(attr.ToArray(), hex.HexToBytes());
+            Assert.AreSequenceEqual(attr.ToArray(), hex.HexToBytes());
 
             var copy = hex.HexToBytes().AsSerializable<Signer>();
 
             Assert.AreEqual(attr.Scopes, copy.Scopes);
-            CollectionAssert.AreEqual(attr.AllowedGroups, copy.AllowedGroups);
+            Assert.AreSequenceEqual(attr.AllowedGroups, copy.AllowedGroups);
             Assert.AreEqual(attr.Account, copy.Account);
         }
 

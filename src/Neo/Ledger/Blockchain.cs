@@ -511,7 +511,7 @@ namespace Neo.Ledger
                 catch (Exception ex) when (handler.Target is Plugin plugin)
                 {
                     var cause = ex.InnerException ?? ex;
-                    Utility.Log(nameof(plugin.Name), LogLevel.Error, $"{plugin.Name} exception: {cause.Message}{Environment.NewLine}{cause.StackTrace}");
+                    Logs.RuntimeLogger.Error(cause, "{Plugin} exception: {Message}{StackTrace}", plugin.Name, cause.Message, cause.StackTrace);
                     switch (plugin.ExceptionPolicy)
                     {
                         case UnhandledExceptionPolicy.StopNode:
@@ -544,6 +544,13 @@ namespace Neo.Ledger
         {
             RelayResult rr = new(inventory, result);
             Sender.Tell(rr);
+
+            if (rr.Inventory is ExtensiblePayload && result != VerifyResult.Succeed)
+            {
+                // If the extensible payload is invalid, we don't want to publish it.
+                return;
+            }
+
             Context.System.EventStream.Publish(rr);
         }
 

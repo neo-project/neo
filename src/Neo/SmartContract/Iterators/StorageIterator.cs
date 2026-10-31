@@ -40,7 +40,7 @@ namespace Neo.SmartContract.Iterators
             return enumerator.MoveNext();
         }
 
-        public StackItem Value(IReferenceCounter? referenceCounter)
+        public StackItem Value()
         {
             ReadOnlyMemory<byte> key = enumerator.Current.Key.Key;
             ReadOnlyMemory<byte> value = enumerator.Current.Value.Value;
@@ -49,7 +49,7 @@ namespace Neo.SmartContract.Iterators
                 key = key[prefixLength..];
 
             StackItem item = options.HasFlag(FindOptions.DeserializeValues)
-                ? BinarySerializer.Deserialize(value, ExecutionEngineLimits.Default, referenceCounter)
+                ? BinarySerializer.Deserialize(value, ExecutionEngineLimits.Default)
                 : value;
 
             if (options.HasFlag(FindOptions.PickField0))
@@ -61,7 +61,7 @@ namespace Neo.SmartContract.Iterators
                 return key;
             if (options.HasFlag(FindOptions.ValuesOnly))
                 return item;
-            return new Struct(referenceCounter) { key, item };
+            return new Struct() { key, item };
         }
     }
 }

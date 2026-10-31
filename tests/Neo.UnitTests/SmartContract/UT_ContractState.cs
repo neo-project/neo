@@ -58,18 +58,18 @@ namespace Neo.UnitTests.SmartContract
         public void TestClone()
         {
             var clone = ((IInteroperable)contract).Clone() as ContractState;
-            CollectionAssert.AreEqual(
-                BinarySerializer.Serialize((clone as IInteroperable).ToStackItem(null), ExecutionEngineLimits.Default),
-                BinarySerializer.Serialize((contract as IInteroperable).ToStackItem(null), ExecutionEngineLimits.Default)
+            Assert.AreSequenceEqual(
+                BinarySerializer.Serialize((clone as IInteroperable).ToStackItem(), ExecutionEngineLimits.Default),
+                BinarySerializer.Serialize((contract as IInteroperable).ToStackItem(), ExecutionEngineLimits.Default)
                 );
 
             clone.Nef.CheckSum++;
             Assert.AreNotEqual(clone.Nef.CheckSum, contract.Nef.CheckSum);
             clone.Manifest.Name += "X";
             Assert.AreNotEqual(clone.Manifest.Name, contract.Manifest.Name);
-            CollectionAssert.AreNotEqual(
-                BinarySerializer.Serialize((clone as IInteroperable).ToStackItem(null), ExecutionEngineLimits.Default),
-                BinarySerializer.Serialize((contract as IInteroperable).ToStackItem(null), ExecutionEngineLimits.Default)
+            Assert.AreNotSequenceEqual(
+                BinarySerializer.Serialize((clone as IInteroperable).ToStackItem(), ExecutionEngineLimits.Default),
+                BinarySerializer.Serialize((contract as IInteroperable).ToStackItem(), ExecutionEngineLimits.Default)
                 );
         }
 
@@ -77,7 +77,7 @@ namespace Neo.UnitTests.SmartContract
         public void TestIInteroperable()
         {
             IInteroperable newContract = (ContractState)RuntimeHelpers.GetUninitializedObject(typeof(ContractState));
-            newContract.FromStackItem(contract.ToStackItem(null));
+            newContract.FromStackItem(contract.ToStackItem());
             Assert.AreEqual(contract.Manifest.ToJson().ToString(), ((ContractState)newContract).Manifest.ToJson().ToString());
             Assert.IsTrue(((ContractState)newContract).Script.Span.SequenceEqual(contract.Script.Span));
         }

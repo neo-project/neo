@@ -14,6 +14,7 @@ using Neo.SmartContract.Manifest;
 using Neo.SmartContract.Native;
 using Neo.VM;
 using System;
+using System.Numerics;
 using Array = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract
@@ -121,10 +122,10 @@ namespace Neo.SmartContract
         internal protected UInt160 CreateStandardAccount(ECPoint pubKey)
         {
             // In the unit of datoshi, 1 datoshi = 1e-8 GAS
-            long fee = IsHardforkEnabled(Hardfork.HF_Aspidochelone)
+            BigInteger fee = IsHardforkEnabled(Hardfork.HF_Aspidochelone)
                 ? CheckSigPrice
                 : 1 << 8;
-            AddFee(fee * _execFeeFactor);
+            AddFee(fee * _execFeeFactor, false);
             return Contract.CreateSignatureRedeemScript(pubKey).ToScriptHash();
         }
 
@@ -138,10 +139,10 @@ namespace Neo.SmartContract
         internal protected UInt160 CreateMultisigAccount(int m, ECPoint[] pubKeys)
         {
             // In the unit of datoshi, 1 datoshi = 1e-8 GAS
-            long fee = IsHardforkEnabled(Hardfork.HF_Aspidochelone)
+            BigInteger fee = IsHardforkEnabled(Hardfork.HF_Aspidochelone)
                 ? CheckSigPrice * pubKeys.Length
                 : 1 << 8;
-            AddFee(fee * _execFeeFactor);
+            AddFee(fee * _execFeeFactor, false);
             return Contract.CreateMultiSigRedeemScript(m, pubKeys).ToScriptHash();
         }
 

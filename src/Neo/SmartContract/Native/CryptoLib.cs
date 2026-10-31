@@ -39,8 +39,8 @@ namespace Neo.SmartContract.Native
         /// <param name="messageHash">The hash of the message that was signed.</param>
         /// <param name="signature">The 65-byte signature in format: r[32] + s[32] + v[1]. 64-bytes for eip-2098, where v must be 27 or 28.</param>
         /// <returns>The recovered public key in compressed format, or null if recovery fails.</returns>
-        [ContractMethod(Hardfork.HF_Echidna, CpuFee = 1 << 15, Name = "recoverSecp256K1")]
-        public static byte[]? RecoverSecp256K1(byte[] messageHash, byte[] signature)
+        [ContractMethod(Hardfork.HF_Huyao, CpuFee = 1 << 15, Name = "recoverSecp256K1")]
+        public static byte[]? RecoverSecp256K1V1(byte[] messageHash, byte[] signature)
         {
             // It will be checked in Crypto.ECRecover
             // if (signature.Length != 65 && signature.Length != 64)
@@ -49,6 +49,21 @@ namespace Neo.SmartContract.Native
             try
             {
                 var point = Crypto.ECRecover(signature, messageHash);
+                return point.EncodePoint(true);
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        // Compatibility only, doesn't check for R and S validity.
+        [ContractMethod(Hardfork.HF_Echidna, Hardfork.HF_Huyao, CpuFee = 1 << 15, Name = "recoverSecp256K1")]
+        public static byte[]? RecoverSecp256K1V0(byte[] messageHash, byte[] signature)
+        {
+            try
+            {
+                var point = Crypto.ECRecoverV0(signature, messageHash);
                 return point.EncodePoint(true);
             }
             catch
@@ -103,6 +118,14 @@ namespace Neo.SmartContract.Native
             return data.Keccak256();
         }
 
+        [ContractMethod(Hardfork.HF_Gorgon, CpuFee = 1 << 15, Name = "verifyWithECDsa")]
+        public static bool VerifyWithECDsaV2(byte[] message, byte[] pubkey, byte[] signature, NamedCurveHash curveHash)
+        {
+            if (!s_curves.TryGetValue(curveHash, out var ch))
+                throw new NotSupportedException($"Unsupported curve or hash algorithm: {curveHash}");
+            return Crypto.VerifySignature(message, signature, pubkey, ch.Curve, ch.HashAlgorithm);
+        }
+
         /// <summary>
         /// Verifies that a digital signature is appropriate for the provided key and message using the ECDSA algorithm.
         /// </summary>
@@ -111,13 +134,13 @@ namespace Neo.SmartContract.Native
         /// <param name="signature">The signature to be verified.</param>
         /// <param name="curveHash">A pair of the curve to be used by the ECDSA algorithm and the hasher function to be used to hash message.</param>
         /// <returns><see langword="true"/> if the signature is valid; otherwise, <see langword="false"/>.</returns>
-        [ContractMethod(Hardfork.HF_Cockatrice, CpuFee = 1 << 15)]
-        public static bool VerifyWithECDsa(byte[] message, byte[] pubkey, byte[] signature, NamedCurveHash curveHash)
+        [ContractMethod(Hardfork.HF_Cockatrice, Hardfork.HF_Gorgon, CpuFee = 1 << 15, Name = "verifyWithECDsa")]
+        public static bool VerifyWithECDsaV1(byte[] message, byte[] pubkey, byte[] signature, NamedCurveHash curveHash)
         {
             try
             {
                 var ch = s_curves[curveHash];
-                return Crypto.VerifySignature(message, signature, pubkey, ch.Curve, ch.HashAlgorithm);
+                return Crypto.VerifySignatureV0(message, signature, pubkey, ch.Curve, ch.HashAlgorithm);
             }
             catch (ArgumentException)
             {
@@ -134,12 +157,27 @@ namespace Neo.SmartContract.Native
 
             try
             {
-                return Crypto.VerifySignature(message, signature, pubkey, s_curves[curve].Curve);
+                return Crypto.VerifySignatureV0(message, signature, pubkey, s_curves[curve].Curve);
             }
             catch (ArgumentException)
             {
                 return false;
             }
+        }
+
+        [ContractMethod(Hardfork.HF_Gorgon, CpuFee = 1 << 15, Name = "verifyWithEd25519")]
+        public static bool VerifyWithEd25519V1(byte[] message, byte[] pubkey, byte[] signature)
+        {
+            if (signature.Length != Ed25519.SignatureSize)
+                throw new FormatException($"Signature size should be {Ed25519.SignatureSize}");
+
+            if (pubkey.Length != Ed25519.PublicKeySize)
+                throw new FormatException($"Public key size should be {Ed25519.PublicKeySize}");
+
+            var verifier = new Ed25519Signer();
+            verifier.Init(false, new Ed25519PublicKeyParameters(pubkey, 0));
+            verifier.BlockUpdate(message, 0, message.Length);
+            return verifier.VerifySignature(signature);
         }
 
         /// <summary>
@@ -149,13 +187,10 @@ namespace Neo.SmartContract.Native
         /// <param name="pubkey">The Ed25519 public key to be used.</param>
         /// <param name="signature">The signature to be verified.</param>
         /// <returns><see langword="true"/> if the signature is valid; otherwise, <see langword="false"/>.</returns>
-        [ContractMethod(Hardfork.HF_Echidna, CpuFee = 1 << 15)]
-        public static bool VerifyWithEd25519(byte[] message, byte[] pubkey, byte[] signature)
+        [ContractMethod(Hardfork.HF_Echidna, Hardfork.HF_Gorgon, CpuFee = 1 << 15, Name = "verifyWithEd25519")]
+        public static bool VerifyWithEd25519V0(byte[] message, byte[] pubkey, byte[] signature)
         {
-            if (signature.Length != Ed25519.SignatureSize)
-                return false;
-
-            if (pubkey.Length != Ed25519.PublicKeySize)
+            if (signature.Length != Ed25519.SignatureSize || pubkey.Length != Ed25519.PublicKeySize)
                 return false;
 
             try
@@ -165,7 +200,7 @@ namespace Neo.SmartContract.Native
                 verifier.BlockUpdate(message, 0, message.Length);
                 return verifier.VerifySignature(signature);
             }
-            catch (Exception)
+            catch
             {
                 return false;
             }

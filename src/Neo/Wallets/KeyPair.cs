@@ -43,21 +43,36 @@ namespace Neo.Wallets
         public UInt160 PublicKeyHash => PublicKey.EncodePoint(true).ToScriptHash();
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="KeyPair"/> class.
+        /// Initializes a new instance of the KeyPair class using the specified private key.
         /// </summary>
-        /// <param name="privateKey">The private key in the <see cref="KeyPair"/>.</param>
-        public KeyPair(byte[] privateKey)
+        /// <remarks>This constructor defaults to using the Secp256r1 (NIST P-256) elliptic curve. Use the other
+        /// constructor to specify a different curve if needed.</remarks>
+        /// <param name="privateKey">A byte array containing the private key to use for generating the key pair.</param>
+        public KeyPair(byte[] privateKey) : this(privateKey, ECCurve.Secp256r1)
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the KeyPair class using the specified private key and elliptic curve.
+        /// </summary>
+        /// <remarks>If privateKey is 32 bytes, the public key is derived from the curve's generator point and the
+        /// private key. For longer privateKey values, the public key is extracted from the provided bytes. The format of
+        /// privateKey must match the expected format for the specified curve.</remarks>
+        /// <param name="privateKey">A byte array containing the private key. Must be 32, 96, or 104 bytes in length, depending on the key format.</param>
+        /// <param name="curve">The elliptic curve to use for key generation and public key derivation.</param>
+        /// <exception cref="ArgumentException">Thrown if privateKey is not 32, 96, or 104 bytes in length.</exception>
+        public KeyPair(byte[] privateKey, ECCurve curve)
         {
             if (privateKey.Length != 32 && privateKey.Length != 96 && privateKey.Length != 104)
                 throw new ArgumentException($"Invalid private key length: {privateKey.Length}", nameof(privateKey));
             PrivateKey = privateKey[^32..];
             if (privateKey.Length == 32)
             {
-                PublicKey = ECCurve.Secp256r1.G * privateKey;
+                PublicKey = curve.G * privateKey;
             }
             else
             {
-                PublicKey = ECPoint.FromBytes(privateKey, ECCurve.Secp256r1);
+                PublicKey = ECPoint.FromBytes(privateKey, curve);
             }
         }
 

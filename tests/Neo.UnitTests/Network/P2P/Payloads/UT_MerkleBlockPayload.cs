@@ -47,7 +47,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             Assert.AreEqual(test.TxCount, clone.TxCount);
             Assert.AreEqual(test.Hashes.Length, clone.Hashes.Length);
             Assert.AreEqual(test.Flags.Length, clone.Flags.Length);
-            CollectionAssert.AreEqual(test.Hashes, clone.Hashes);
+            Assert.AreSequenceEqual(test.Hashes, clone.Hashes);
             Assert.IsTrue(test.Flags.Span.SequenceEqual(clone.Flags.Span));
         }
     }

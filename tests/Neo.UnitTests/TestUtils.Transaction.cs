@@ -85,7 +85,7 @@ namespace Neo.UnitTests
         public static Transaction CreateRandomHashTransaction()
         {
             var randomBytes = new byte[16];
-            TestRandom.NextBytes(randomBytes);
+            TestRandom.Value!.NextBytes(randomBytes);
             return new Transaction
             {
                 Script = randomBytes,

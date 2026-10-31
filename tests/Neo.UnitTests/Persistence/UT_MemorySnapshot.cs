@@ -96,7 +96,7 @@ namespace Neo.UnitTests.Persistence
             _snapshot.Commit();
 
             // After commit the snapshot, the value can be get from the store but still can not get from the snapshot
-            CollectionAssert.AreEqual(value1, _memoryStore.TryGet(key1));
+            Assert.AreSequenceEqual(value1, _memoryStore.TryGet(key1));
             Assert.IsNull(_snapshot.TryGet(key1));
 
             _snapshot.Delete(key1);
@@ -138,18 +138,18 @@ namespace Neo.UnitTests.Persistence
             // But can get the value from a new snapshot
             _snapshot.Commit();
             var snapshot2 = _memoryStore.GetSnapshot();
-            CollectionAssert.AreEqual(value1, _memoryStore.TryGet(key1));
+            Assert.AreSequenceEqual(value1, _memoryStore.TryGet(key1));
             Assert.IsNull(_snapshot.TryGet(key1));
             Assert.IsTrue(snapshot2.TryGet(key1, out var result));
-            CollectionAssert.AreEqual(value1, result);
+            Assert.AreSequenceEqual(value1, result);
 
             Assert.IsFalse(_snapshot.TryGet(key1, out var value2));
 
             Assert.IsTrue(snapshot2.TryGet(key1, out value2));
-            CollectionAssert.AreEqual(value1, value2);
+            Assert.AreSequenceEqual(value1, value2);
 
             Assert.IsTrue(_memoryStore.TryGet(key1, out value2));
-            CollectionAssert.AreEqual(value1, value2);
+            Assert.AreSequenceEqual(value1, value2);
 
             _snapshot.Delete(key1);
 
@@ -171,7 +171,7 @@ namespace Neo.UnitTests.Persistence
             snapshot2.Commit();
             Assert.IsNull(_snapshot.TryGet(key1));
             Assert.IsTrue(snapshot2.TryGet(key1, out result));
-            CollectionAssert.AreEqual(value1, result);
+            Assert.AreSequenceEqual(value1, result);
         }
     }
 }

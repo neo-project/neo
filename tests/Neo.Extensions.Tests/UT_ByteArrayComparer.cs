@@ -80,5 +80,70 @@ namespace Neo.Extensions.Tests
             y = [1, 2, 3, 4, 5, 6];
             Assert.IsGreaterThan(0, comparer.Compare(x, y));
         }
+
+        [TestMethod]
+        public void TestCompareSpan()
+        {
+            var comparer = ByteArrayComparer.Default;
+
+            ReadOnlySpan<byte> x = [];
+            ReadOnlySpan<byte> y = [];
+            Assert.AreEqual(0, comparer.Compare(x, y));
+
+            x = [1, 2, 3, 4, 5];
+            y = x.ToArray();
+            Assert.AreEqual(0, comparer.Compare(x, y));
+            Assert.AreEqual(0, comparer.Compare(x, x));
+
+            y = [];
+            Assert.IsGreaterThan(0, comparer.Compare(x, y));
+
+            x = [];
+            y = [1, 2, 3, 4, 5];
+            Assert.IsLessThan(0, comparer.Compare(x, y));
+
+            x = [1];
+            y = [];
+            Assert.IsGreaterThan(0, comparer.Compare(x, y));
+            y = x.ToArray();
+            Assert.AreEqual(0, comparer.Compare(x, y));
+
+            x = [1];
+            y = [2];
+            Assert.IsLessThan(0, comparer.Compare(x, y));
+
+            Assert.AreEqual(0, comparer.Compare([], []));
+
+            x = [1, 2, 3, 4, 5];
+            y = [1, 2, 3];
+            Assert.IsGreaterThan(0, comparer.Compare(x, y));
+
+            x = [1, 2, 3, 4, 5];
+            y = [1, 2, 3, 4, 5, 6];
+            Assert.IsLessThan(0, comparer.Compare(x, y));
+
+            // cases for reverse comparer
+            comparer = ByteArrayComparer.Reverse;
+
+            x = [3];
+            Assert.IsLessThan(0, comparer.Compare(x, y));
+
+            y = x.ToArray();
+            Assert.AreEqual(0, comparer.Compare(x, y));
+
+            x = [1];
+            y = [2];
+            Assert.IsGreaterThan(0, comparer.Compare(x, y));
+
+            Assert.AreEqual(0, comparer.Compare([], []));
+
+            x = [1, 2, 3, 4, 5];
+            y = [1, 2, 3];
+            Assert.IsLessThan(0, comparer.Compare(x, y));
+
+            x = [1, 2, 3, 4, 5];
+            y = [1, 2, 3, 4, 5, 6];
+            Assert.IsGreaterThan(0, comparer.Compare(x, y));
+        }
     }
 }

@@ -62,11 +62,11 @@ namespace Neo.UnitTests.Persistence
             Assert.IsTrue(view.Contains(key));
 
             // Test this[]
-            CollectionAssert.AreEqual(value, view[key]);
+            Assert.AreSequenceEqual(value, view[key]);
 
             // Test TryGet
             Assert.IsTrue(view.TryGet(key, out item));
-            CollectionAssert.AreEqual(value, item);
+            Assert.AreSequenceEqual(value, item);
         }
     }
 }

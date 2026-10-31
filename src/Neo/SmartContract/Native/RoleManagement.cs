@@ -72,10 +72,14 @@ namespace Neo.SmartContract.Native
 
             if (engine.PersistingBlock is null)
                 throw new InvalidOperationException("Persisting block is null");
+
             var index = engine.PersistingBlock.Index + 1;
             var key = CreateStorageKey((byte)role, index);
             if (engine.SnapshotCache.Contains(key))
                 throw new InvalidOperationException("Role already designated");
+
+            var deduplicated = nodes.Distinct().Count();
+            if (deduplicated != nodes.Length) throw new InvalidOperationException($"Duplicate publickeys are not allowed");
 
             NodeList list = new();
             list.AddRange(nodes);
@@ -83,14 +87,14 @@ namespace Neo.SmartContract.Native
             engine.SnapshotCache.Add(key, new StorageItem(list));
             if (engine.IsHardforkEnabled(Hardfork.HF_Echidna))
             {
-                var oldNodes = new VM.Types.Array(engine.ReferenceCounter, GetDesignatedByRole(engine.SnapshotCache, role, index - 1).Select(u => (ByteString)u.EncodePoint(true)));
-                var newNodes = new VM.Types.Array(engine.ReferenceCounter, nodes.Select(u => (ByteString)u.EncodePoint(true)));
+                var oldNodes = new VM.Types.Array(GetDesignatedByRole(engine.SnapshotCache, role, index - 1).Select(u => (ByteString)u.EncodePoint(true)));
+                var newNodes = new VM.Types.Array(nodes.Select(u => (ByteString)u.EncodePoint(true)));
 
-                engine.SendNotification(Hash, "Designation", new VM.Types.Array(engine.ReferenceCounter, [(int)role, engine.PersistingBlock.Index, oldNodes, newNodes]));
+                engine.SendNotification(Hash, "Designation", new VM.Types.Array([(int)role, engine.PersistingBlock.Index, oldNodes, newNodes]));
             }
             else
             {
-                engine.SendNotification(Hash, "Designation", new VM.Types.Array(engine.ReferenceCounter, [(int)role, engine.PersistingBlock.Index]));
+                engine.SendNotification(Hash, "Designation", new VM.Types.Array([(int)role, engine.PersistingBlock.Index]));
             }
         }
 
@@ -101,7 +105,7 @@ namespace Neo.SmartContract.Native
                 return ECPoint.DecodePoint(item.GetSpan(), ECCurve.Secp256r1);
             }
 
-            protected override StackItem ElementToStackItem(ECPoint element, IReferenceCounter? referenceCounter)
+            protected override StackItem ElementToStackItem(ECPoint element)
             {
                 return element.ToArray();
             }

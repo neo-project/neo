@@ -38,7 +38,7 @@ namespace Neo.SmartContract.Native
             {
                 if (NativeContracts.TryGetValue(native.Id, out var value)) return value;
 
-                uint index = engine.PersistingBlock is null ? Ledger.CurrentIndex(engine.SnapshotCache) : engine.PersistingBlock.Index;
+                uint index = engine.GetPersistingIndex();
                 CacheEntry methods = native.GetAllowedMethods(engine.ProtocolSettings.IsHardforkEnabled, index);
                 NativeContracts[native.Id] = methods;
                 return methods;
@@ -109,6 +109,11 @@ namespace Neo.SmartContract.Native
         /// Gets the instance of the <see cref="Treasury"/> class.
         /// </summary>
         public static Treasury Treasury { get; } = new();
+
+        /// <summary>
+        /// Gets the instance of the <see cref="TemporaryStorage"/> class.
+        /// </summary>
+        public static TemporaryStorage TemporaryStorage { get; } = new();
 
         #endregion
 
@@ -225,12 +230,8 @@ namespace Neo.SmartContract.Native
 
         internal static bool IsActive(IHardforkActivable u, IsHardforkEnabledDelegate hfChecker, uint blockHeight)
         {
-            return  // no hardfork is involved
-                    u.ActiveIn is null && u.DeprecatedIn is null ||
-                    // deprecated method hardfork is involved
-                    u.DeprecatedIn is not null && hfChecker(u.DeprecatedIn.Value, blockHeight) == false ||
-                    // active method hardfork is involved
-                    u.ActiveIn is not null && hfChecker(u.ActiveIn.Value, blockHeight);
+            // Method/event is active iff ActiveIn hardfork IS active AND DeprecatedIn hardfork IS NOT active.
+            return (u.ActiveIn is null || hfChecker(u.ActiveIn.Value, blockHeight)) && (u.DeprecatedIn is null || !hfChecker(u.DeprecatedIn.Value, blockHeight));
         }
 
         /// <summary>
@@ -333,7 +334,8 @@ namespace Neo.SmartContract.Native
         }
 
         /// <summary>
-        /// Is the native contract active
+        /// Is the native contract active.
+        /// A hardfork omitted from <paramref name="settings"/> stays inactive, matching <see cref="IsInitializeBlock"/>.
         /// </summary>
         /// <param name="settings">The <see cref="ProtocolSettings"/> where the HardForks are configured.</param>
         /// <param name="blockHeight">Block height</param>
@@ -342,11 +344,9 @@ namespace Neo.SmartContract.Native
         {
             if (ActiveIn is null) return true;
 
+            // If hf is not set in the configuration (with EnsureOmmitedHardforks applied over it), it is treated as disabled.
             if (!settings.Hardforks.TryGetValue(ActiveIn.Value, out var activeIn))
-            {
-                // If is not set in the configuration is treated as enabled from the genesis
-                activeIn = 0;
-            }
+                return false;
 
             return activeIn <= blockHeight;
         }
@@ -471,7 +471,7 @@ namespace Neo.SmartContract.Native
                     // In the unit of picoGAS, 1 picoGAS = 1e-12 GAS
                     engine.AddFee(
                         (method.CpuFee * engine.ExecFeePicoFactor) +
-                        (method.StorageFee * engine.StoragePrice * ApplicationEngine.FeeFactor));
+                        (method.StorageFee * engine.StoragePrice * ApplicationEngine.FeeFactor), false);
                 }
                 List<object?> parameters = new();
                 if (method.NeedApplicationEngine) parameters.Add(engine);

@@ -151,6 +151,21 @@ namespace Neo.UnitTests
             Assert.AreEqual("1", value.ToString());
             value = new BigDecimal(new BigInteger(123456), 5);
             Assert.AreEqual("1.23456", value.ToString());
+
+            value = new BigDecimal(new BigInteger(-1234), 2);
+            Assert.AreEqual("-12.34", value.ToString());
+            value = new BigDecimal(new BigInteger(-1200), 2);
+            Assert.AreEqual("-12", value.ToString());
+            value = new BigDecimal(new BigInteger(-1010), 2);
+            Assert.AreEqual("-10.1", value.ToString());
+            value = new BigDecimal(new BigInteger(-34), 2);
+            Assert.AreEqual("-0.34", value.ToString());
+            value = new BigDecimal(new BigInteger(-10), 2);
+            Assert.AreEqual("-0.1", value.ToString());
+            value = new BigDecimal(new BigInteger(-10), 0);
+            Assert.AreEqual("-10", value.ToString());
+            value = new BigDecimal(BigInteger.Zero, 2);
+            Assert.AreEqual("0", value.ToString());
         }
 
         [TestMethod]

@@ -58,7 +58,7 @@ namespace Neo.UnitTests.SmartContract
             byte[] script = new byte[32];
             ContractParameterType[] parameterList = new ContractParameterType[] { ContractParameterType.Signature };
             Contract contract = Contract.Create(parameterList, script);
-            Assert.AreEqual(contract.Script, script);
+            Assert.AreSequenceEqual(script, contract.Script);
             Assert.HasCount(1, contract.ParameterList);
             Assert.AreEqual(ContractParameterType.Signature, contract.ParameterList[0]);
         }
@@ -90,7 +90,7 @@ namespace Neo.UnitTests.SmartContract
             expectedArray[71] = (byte)OpCode.PUSH2;
             expectedArray[72] = (byte)OpCode.SYSCALL;
             Array.Copy(BitConverter.GetBytes(ApplicationEngine.System_Crypto_CheckMultisig), 0, expectedArray, 73, 4);
-            CollectionAssert.AreEqual(expectedArray, contract.Script);
+            Assert.AreSequenceEqual(expectedArray, contract.Script);
             Assert.HasCount(2, contract.ParameterList);
             Assert.AreEqual(ContractParameterType.Signature, contract.ParameterList[0]);
             Assert.AreEqual(ContractParameterType.Signature, contract.ParameterList[1]);
@@ -125,7 +125,7 @@ namespace Neo.UnitTests.SmartContract
             expectedArray[71] = (byte)OpCode.PUSH2;
             expectedArray[72] = (byte)OpCode.SYSCALL;
             Array.Copy(BitConverter.GetBytes(ApplicationEngine.System_Crypto_CheckMultisig), 0, expectedArray, 73, 4);
-            CollectionAssert.AreEqual(expectedArray, script);
+            Assert.AreSequenceEqual(expectedArray, script);
         }
 
         [TestMethod]
@@ -142,7 +142,7 @@ namespace Neo.UnitTests.SmartContract
             Array.Copy(key.PublicKey.EncodePoint(true), 0, expectedArray, 2, 33);
             expectedArray[35] = (byte)OpCode.SYSCALL;
             Array.Copy(BitConverter.GetBytes(ApplicationEngine.System_Crypto_CheckSig), 0, expectedArray, 36, 4);
-            CollectionAssert.AreEqual(expectedArray, contract.Script);
+            Assert.AreSequenceEqual(expectedArray, contract.Script);
             Assert.HasCount(1, contract.ParameterList);
             Assert.AreEqual(ContractParameterType.Signature, contract.ParameterList[0]);
         }
@@ -161,7 +161,7 @@ namespace Neo.UnitTests.SmartContract
             Array.Copy(key.PublicKey.EncodePoint(true), 0, expectedArray, 2, 33);
             expectedArray[35] = (byte)OpCode.SYSCALL;
             Array.Copy(BitConverter.GetBytes(ApplicationEngine.System_Crypto_CheckSig), 0, expectedArray, 36, 4);
-            CollectionAssert.AreEqual(expectedArray, script);
+            Assert.AreSequenceEqual(expectedArray, script);
         }
 
         [TestMethod]
@@ -176,9 +176,13 @@ namespace Neo.UnitTests.SmartContract
             byte[] invocation = new ScriptBuilder().EmitPush(UInt160.Zero).ToArray();
 
             var fee = PolicyContract.DefaultExecFeeFactor * (ApplicationEngine.OpCodePriceTable[(byte)OpCode.PUSHDATA1] * 2 + ApplicationEngine.OpCodePriceTable[(byte)OpCode.SYSCALL] + ApplicationEngine.CheckSigPrice);
+            var settings = TestProtocolSettings.Default with
+            {
+                Hardforks = TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_Gorgon, 1).SetItem(Hardfork.HF_Huyao, uint.MaxValue)
+            };
 
             using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification,
-                new Transaction { Signers = Array.Empty<Signer>(), Attributes = Array.Empty<TransactionAttribute>(), Witnesses = [] }, snapshot, settings: TestProtocolSettings.Default))
+                new Transaction { Signers = Array.Empty<Signer>(), Attributes = Array.Empty<TransactionAttribute>(), Witnesses = [] }, snapshot, settings: settings))
             {
                 engine.LoadScript(invocation.Concat(verification).ToArray(), configureState: p => p.CallFlags = CallFlags.None);
                 engine.Execute();
@@ -206,9 +210,13 @@ namespace Neo.UnitTests.SmartContract
             byte[] invocation = new ScriptBuilder().EmitPush(UInt160.Zero).EmitPush(UInt160.Zero).ToArray();
 
             long fee = PolicyContract.DefaultExecFeeFactor * (ApplicationEngine.OpCodePriceTable[(byte)OpCode.PUSHDATA1] * (2 + 2) + ApplicationEngine.OpCodePriceTable[(byte)OpCode.PUSHINT8] * 2 + ApplicationEngine.OpCodePriceTable[(byte)OpCode.SYSCALL] + ApplicationEngine.CheckSigPrice * 2);
+            var settings = TestProtocolSettings.Default with
+            {
+                Hardforks = TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_Gorgon, 1).SetItem(Hardfork.HF_Huyao, uint.MaxValue)
+            };
 
             using (ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Verification,
-                new Transaction { Signers = Array.Empty<Signer>(), Attributes = Array.Empty<TransactionAttribute>(), Witnesses = [] }, snapshot, settings: TestProtocolSettings.Default))
+                new Transaction { Signers = Array.Empty<Signer>(), Attributes = Array.Empty<TransactionAttribute>(), Witnesses = [] }, snapshot, settings: settings))
             {
                 engine.LoadScript(invocation.Concat(verification).ToArray(), configureState: p => p.CallFlags = CallFlags.None);
                 engine.Execute();

@@ -15,7 +15,6 @@ using Akka.TestKit.MsTest;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.IO;
 using Neo.Network.P2P;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -24,8 +23,6 @@ namespace Neo.UnitTests.Network.P2P
     [TestClass]
     public class UT_RemoteNodeMailbox : TestKit
     {
-        private static readonly Random TestRandom = new Random(1337); // use fixed seed for guaranteed determinism
-
         RemoteNodeMailbox uut;
 
         [TestCleanup]

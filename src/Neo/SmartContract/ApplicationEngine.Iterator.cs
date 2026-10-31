@@ -47,7 +47,7 @@ namespace Neo.SmartContract
         /// <returns>The element in the collection at the current position of the iterator.</returns>
         internal protected StackItem IteratorValue(IIterator iterator)
         {
-            return iterator.Value(ReferenceCounter);
+            return iterator.Value();
         }
     }
 }

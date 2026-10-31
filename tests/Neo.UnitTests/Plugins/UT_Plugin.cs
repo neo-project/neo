@@ -85,14 +85,7 @@ namespace Neo.UnitTests.Plugins
         public void TestGetVersion()
         {
             var pp = new TestPlugin();
-            try
-            {
-                _ = pp.Version.ToString();
-            }
-            catch (Exception ex)
-            {
-                Assert.Fail($"Should not throw but threw {ex}");
-            }
+            _ = pp.Version.ToString();
         }
 
         [TestMethod]
@@ -120,29 +113,15 @@ namespace Neo.UnitTests.Plugins
         {
             _ = new TestPlugin();
             // Ensure no exception is thrown
-            try
-            {
-                Blockchain.InvokeCommitting(null, null, null, null);
-                Blockchain.InvokeCommitted(null, null);
-            }
-            catch (Exception ex)
-            {
-                Assert.Fail($"InvokeCommitting or InvokeCommitted threw an exception: {ex.Message}");
-            }
+            Blockchain.InvokeCommitting(null, null, null, null);
+            Blockchain.InvokeCommitted(null, null);
 
             // Register TestNonPlugin that throws exceptions
             _ = new TestNonPlugin();
 
             // Ensure exception is thrown
-            Assert.ThrowsExactly<NotImplementedException>(() =>
-           {
-               Blockchain.InvokeCommitting(null, null, null, null);
-           });
-
-            Assert.ThrowsExactly<NotImplementedException>(() =>
-           {
-               Blockchain.InvokeCommitted(null, null);
-           });
+            Assert.ThrowsExactly<NotImplementedException>(() => Blockchain.InvokeCommitting(null, null, null, null));
+            Assert.ThrowsExactly<NotImplementedException>(() => Blockchain.InvokeCommitted(null, null));
         }
 
         [TestMethod]
@@ -151,15 +130,8 @@ namespace Neo.UnitTests.Plugins
             var pp = new TestPlugin();
             Assert.IsFalse(pp.IsStopped);
             // Ensure no exception is thrown
-            try
-            {
-                Blockchain.InvokeCommitting(null, null, null, null);
-                Blockchain.InvokeCommitted(null, null);
-            }
-            catch (Exception ex)
-            {
-                Assert.Fail($"InvokeCommitting or InvokeCommitted threw an exception: {ex.Message}");
-            }
+            Blockchain.InvokeCommitting(null, null, null, null);
+            Blockchain.InvokeCommitted(null, null);
 
             Assert.IsTrue(pp.IsStopped);
         }
@@ -171,15 +143,8 @@ namespace Neo.UnitTests.Plugins
             var pp = new TestPlugin();
             Assert.IsFalse(pp.IsStopped);
             // Ensure no exception is thrown
-            try
-            {
-                Blockchain.InvokeCommitting(null, null, null, null);
-                Blockchain.InvokeCommitted(null, null);
-            }
-            catch (Exception ex)
-            {
-                Assert.Fail($"InvokeCommitting or InvokeCommitted threw an exception: {ex.Message}");
-            }
+            Blockchain.InvokeCommitting(null, null, null, null);
+            Blockchain.InvokeCommitted(null, null);
 
             Assert.IsTrue(pp.IsStopped);
 
@@ -187,15 +152,8 @@ namespace Neo.UnitTests.Plugins
             var pp2 = new TestPlugin(UnhandledExceptionPolicy.Ignore);
             Assert.IsFalse(pp2.IsStopped);
             // Ensure no exception is thrown
-            try
-            {
-                Blockchain.InvokeCommitting(null, null, null, null);
-                Blockchain.InvokeCommitted(null, null);
-            }
-            catch (Exception ex)
-            {
-                Assert.Fail($"InvokeCommitting or InvokeCommitted threw an exception: {ex.Message}");
-            }
+            Blockchain.InvokeCommitting(null, null, null, null);
+            Blockchain.InvokeCommitted(null, null);
 
             Assert.IsFalse(pp2.IsStopped);
         }

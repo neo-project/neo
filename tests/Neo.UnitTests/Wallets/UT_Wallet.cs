@@ -21,8 +21,10 @@ using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.UnitTests.Cryptography;
 using Neo.Wallets;
+using Neo.Wallets.NEP6;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Numerics;
 using Helper = Neo.SmartContract.Helper;
@@ -31,11 +33,12 @@ namespace Neo.UnitTests.Wallets
 {
     internal class MyWallet : Wallet
     {
-        public override string Name => "MyWallet";
+        public override string Name { get; set; } = "MyWallet";
 
         public override Version Version => Version.Parse("0.0.1");
+        public override bool IsUnlocked => true;
 
-        private readonly Dictionary<UInt160, WalletAccount> accounts = new();
+        private readonly Dictionary<UInt160, WalletAccount> _accounts = [];
 
         public MyWallet() : base(null, TestProtocolSettings.Default) { }
 
@@ -46,12 +49,12 @@ namespace Neo.UnitTests.Wallets
 
         public override bool Contains(UInt160 scriptHash)
         {
-            return accounts.ContainsKey(scriptHash);
+            return _accounts.ContainsKey(scriptHash);
         }
 
         public void AddAccount(WalletAccount account)
         {
-            accounts.Add(account.ScriptHash, account);
+            _accounts.Add(account.ScriptHash, account);
         }
 
         public override WalletAccount CreateAccount(byte[] privateKey)
@@ -91,18 +94,18 @@ namespace Neo.UnitTests.Wallets
 
         public override bool DeleteAccount(UInt160 scriptHash)
         {
-            return accounts.Remove(scriptHash);
+            return _accounts.Remove(scriptHash);
         }
 
         public override WalletAccount GetAccount(UInt160 scriptHash)
         {
-            accounts.TryGetValue(scriptHash, out WalletAccount account);
+            _accounts.TryGetValue(scriptHash, out WalletAccount account);
             return account;
         }
 
         public override IEnumerable<WalletAccount> GetAccounts()
         {
-            return accounts.Values;
+            return _accounts.Values;
         }
 
         public override bool VerifyPassword(string password)
@@ -130,14 +133,7 @@ namespace Neo.UnitTests.Wallets
         public void TestContains()
         {
             MyWallet wallet = new();
-            try
-            {
-                wallet.Contains(UInt160.Zero);
-            }
-            catch (Exception)
-            {
-                Assert.Fail();
-            }
+            _ = wallet.Contains(UInt160.Zero);
         }
 
         [TestMethod]
@@ -202,29 +198,14 @@ namespace Neo.UnitTests.Wallets
         public void TestGetAccount2()
         {
             var wallet = new MyWallet();
-
-            try
-            {
-                wallet.GetAccount(UInt160.Zero);
-            }
-            catch (Exception)
-            {
-                Assert.Fail();
-            }
+            _ = wallet.GetAccount(UInt160.Zero);
         }
 
         [TestMethod]
         public void TestGetAccounts()
         {
             var wallet = new MyWallet();
-            try
-            {
-                wallet.GetAccounts();
-            }
-            catch (Exception)
-            {
-                Assert.Fail();
-            }
+            _ = wallet.GetAccounts();
         }
 
         [TestMethod]
@@ -280,7 +261,7 @@ namespace Neo.UnitTests.Wallets
             action = () => Wallet.GetPrivateKeyFromNEP2(nep2Key, "Test", ProtocolSettings.Default.AddressVersion, 2, 1, 1);
             Assert.ThrowsExactly<FormatException>(action);
 
-            CollectionAssert.AreEqual("000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f".HexToBytes(),
+            Assert.AreSequenceEqual("000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f".HexToBytes(),
                 Wallet.GetPrivateKeyFromNEP2(nep2Key, "pwd", ProtocolSettings.Default.AddressVersion, 2, 1, 1));
         }
 
@@ -293,7 +274,7 @@ namespace Neo.UnitTests.Wallets
             action = () => Wallet.GetPrivateKeyFromWIF("3vQB7B6MrGQZaxCuFg4oh");
             Assert.ThrowsExactly<FormatException>(action);
 
-            CollectionAssert.AreEqual("c7134d6fd8e73d819e82755c64c93788d8db0961929e025a53363c4cc02a6962".HexToBytes(),
+            Assert.AreSequenceEqual("c7134d6fd8e73d819e82755c64c93788d8db0961929e025a53363c4cc02a6962".HexToBytes(),
                 Wallet.GetPrivateKeyFromWIF("L3tgppXLgdaeqSGSFw1Go3skBiy8vQAM7YMXvTHsKQtE16PBncSU"));
         }
 
@@ -427,14 +408,7 @@ namespace Neo.UnitTests.Wallets
         public void TestVerifyPassword()
         {
             var wallet = new MyWallet();
-            try
-            {
-                wallet.VerifyPassword("Test");
-            }
-            catch (Exception)
-            {
-                Assert.Fail();
-            }
+            _ = wallet.VerifyPassword("Test");
         }
 
         [TestMethod]
@@ -452,7 +426,7 @@ namespace Neo.UnitTests.Wallets
 
             var signature = wallet.SignBlock(block, glkey.PublicKey, network);
             Assert.IsNotNull(signature);
-            Assert.AreEqual(64, signature.Length);
+            Assert.HasCount(64, signature);
 
             var signData = block.GetSignData(network);
             var isValid = Crypto.VerifySignature(signData, signature.Span, glkey.PublicKey);
@@ -472,6 +446,53 @@ namespace Neo.UnitTests.Wallets
             wallet.GetAccount(scriptHash).Lock = true;
             action = () => wallet.SignBlock(block, pair.PublicKey, network);
             Assert.ThrowsExactly<SignException>(action); // locked
+        }
+
+        [TestMethod]
+        [DataRow(1)]
+        [DataRow(3)]
+        public void TestSignMultiSigRespectsMemberLock(int memberCount)
+        {
+            var wallet = new MyWallet();
+            using var snapshot = TestBlockchain.GetTestSnapshotCache();
+            var locked = wallet.CreateAccount([.. new byte[32].Select(_ => (byte)1)]);
+            var unlocked = wallet.CreateAccount([.. new byte[32].Select(_ => (byte)2)]);
+            var externalKey = new KeyPair([.. new byte[32].Select(_ => (byte)3)]);
+            var lockedKey = locked.GetKey().PublicKey;
+            var unlockedKey = unlocked.GetKey().PublicKey;
+            var points = memberCount == 1 ? new[] { lockedKey } : [lockedKey, unlockedKey, externalKey.PublicKey];
+            var multiSig = wallet.CreateMultiSigAccount(memberCount == 1 ? 1 : 2, points);
+            var tx = new Transaction
+            {
+                Script = Array.Empty<byte>(),
+                Signers = [new Signer { Account = multiSig.ScriptHash, Scopes = WitnessScope.None }],
+                Attributes = [],
+                Witnesses = []
+            };
+            var context = new ContractParametersContext(snapshot, tx, wallet.ProtocolSettings.Network);
+
+            locked.Lock = true;
+            Assert.AreEqual(memberCount > 1, wallet.Sign(context));
+            Assert.IsFalse(context.Completed);
+            var signatures = context.GetSignatures(multiSig.ScriptHash);
+            Assert.AreNotEqual(true, signatures?.ContainsKey(lockedKey));
+            if (memberCount > 1)
+            {
+                Assert.IsNotNull(signatures);
+                Assert.HasCount(1, signatures);
+                Assert.IsTrue(Crypto.VerifySignature(tx.GetSignData(context.Network), signatures[unlockedKey], unlockedKey));
+            }
+
+            locked.Lock = false;
+            Assert.IsTrue(wallet.Sign(context));
+            Assert.IsTrue(context.Completed);
+            Assert.IsTrue(context.GetSignatures(multiSig.ScriptHash).ContainsKey(lockedKey));
+
+            multiSig.Lock = true;
+            context = new ContractParametersContext(snapshot, tx, wallet.ProtocolSettings.Network);
+            Assert.IsFalse(wallet.Sign(context));
+            Assert.IsFalse(context.Completed);
+            Assert.IsNull(context.GetSignatures(multiSig.ScriptHash));
         }
 
         [TestMethod]
@@ -538,7 +559,7 @@ namespace Neo.UnitTests.Wallets
             Assert.AreNotEqual(expectedWalletAccount1.ScriptHash, actualMultiSigAccount1.ScriptHash);
             Assert.AreEqual(expectedAccountKey1.PublicKey, actualMultiSigAccount1.GetKey().PublicKey);
             Assert.IsTrue(Helper.IsMultiSigContract(actualMultiSigAccount1.Contract.Script));
-            Assert.IsTrue(expectedWallet.GetMultiSigAccounts().Contains(actualMultiSigAccount1));
+            Assert.Contains(actualMultiSigAccount1, expectedWallet.GetMultiSigAccounts());
 
             var notExpectedAccountKeys = new ECPoint[1025];
             Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => expectedWallet.CreateMultiSigAccount());
@@ -550,7 +571,22 @@ namespace Neo.UnitTests.Wallets
             Assert.AreNotEqual(expectedWalletAccount2.ScriptHash, actualMultiSigAccount2.ScriptHash);
             Assert.Contains(actualMultiSigAccount2.GetKey().PublicKey, [expectedAccountKey1.PublicKey, expectedAccountKey2.PublicKey, expectedAccountKey3.PublicKey]);
             Assert.IsTrue(Helper.IsMultiSigContract(actualMultiSigAccount2.Contract.Script));
-            Assert.IsTrue(expectedWallet.GetMultiSigAccounts().Contains(actualMultiSigAccount2));
+            Assert.Contains(actualMultiSigAccount2, expectedWallet.GetMultiSigAccounts());
+        }
+
+        [TestMethod]
+        public void TestIsUnlocked()
+        {
+            var settings = TestProtocolSettings.Default;
+            var walletPath = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid():N}.json");
+
+            if (File.Exists(walletPath)) File.Delete(walletPath);
+
+            var lockedWallet = new NEP6Wallet(walletPath, null, settings, name: "test");
+            Assert.IsFalse(lockedWallet.IsUnlocked);
+
+            var unlockedWallet = new NEP6Wallet(walletPath, "pwd", settings, name: "test");
+            Assert.IsTrue(unlockedWallet.IsUnlocked);
         }
     }
 }

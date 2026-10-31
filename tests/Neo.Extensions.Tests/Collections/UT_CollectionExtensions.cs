@@ -24,16 +24,16 @@ namespace Neo.Extensions.Tests.Collections
             var chunks = source.Chunk(3).GetEnumerator();
 
             Assert.IsTrue(chunks.MoveNext());
-            CollectionAssert.AreEqual(new[] { 1, 2, 3 }, chunks.Current);
+            Assert.AreSequenceEqual(new[] { 1, 2, 3 }, chunks.Current);
 
             Assert.IsTrue(chunks.MoveNext());
-            CollectionAssert.AreEqual(new[] { 4, 5, 6 }, chunks.Current);
+            Assert.AreSequenceEqual(new[] { 4, 5, 6 }, chunks.Current);
 
             Assert.IsTrue(chunks.MoveNext());
-            CollectionAssert.AreEqual(new[] { 7, 8, 9 }, chunks.Current);
+            Assert.AreSequenceEqual(new[] { 7, 8, 9 }, chunks.Current);
 
             Assert.IsTrue(chunks.MoveNext());
-            CollectionAssert.AreEqual(new[] { 10 }, chunks.Current);
+            Assert.AreSequenceEqual(new[] { 10 }, chunks.Current);
 
             // Empty source
             var empty = new List<int>();
@@ -55,10 +55,10 @@ namespace Neo.Extensions.Tests.Collections
             chunks = hashSet.Chunk(3).GetEnumerator();
 
             Assert.IsTrue(chunks.MoveNext());
-            CollectionAssert.AreEqual(new[] { 1, 2, 3 }, chunks.Current);
+            Assert.AreSequenceEqual(new[] { 1, 2, 3 }, chunks.Current);
 
             Assert.IsTrue(chunks.MoveNext());
-            CollectionAssert.AreEqual(new[] { 4 }, chunks.Current);
+            Assert.AreSequenceEqual(new[] { 4 }, chunks.Current);
         }
 
         [TestMethod]

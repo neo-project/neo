@@ -43,7 +43,7 @@ namespace Neo.UnitTests.SmartContract
             }
             byte[] script1 = Contract.CreateMultiSigRedeemScript(20, publicKeys1);
             Assert.IsTrue(Helper.IsMultiSigContract(script1, out _, out ECPoint[] p1));
-            CollectionAssert.AreEqual(publicKeys1.OrderBy(p => p).ToArray(), p1);
+            Assert.AreSequenceEqual(publicKeys1.OrderBy(p => p).ToArray(), p1);
 
             ECPoint[] publicKeys2 = new ECPoint[256];
             for (int i = 0; i < 256; i++)
@@ -56,7 +56,7 @@ namespace Neo.UnitTests.SmartContract
             }
             byte[] script2 = Contract.CreateMultiSigRedeemScript(256, publicKeys2);
             Assert.IsTrue(Helper.IsMultiSigContract(script2, out _, out ECPoint[] p2));
-            CollectionAssert.AreEqual(publicKeys2.OrderBy(p => p).ToArray(), p2);
+            Assert.AreSequenceEqual(publicKeys2.OrderBy(p => p).ToArray(), p2);
 
             ECPoint[] publicKeys3 = new ECPoint[3];
             for (int i = 0; i < 3; i++)
@@ -69,7 +69,7 @@ namespace Neo.UnitTests.SmartContract
             }
             byte[] script3 = Contract.CreateMultiSigRedeemScript(3, publicKeys3);
             Assert.IsTrue(Helper.IsMultiSigContract(script3, out _, out ECPoint[] p3));
-            CollectionAssert.AreEqual(publicKeys3.OrderBy(p => p).ToArray(), p3);
+            Assert.AreSequenceEqual(publicKeys3.OrderBy(p => p).ToArray(), p3);
 
             ECPoint[] publicKeys4 = new ECPoint[3];
             for (int i = 0; i < 3; i++)

@@ -86,17 +86,17 @@ namespace Neo.UnitTests.IO
             }
 
             // Read Error
-            Assert.ThrowsExactly<FormatException>(() =>
+            void ReadTooMany()
             {
                 var reader = new MemoryReader(data);
                 reader.ReadNullableArray<UInt160>(2);
-                Assert.Fail();
-            });
+            }
+            Assert.ThrowsExactly<FormatException>(ReadTooMany);
 
             // Read 100%
             var reader = new MemoryReader(data);
             var read = reader.ReadNullableArray<UInt160>();
-            CollectionAssert.AreEqual(caseArray, read);
+            Assert.AreSequenceEqual(caseArray, read);
         }
 
         [TestMethod]
@@ -114,7 +114,7 @@ namespace Neo.UnitTests.IO
             var byteArray = data.CompressLz4();
             var result = byteArray.Span.DecompressLz4(byte.MaxValue);
 
-            CollectionAssert.AreEqual(result, data);
+            Assert.AreSequenceEqual(result, data);
 
             // Compress
 
@@ -125,7 +125,7 @@ namespace Neo.UnitTests.IO
             result = byteArray.Span.DecompressLz4(byte.MaxValue);
 
             Assert.IsLessThan(result.Length, byteArray.Length);
-            CollectionAssert.AreEqual(result, data);
+            Assert.AreSequenceEqual(result, data);
 
             // Error max length
 

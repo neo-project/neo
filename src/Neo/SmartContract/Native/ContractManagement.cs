@@ -12,6 +12,7 @@
 #pragma warning disable IDE0051
 
 using Neo.Extensions;
+using Neo.IO;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract.Iterators;
@@ -65,7 +66,7 @@ namespace Neo.SmartContract.Native
             ContractMethodDescriptor? md = contract.Manifest.Abi.GetMethod(ContractBasicMethod.Deploy, ContractBasicMethod.DeployPCount);
             if (md is not null)
                 await engine.CallFromNativeContractAsync(Hash, contract.Hash, md.Name, data, update);
-            engine.SendNotification(Hash, update ? "Update" : "Deploy", new Array(engine.ReferenceCounter) { contract.Hash.ToArray() });
+            engine.SendNotification(Hash, update ? "Update" : "Deploy", new Array() { contract.Hash.ToArray() });
         }
 
         internal override async ContractTask OnPersistAsync(ApplicationEngine engine)
@@ -112,7 +113,7 @@ namespace Neo.SmartContract.Native
                     }
 
                     // Emit native contract notification
-                    engine.SendNotification(Hash, state is null ? "Deploy" : "Update", new Array(engine.ReferenceCounter) { contract.Hash.ToArray() });
+                    engine.SendNotification(Hash, state is null ? "Deploy" : "Update", new Array() { contract.Hash.ToArray() });
                 }
             }
         }
@@ -158,6 +159,33 @@ namespace Neo.SmartContract.Native
         }
 
         /// <summary>
+        /// Gets ID of the contract with the specified hash. Does not perform full
+        /// contract state deserialization hence may be used as an optimized version
+        /// of GetContract is only ID is needed.
+        /// </summary>
+        /// <param name="snapshot">The snapshot used to read data.</param>
+        /// <param name="hash">The contract hash.</param>
+        /// <returns>ID of the contract (if exists).</returns>
+        public int? GetContractId(IReadOnlyStore snapshot, UInt160 hash)
+        {
+            var key = CreateStorageKey(Prefix_Contract, hash);
+            if (!snapshot.TryGet(key, out var item))
+                return null;
+
+            MemoryReader reader = new(item.Value);
+            var type = (StackItemType)reader.ReadByte(); // ContractState container type.
+            if (type != StackItemType.Array)
+                return null;
+            int count = (int)reader.ReadVarInt(); // the number of items in ContractState.
+            if (count < 5)
+                return null;
+            type = (StackItemType)reader.ReadByte(); // the type of the first item (contract ID).
+            if (type != StackItemType.Integer)
+                return null;
+            return (int)new BigInteger(reader.ReadVarMemory(Integer.MaxSize).Span); // the ID itself.
+        }
+
+        /// <summary>
         /// Check if exists the deployed contract with the specified hash.
         /// </summary>
         /// <param name="snapshot">The snapshot used to read data.</param>
@@ -189,7 +217,7 @@ namespace Neo.SmartContract.Native
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <returns>Iterator with hashes of all deployed contracts.</returns>
         [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.ReadStates)]
-        private IIterator GetContractHashes(IReadOnlyStore snapshot)
+        public IIterator GetContractHashes(IReadOnlyStore snapshot)
         {
             const FindOptions options = FindOptions.RemovePrefix;
             var prefixKey = CreateStorageKey(Prefix_ContractHash);
@@ -269,8 +297,7 @@ namespace Neo.SmartContract.Native
 
             // In the unit of picoGAS, 1 picoGAS = 1e-12 GAS
             engine.AddFee(BigInteger.Max(engine.StoragePrice * (nefFile.Length + manifest.Length),
-                GetMinimumDeploymentFee(engine.SnapshotCache))
-                * ApplicationEngine.FeeFactor);
+                GetMinimumDeploymentFee(engine.SnapshotCache)), true);
 
             NefFile nef = nefFile.AsSerializable<NefFile>();
             ContractManifest parsedManifest = ContractManifest.Parse(manifest);
@@ -336,7 +363,7 @@ namespace Neo.SmartContract.Native
             if (nefFile is null && manifest is null)
                 throw new ArgumentException("NEF file and manifest cannot both be null.");
 
-            engine.AddFee(engine.StoragePrice * ApplicationEngine.FeeFactor * ((nefFile?.Length ?? 0) + (manifest?.Length ?? 0)));
+            engine.AddFee(engine.StoragePrice * ((nefFile?.Length ?? 0) + (manifest?.Length ?? 0)), true);
 
             var contractState = engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_Contract, engine.CallingScriptHash!))
                 ?? throw new InvalidOperationException($"Updating Contract Does Not Exist: {engine.CallingScriptHash}");
@@ -376,26 +403,64 @@ namespace Neo.SmartContract.Native
         }
 
         /// <summary>
-        /// Destroys a contract.
+        /// Destroys a contract. Pre-Gorgon version of `destroy` that blocks the contract's account
+        /// *after* removing the contract state and contract storage items from the snapshot.
         /// </summary>
         /// <param name="engine">The engine used to write data.</param>
-        [ContractMethod(CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
-        private async ContractTask Destroy(ApplicationEngine engine)
+        [ContractMethod(true, Hardfork.HF_Gorgon, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify, Name = "destroy")]
+        private async ContractTask DestroyV0(ApplicationEngine engine)
+        {
+            await DestroyInternal(engine, false);
+        }
+
+        /// <summary>
+        /// Destroys a contract. Post-Gorgon version of `destroy` that blocks the contract's account
+        /// *prior to* removing the contract state and contract storage items from the snapshot.
+        /// </summary>
+        /// <param name="engine">The engine used to write data.</param>
+        [ContractMethod(Hardfork.HF_Gorgon, CpuFee = 1 << 15, RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify, Name = "destroy")]
+        private async ContractTask DestroyV1(ApplicationEngine engine)
+        {
+            await DestroyInternal(engine, true);
+        }
+
+        /// <summary>
+        /// An internal representation of `destroy` method that destroys a contract.
+        /// </summary>
+        /// <param name="engine">The engine used to write data.</param>
+        /// <param name="blockBeforeErase">Denotes whether the contract account blocking should happen before the contract state and storage items removal from the storage.</param>
+        private async ContractTask DestroyInternal(ApplicationEngine engine, bool blockBeforeErase)
         {
             UInt160 hash = engine.CallingScriptHash!;
             StorageKey ckey = CreateStorageKey(Prefix_Contract, hash);
             ContractState? contract = engine.SnapshotCache.TryGet(ckey)?.GetInteroperable<ContractState>(false);
             if (contract is null) return;
+
+            if (blockBeforeErase)
+            {
+                // Lock contract (and allow to receive an unclaimed GAS after votes revoke, if so,
+                // because the contract is not yet removed from the snapshot).
+                await Policy.BlockAccountInternal(engine, hash);
+                // Clean whitelist (emit event if exists with the old manifest information).
+                Policy.CleanWhitelist(engine, contract);
+            }
+
             engine.SnapshotCache.Delete(ckey);
             engine.SnapshotCache.Delete(CreateStorageKey(Prefix_ContractHash, contract.Id));
             foreach (var (key, _) in engine.SnapshotCache.Find(StorageKey.CreateSearchPrefix(contract.Id, ReadOnlySpan<byte>.Empty)))
                 engine.SnapshotCache.Delete(key);
-            // lock contract
-            await Policy.BlockAccountInternal(engine, hash);
-            // Clean whitelist (emit event if exists with the old manifest information)
-            Policy.CleanWhitelist(engine, contract);
-            // emit event
-            engine.SendNotification(Hash, "Destroy", new Array(engine.ReferenceCounter) { hash.ToArray() });
+
+            if (!blockBeforeErase)
+            {
+                // Lock contract (and skip any side calls like onNEP17Payment on votes revoke
+                // because the contract is already removed from the snapshot).
+                await Policy.BlockAccountInternal(engine, hash);
+                // Clean whitelist (emit event if exists with the old manifest information).
+                Policy.CleanWhitelist(engine, contract);
+            }
+
+            // Emit event.
+            engine.SendNotification(Hash, "Destroy", new Array() { hash.ToArray() });
         }
     }
 }

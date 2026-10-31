@@ -107,7 +107,7 @@ namespace Neo.UnitTests.Builders
                 .AttachSystem(sb => sb.Emit(OpCode.NOP))
                 .Build();
 
-            CollectionAssert.AreEqual(expectedScript, tx.Script.ToArray());
+            Assert.AreSequenceEqual(expectedScript, tx.Script.ToArray());
             Assert.IsNotNull(tx.Hash);
         }
 
