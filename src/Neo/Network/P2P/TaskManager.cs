@@ -114,7 +114,7 @@ namespace Neo.Network.P2P
             hashes.Remove(_knownHashes);
             // Add to AvailableTasks the ones, of type InventoryType.Block, that are global (already under process by other sessions)
             if (payload.Type == InventoryType.Block)
-                session.AvailableTasks.UnionWith(hashes.Where(p => globalInvTasks.ContainsKey(p)));
+                session.AvailableTasks.UnionWith(hashes.Where(p => globalInvTasks.ContainsKey(p) && !session.InvTasks.ContainsKey(p)));
 
             // Remove those that are already in process by other sessions
             hashes.Remove(globalInvTasks);
@@ -140,6 +140,7 @@ namespace Neo.Network.P2P
             lastSeenPersistedIndex = block.Index;
 
             foreach (var (actor, session) in sessions)
+            {
                 if (session.ReceivedBlockHashes.Remove(block.Index, out var receivedBlockHash))
                 {
                     if (block.Hash == receivedBlockHash)
@@ -147,6 +148,11 @@ namespace Neo.Network.P2P
                     else
                         actor.Tell(Tcp.Abort.Instance);
                 }
+
+                // Safety net: drop any remaining entries for heights at or below the one
+                // just persisted, so they cannot linger until the peer disconnects.
+                session.ReceivedBlockHashes.RemoveWhere(p => p.Key <= block.Index);
+            }
         }
 
         protected override void OnReceive(object message)
@@ -207,6 +213,11 @@ namespace Neo.Network.P2P
             foreach (var hash in payload.Hashes)
             {
                 globalInvTasks.Remove(hash);
+                foreach (var session in sessions.Values)
+                {
+                    session.AvailableTasks.Remove(hash);
+                    session.InvTasks.Remove(hash);
+                }
             }
 
             foreach (var group in InvPayload.CreateGroup(payload.Type, payload.Hashes))
@@ -217,42 +228,64 @@ namespace Neo.Network.P2P
 
         private void OnTaskCompleted(IInventory inventory)
         {
-            var block = inventory as Block;
             _knownHashes.TryAdd(inventory.Hash);
             globalInvTasks.Remove(inventory.Hash);
-            if (block is not null)
+
+            if (inventory is Block block)
             {
                 globalIndexTasks.Remove(block.Index);
             }
 
+            // Clear the entry from every session, not only the sender's: with
+            // MaxConcurrentTasks allowing the same hash/index to be assigned to more
+            // than one session, leaving it behind on the others would let a later
+            // OnTimer/DecrementGlobalTask steal the slot from whichever session was
+            // reassigned to it in the meantime.
             foreach (var ms in sessions.Values)
             {
                 ms.AvailableTasks.Remove(inventory.Hash);
+                ms.InvTasks.Remove(inventory.Hash);
+
+                if (inventory is Block completedBlock)
+                    ms.IndexTasks.Remove(completedBlock.Index);
             }
 
-            if (sessions.TryGetValue(Sender, out var session))
+            if (!sessions.TryGetValue(Sender, out var session) || session is null)
+                return;
+
+            if (inventory is Block requestedBlock)
             {
-                session.InvTasks.Remove(inventory.Hash);
-                if (block is not null)
-                {
-                    session.IndexTasks.Remove(block.Index);
-                    if (session.ReceivedBlockHashes.TryGetValue(block.Index, out var blockOldHash))
-                    {
-                        if (block.Hash != blockOldHash)
-                        {
-                            Sender.Tell(Tcp.Abort.Instance);
-                            return;
-                        }
-                    }
-                    else
-                    {
-                        session.ReceivedBlockHashes.Add(block.Index, block.Hash);
-                    }
-                }
-                else
-                {
-                    RequestTasks(Sender, session);
-                }
+                TrackReceivedBlockHash(session, requestedBlock);
+            }
+            else
+            {
+                RequestTasks(Sender, session);
+            }
+        }
+
+        /// <summary>
+        /// Records index -> hash for a block received from the sending peer, as long as
+        /// its height is within the window RequestTasks and OnPersistCompleted care about.
+        /// </summary>
+        private void TrackReceivedBlockHash(TaskSession session, Block block)
+        {
+            var currentHeight = NativeContract.Ledger.CurrentIndex(system.StoreView);
+
+            if (block.Index <= currentHeight)
+                return;
+
+            // Overflow-safe: block.Index > currentHeight is already guaranteed above.
+            if (block.Index - currentHeight > InvPayload.MaxHashesCount)
+                return;
+
+            if (session.ReceivedBlockHashes.TryGetValue(block.Index, out var previousHash))
+            {
+                if (block.Hash != previousHash)
+                    Sender.Tell(Tcp.Abort.Instance);
+            }
+            else
+            {
+                session.ReceivedBlockHashes.Add(block.Index, block.Hash);
             }
         }
 
@@ -365,12 +398,13 @@ namespace Neo.Network.P2P
             if (session.AvailableTasks.Count > 0)
             {
                 session.AvailableTasks.Remove(_knownHashes);
+                session.AvailableTasks.Remove(session.InvTasks);
                 // Search any similar hash that is on Singleton's knowledge, which means, on the way or already processed
                 session.AvailableTasks.RemoveWhere(p => NativeContract.Ledger.ContainsBlock(snapshot, p));
                 HashSet<UInt256> hashes = [.. session.AvailableTasks];
+                hashes.RemoveWhere(p => !IncrementGlobalTask(p));
                 if (hashes.Count > 0)
                 {
-                    hashes.RemoveWhere(p => !IncrementGlobalTask(p));
                     session.AvailableTasks.Remove(hashes);
 
                     foreach (UInt256 hash in hashes)
@@ -387,7 +421,10 @@ namespace Neo.Network.P2P
             // When the number of AvailableTasks is no more than 0,
             // no pending tasks of InventoryType.Block, it should process pending the tasks of headers
             // If not HeaderTask pending to be processed it should ask for more Blocks
-            if ((!HasHeaderTask || globalInvTasks[HeaderTaskHash] < MaxConcurrentTasks) && headerHeight < session.LastBlockIndex && !system.HeaderCache.Full)
+            if (!session.InvTasks.ContainsKey(HeaderTaskHash) &&
+                (!HasHeaderTask || globalInvTasks[HeaderTaskHash] < MaxConcurrentTasks) &&
+                headerHeight < session.LastBlockIndex &&
+                !system.HeaderCache.Full)
             {
                 session.InvTasks[HeaderTaskHash] = DateTime.UtcNow;
                 IncrementGlobalTask(HeaderTaskHash);
@@ -396,11 +433,27 @@ namespace Neo.Network.P2P
             else if (currentHeight < session.LastBlockIndex)
             {
                 uint startHeight = currentHeight + 1;
-                while (globalIndexTasks.ContainsKey(startHeight) || session.ReceivedBlockHashes.ContainsKey(startHeight)) { startHeight++; }
-                if (startHeight > session.LastBlockIndex || startHeight >= currentHeight + InvPayload.MaxHashesCount) return;
+                // Bound the scan by uint.MaxValue so it cannot wrap to 0 if every height up to
+                // uint.MaxValue is already tracked (mirrors the endHeight scan guard below).
+                while (startHeight < uint.MaxValue && (globalIndexTasks.ContainsKey(startHeight) || session.ReceivedBlockHashes.ContainsKey(startHeight))) { startHeight++; }
+                // Avoid uint overflow: compare via subtraction (startHeight >= currentHeight here) instead of currentHeight + MaxHashesCount
+                // which can wrap when currentHeight is near uint.MaxValue.
+                // The loop above may leave startHeight == uint.MaxValue still tracked (it stopped there instead of wrapping) so re-check it explicitly rather than assuming it is free.
+                if (startHeight > session.LastBlockIndex ||
+                    startHeight - currentHeight >= InvPayload.MaxHashesCount ||
+                    globalIndexTasks.ContainsKey(startHeight) ||
+                    session.ReceivedBlockHashes.ContainsKey(startHeight)) return;
+
                 uint endHeight = startHeight;
-                while (!globalIndexTasks.ContainsKey(++endHeight) && endHeight <= session.LastBlockIndex && endHeight <= currentHeight + InvPayload.MaxHashesCount) { }
-                uint count = Math.Min(endHeight - startHeight, InvPayload.MaxHashesCount);
+                while (endHeight < uint.MaxValue)
+                {
+                    var next = endHeight + 1;
+                    if (globalIndexTasks.ContainsKey(next) || next > session.LastBlockIndex || next - currentHeight > InvPayload.MaxHashesCount)
+                        break;
+                    endHeight = next;
+                }
+
+                uint count = Math.Min(endHeight - startHeight + 1, InvPayload.MaxHashesCount);
                 for (uint i = 0; i < count; i++)
                 {
                     session.IndexTasks[startHeight + i] = TimeProvider.Current.UtcNow;

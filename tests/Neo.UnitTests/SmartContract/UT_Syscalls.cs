@@ -187,7 +187,7 @@ namespace Neo.UnitTests.SmartContract
 
                 var settings = TestProtocolSettings.Default with
                 {
-                    Hardforks = TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_Gorgon, 1)
+                    Hardforks = TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_Gorgon, 1).Remove(Hardfork.HF_Huyao)
                 };
                 var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: settings, gas: 100_000_000);
                 engine.LoadScript(script.ToArray());
@@ -210,7 +210,11 @@ namespace Neo.UnitTests.SmartContract
 
                 // Execute
 
-                var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
+                var settings = TestProtocolSettings.Default with
+                {
+                    Hardforks = TestProtocolSettings.Default.Hardforks.Remove(Hardfork.HF_Huyao)
+                };
+                var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: settings);
                 engine.LoadScript(script.ToArray());
 
                 // Check the results
@@ -220,6 +224,69 @@ namespace Neo.UnitTests.SmartContract
                 Assert.IsInstanceOfType(engine.ResultStack.Peek(), typeof(Integer));
                 Assert.AreEqual(1999999520, engine.ResultStack.Pop().GetInteger());
             }
+        }
+
+        [TestMethod]
+        public void System_Runtime_GetRandom_VerificationPrice()
+        {
+            var snapshot = _snapshotCache.CloneCache();
+
+            using var script = new ScriptBuilder();
+            script.EmitSysCall(ApplicationEngine.System_Runtime_GetRandom);
+            script.Emit(OpCode.DROP);
+
+            long GetFee(uint huyaoHeight)
+            {
+                var settings = TestProtocolSettings.Default with
+                {
+                    Hardforks = TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_Huyao, huyaoHeight)
+                };
+                var engine = ApplicationEngine.Create(TriggerType.Verification, null, snapshot, null, settings);
+                engine.LoadScript(script.ToArray(), configureState: p => p.CallFlags = CallFlags.ReadOnly);
+                Assert.AreEqual(VMState.HALT, engine.Execute());
+                return engine.FeeConsumed;
+            }
+
+            // Huyao is configured, but the ledger is still below its height. Verification
+            // engine has no persisting block, so the height must be taken from the ledger.
+            Assert.IsLessThan(100u, NativeContract.Ledger.CurrentIndex(snapshot));
+            // GetRandom in-handler fee (1 << 13) + DROP (1 << 1), multiplied by the default ExecFeeFactor (30) = 245820 datoshi.
+            Assert.AreEqual(245820, GetFee(100));
+
+            // GetRandom (15833) + DROP (99 * 1 + 1486), multiplied by 1e-11 GAS * the default ExecFeeFactor (30) = 522.54
+            // datoshi since Huyao, rounded up.
+            Assert.AreEqual(523, GetFee(0));
+        }
+
+        [TestMethod]
+        public void System_Runtime_Log_PriceSinceHuyao()
+        {
+            var snapshot = _snapshotCache.CloneCache();
+
+            using var script = new ScriptBuilder();
+            script.EmitPush("a");
+            script.EmitSysCall(ApplicationEngine.System_Runtime_Log);
+
+            long GetFee(ProtocolSettings settings)
+            {
+                var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: settings);
+                engine.LoadScript(script.ToArray());
+                Assert.AreEqual(VMState.HALT, engine.Execute());
+                return engine.FeeConsumed;
+            }
+
+            var feeBefore = GetFee(TestProtocolSettings.Default with
+            {
+                Hardforks = TestProtocolSettings.Default.Hardforks.Remove(Hardfork.HF_Huyao)
+            });
+            var feeAfter = GetFee(TestProtocolSettings.Default);
+
+            // PUSHDATA1 (1 << 3) + Log (1 << 15), multiplied by ExecFeeFactor = 983280 datoshi before Huyao.
+            Assert.AreEqual(983280, feeBefore);
+            // PUSHDATA1 (1685) + Log (31767), multiplied by 1e-11 GAS * ExecFeeFactor = 1003.56 datoshi
+            // since Huyao, rounded up.
+            Assert.AreEqual(1004, feeAfter);
+            Assert.IsLessThan(feeBefore, feeAfter);
         }
 
         [TestMethod]

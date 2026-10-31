@@ -1135,7 +1135,7 @@ namespace Neo.UnitTests.SmartContract.Native
             ok = Neo.SmartContract.Native.CryptoLib.VerifyWithECDsaV2(message, key.PublicKey.EncodePoint(false), sign, NamedCurveHash.secp256r1SHA256);
             Assert.IsTrue(ok);
 
-            Assert.ThrowsExactly<ArgumentException>(() => Neo.SmartContract.Native.CryptoLib.VerifyWithECDsaV2(message, key.PublicKey.EncodePoint(false), sign, NamedCurveHash.secp256k1SHA256));
+            Assert.ThrowsExactly<FormatException>(() => Neo.SmartContract.Native.CryptoLib.VerifyWithECDsaV2(message, key.PublicKey.EncodePoint(false), sign, NamedCurveHash.secp256k1SHA256));
             // ArithmeticException, but should be ArgumentException
             byte[] invalidPublicKey = [0x03, .. Enumerable.Repeat<byte>(0x03, 32)];
             Assert.ThrowsExactly<ArithmeticException>(() => Neo.SmartContract.Native.CryptoLib.VerifyWithECDsaV2(message, invalidPublicKey, sign, NamedCurveHash.secp256k1SHA256));

@@ -21,6 +21,7 @@ using Neo.VM.Types;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Linq;
 using System.Numerics;
 using System.Reflection;
@@ -39,6 +40,7 @@ namespace Neo.SmartContract
         protected static readonly JumpTable DefaultJumpTable = ComposeDefaultJumpTable();
         protected static readonly JumpTable NotEchidnaJumpTable = ComposeNotEchidnaJumpTable();
         protected static readonly JumpTable NotGorgonJumpTable = ComposeNotGorgonJumpTable();
+        protected static readonly JumpTable NotHuyaoJumpTable = ComposeNotHuyaoJumpTable();
 
         /// <summary>
         /// The maximum cost that can be spent when a contract is executed in test mode.
@@ -91,6 +93,11 @@ namespace Neo.SmartContract
         /// Charges VM instruction price after opcode execution. Applied starting from Huyao hardfork.
         /// </summary>
         private readonly Action<Instruction?, RunStats?>? _postExecuteInstruction;
+        /// <summary>
+        /// Denotes whether the currently executed context is whitelisted. Filled in prior to every
+        /// instruction execution.
+        /// </summary>
+        private bool _whitelisted;
 
         /// <summary>
         /// Gets or sets the provider used to create the <see cref="ApplicationEngine"/>.
@@ -112,6 +119,7 @@ namespace Neo.SmartContract
         /// <summary>
         /// The trigger of the execution.
         /// </summary>
+        [InteropPrice(Hardfork.HF_Huyao, 8700)]
         public TriggerType Trigger { get; }
 
         /// <summary>
@@ -132,6 +140,7 @@ namespace Neo.SmartContract
 
         /// <summary>
         /// The block being persisted. This field could be <see langword="null"/> if the <see cref="Trigger"/> is <see cref="TriggerType.Verification"/>.
+        /// Use <see cref="GetPersistingIndex()"/> to get the index of persisting block.
         /// </summary>
         public Block? PersistingBlock { get; }
 
@@ -176,6 +185,7 @@ namespace Neo.SmartContract
         /// The remaining GAS that can be spent in order to complete the execution.
         /// In the unit of datoshi, 1 datoshi = 1e-8 GAS, 1 GAS = 1e8 datoshi
         /// </summary>
+        [InteropPrice(Hardfork.HF_Huyao, 8900)]
         public long GasLeft
         {
             get
@@ -195,11 +205,13 @@ namespace Neo.SmartContract
         /// <summary>
         /// The script hash of the current context. This field could be <see langword="null"/> if no context is loaded to the engine.
         /// </summary>
+        [InteropPrice(Hardfork.HF_Huyao, 9900)]
         public UInt160? CurrentScriptHash => CurrentContext?.GetScriptHash();
 
         /// <summary>
         /// The script hash of the calling contract. This field could be <see langword="null"/> if the current context is the entry context.
         /// </summary>
+        [InteropPrice(Hardfork.HF_Huyao, 9567)]
         public virtual UInt160? CallingScriptHash
         {
             get
@@ -213,6 +225,7 @@ namespace Neo.SmartContract
         /// <summary>
         /// The script hash of the entry context. This field could be <see langword="null"/> if no context is loaded to the engine.
         /// </summary>
+        [InteropPrice(Hardfork.HF_Huyao, 9900)]
         public virtual UInt160? EntryScriptHash => EntryContext?.GetScriptHash();
 
         /// <summary>
@@ -254,9 +267,9 @@ namespace Neo.SmartContract
             DynamicPriceTable = dynamicPriceTable ?? DefaultDynamicPriceTable.Clone();
             nonceData = container is Transaction tx ? tx.Hash.ToArray()[..16] : new byte[16];
 
-            var persistingIndex = persistingBlock?.Index ?? (snapshotCache is null ? 0 : NativeContract.Ledger.CurrentIndex(snapshotCache));
+            var persistingIndex = GetPersistingIndex();
 
-            if (snapshotCache is null || persistingBlock?.Index == 0)
+            if (snapshotCache is null || persistingIndex == 0)
             {
                 // Policy storage isn't available yet (genesis or no snapshot): fall back to the defaults.
                 _execFeeFactor = PolicyContract.DefaultExecFeeFactor * FeeFactor; // Add fee decimals
@@ -281,14 +294,24 @@ namespace Neo.SmartContract
             }
 
             if (settings == null || !settings.IsHardforkEnabled(Hardfork.HF_Huyao, persistingIndex))
-                _preExecuteInstruction = instruction => AddFee(_execFeeFactor * OpCodePriceTable[(byte)instruction.OpCode], false);
+                _preExecuteInstruction = instruction =>
+                {
+                    _whitelisted = CurrentContext?.GetState<ExecutionContextState>()?.WhiteListed ?? false;
+                    AddFee(_execFeeFactor * OpCodePriceTable[(byte)instruction.OpCode], false);
+                };
             else
+            {
+                _preExecuteInstruction = instruction =>
+                {
+                    _whitelisted = CurrentContext?.GetState<ExecutionContextState>()?.WhiteListed ?? false;
+                };
                 _postExecuteInstruction = (instruction, runStats) =>
                 {
                     var stats = runStats ?? new RunStats();
                     long price = instruction is null ? 0 : OpcodeV1((long)_execFeeFactor, instruction.OpCode, stats);
                     AddFemtoGas(price, false);
                 };
+            }
 
             if (persistingBlock is not null)
             {
@@ -321,7 +344,7 @@ namespace Neo.SmartContract
 
         public static JumpTable ComposeNotGorgonJumpTable()
         {
-            var table = ComposeDefaultJumpTable();
+            var table = ComposeNotHuyaoJumpTable();
 
             // Before https://github.com/neo-project/neo-vm/pull/543
             table[OpCode.HASKEY] = HasKey_Before543;
@@ -332,6 +355,16 @@ namespace Neo.SmartContract
             // Before https://github.com/neo-project/neo-vm/pull/567.
             table[OpCode.SHR] = VulnerableSHR;
             table[OpCode.SHL] = VulnerableSHL;
+
+            return table;
+        }
+
+        public static JumpTable ComposeNotHuyaoJumpTable()
+        {
+            var table = ComposeDefaultJumpTable();
+
+            // Before https://github.com/neo-project/neo-vm/pull/606
+            table[OpCode.SETITEM] = SetItem_Before606;
 
             return table;
         }
@@ -425,6 +458,88 @@ namespace Neo.SmartContract
                 default:
                     throw new InvalidOperationException($"Invalid type for {instruction.OpCode}: {x.Type}");
             }
+        }
+
+        private static void SetItem_Before606(ExecutionEngine engine, Instruction instruction, ref RunStats runStats)
+        {
+            var value = engine.PopNoRef();
+            var nClonedItems = 0;
+            var (r1, r2) = (engine.ReferenceCounter.Count, engine.ReferenceCounter.Count);
+            if (value is Struct s)
+            {
+                engine.ReferenceCounter.RemoveStackReference(value);
+                r2 = engine.ReferenceCounter.Count;
+                value = s.Clone(engine.Limits, out nClonedItems);
+                engine.ReferenceCounter.AddStackReference(value);
+            }
+            var r3 = engine.ReferenceCounter.Count;
+            var key = engine.Pop<PrimitiveType>();
+            var x = engine.Pop();
+            switch (x)
+            {
+                case VMArray array:
+                    {
+                        var index = key.GetInteger();
+                        if (index < 0 || index >= array.Count)
+                        {
+                            engine.ReferenceCounter.RemoveStackReference(value);
+                            var r4 = engine.ReferenceCounter.Count;
+                            engine.JumpTable.ExecuteThrow(engine, $"The index of {nameof(VMArray)} is out of range, {index}/[0, {array.Count}).", out int refsDelta);
+                            runStats.CollectRefDelta((r1 - r2) + (r3 - r2) + (r3 - r4) + refsDelta);
+                            runStats.CollectClonedItems(nClonedItems);
+                            return;
+                        }
+                        var i = (int)index;
+                        if (array.IsStackReferenced)
+                            engine.ReferenceCounter.RemoveStackReference(array[i]);
+                        else
+                            engine.ReferenceCounter.RemoveStackReference(value);
+                        array[i] = value;
+                        break;
+                    }
+                case Map map:
+                    {
+                        if (map.IsStackReferenced)
+                        {
+                            if (map.TryGetValue(key, out var value1))
+                            {
+                                engine.ReferenceCounter.RemoveStackReference(value1);
+                            }
+                            else
+                            {
+                                engine.ReferenceCounter.AddStackReference(key);
+                            }
+                        }
+                        else
+                            engine.ReferenceCounter.RemoveStackReference(value);
+                        map[key] = value;
+                        break;
+                    }
+                case Buffer buffer:
+                    {
+                        engine.ReferenceCounter.RemoveStackReference(value);
+                        var index = key.GetInteger();
+                        if (index < 0 || index >= buffer.Size)
+                        {
+                            var r4 = engine.ReferenceCounter.Count;
+                            engine.JumpTable.ExecuteThrow(engine, $"The index of {nameof(Buffer)} is out of range, {index}/[0, {buffer.Size}).", out int refsDelta);
+                            runStats.CollectRefDelta((r1 - r2) + (r3 - r2) + (r3 - r4) + refsDelta);
+                            runStats.CollectClonedItems(nClonedItems);
+                            return;
+                        }
+                        if (value is not PrimitiveType p)
+                            throw new InvalidOperationException($"Only primitive type values can be set in {nameof(Buffer)} in {instruction.OpCode}.");
+                        var b = p.GetInteger();
+                        if (b < sbyte.MinValue || b > byte.MaxValue)
+                            throw new InvalidOperationException($"Overflow in {instruction.OpCode}, {b} is not a byte type.");
+                        buffer.InnerBuffer.Span[(int)index] = (byte)b;
+                        break;
+                    }
+                default:
+                    throw new InvalidOperationException($"Invalid type for {instruction.OpCode}: {x.Type}");
+            }
+            runStats.CollectRefDelta((r1 - r2) + (r3 - r2) + (r3 - engine.ReferenceCounter.Count));
+            runStats.CollectClonedItems(nClonedItems);
         }
 
         private static void PickItem_Before543(ExecutionEngine engine, Instruction instruction, ref RunStats _)
@@ -595,11 +710,10 @@ namespace Neo.SmartContract
                 throw new InvalidOperationException("AddFemtoGas can't be negative.");
             }
 
-            // Check whitelist
-
-            if (CurrentContext?.GetState<ExecutionContextState>()?.WhiteListed == true)
+            // Check whitelist.
+            if (_whitelisted)
             {
-                // The execution is whitelisted
+                // The execution is whitelisted.
                 return;
             }
 
@@ -764,15 +878,19 @@ namespace Neo.SmartContract
         /// <returns>The engine instance created.</returns>
         public static ApplicationEngine Create(TriggerType trigger, IVerifiable? container, DataCache snapshot, Block? persistingBlock = null, ProtocolSettings? settings = null, long gas = TestModeGas, IDiagnostic? diagnostic = null)
         {
-            var index = persistingBlock?.Index ?? NativeContract.Ledger.CurrentIndex(snapshot);
+            var index = GetPersistingIndex(persistingBlock, snapshot);
             settings ??= ProtocolSettings.Default;
             // Adjust jump table according persistingBlock
 
             JumpTable jumpTable;
 
-            if (settings.IsHardforkEnabled(Hardfork.HF_Gorgon, index))
+            if (settings.IsHardforkEnabled(Hardfork.HF_Huyao, index))
             {
                 jumpTable = DefaultJumpTable;
+            }
+            else if (settings.IsHardforkEnabled(Hardfork.HF_Gorgon, index))
+            {
+                jumpTable = NotHuyaoJumpTable;
             }
             else
             {
@@ -815,7 +933,7 @@ namespace Neo.SmartContract
             if (index + count > x.Length)
                 throw new InvalidOperationException($"The index + count is out of range for {nameof(OpCode.SUBSTR)}, index: {index}, count: {count}, {index + count}/[0, {x.Length}].");
 
-            Buffer result = new(count, false);
+            Buffer result = new(count);
             x.Slice(index, count).CopyTo(result.InnerBuffer.Span);
             engine.Push(result);
         }
@@ -1043,7 +1161,7 @@ namespace Neo.SmartContract
         protected virtual void OnSysCall(InteropDescriptor descriptor)
         {
             ValidateCallFlags(descriptor.RequiredCallFlags);
-            AddFee(descriptor.FixedPrice * _execFeeFactor, false);
+            AddFemtoGas(GetSysCallPrice(descriptor), false);
 
             object?[] parameters = new object?[descriptor.Parameters.Count];
             for (int i = 0; i < parameters.Length; i++)
@@ -1052,6 +1170,24 @@ namespace Neo.SmartContract
             object? returnValue = descriptor.Handler.Invoke(this, parameters);
             if (descriptor.Handler.ReturnType != typeof(void))
                 Push(Convert(returnValue));
+        }
+
+        /// <summary>
+        /// Gets the fixed price of the specified interoperable service. It's taken from the latest
+        /// enabled <see cref="InteropDescriptor.Prices"/> entry.
+        /// </summary>
+        /// <param name="descriptor">The descriptor of the interoperable service.</param>
+        /// <returns>The price in the unit of femtoGAS.</returns>
+        private BigInteger GetSysCallPrice(InteropDescriptor descriptor)
+        {
+            var prices = descriptor.Prices;
+            for (int i = 0; i < prices.Count; i++)
+            {
+                var (hardfork, price) = prices[i];
+                if (hardfork is null || IsHardforkEnabled(hardfork.Value))
+                    return price * _execFeeFactor;
+            }
+            throw new UnreachableException($"Price of {descriptor.Name} isn't found.");
         }
 
         protected override void PreExecuteInstruction(Instruction instruction)
@@ -1090,15 +1226,25 @@ namespace Neo.SmartContract
         protected static InteropDescriptor Register(string name, string handler, long fixedPrice, CallFlags requiredCallFlags, Hardfork? hardfork = null)
         {
             var flags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static;
-            var method = typeof(ApplicationEngine).GetMethod(handler, flags)
-                ?? typeof(ApplicationEngine).GetProperty(handler, flags)?.GetMethod
+            MemberInfo member = (MemberInfo?)typeof(ApplicationEngine).GetMethod(handler, flags)
+                ?? typeof(ApplicationEngine).GetProperty(handler, flags)
                 ?? throw new ArgumentException($"Handler {handler} is not found.", nameof(handler));
+            var method = member as MethodInfo ?? ((PropertyInfo)member).GetMethod
+                ?? throw new ArgumentException($"Handler {handler} has no getter.", nameof(handler));
+            var attributes = member.GetCustomAttributes<InteropPriceAttribute>();
+            if (attributes.Select(p => p.Since).Distinct().Count() != attributes.Count())
+                throw new ArgumentException($"Handler {handler} has several prices for the same hardfork.", nameof(handler));
+            var prices = attributes
+                .OrderByDescending(p => p.Since)
+                .Select(p => new KeyValuePair<Hardfork?, long>(p.Since, p.Coefficient))
+                .Append(new KeyValuePair<Hardfork?, long>(null, fixedPrice * OpcodePriceMultiplier)) // the fixed price is in the unit of 1e-8 GAS, scale it to 1e-11 GAS
+                .ToArray();
             var descriptor = new InteropDescriptor()
             {
                 Name = name,
                 Handler = method,
                 Hardfork = hardfork,
-                FixedPrice = fixedPrice,
+                Prices = prices,
                 RequiredCallFlags = requiredCallFlags
             };
             services ??= [];
@@ -1175,11 +1321,30 @@ namespace Neo.SmartContract
             if (ProtocolSettings == null)
                 return false;
 
-            // Return true if PersistingBlock is null and Hardfork is enabled
-            if (PersistingBlock is null)
-                return ProtocolSettings.Hardforks.ContainsKey(hardfork);
+            var persistingIndex = GetPersistingIndex();
+            return ProtocolSettings.IsHardforkEnabled(hardfork, persistingIndex);
+        }
 
-            return ProtocolSettings.IsHardforkEnabled(hardfork, PersistingBlock.Index);
+        /// <summary>
+        /// Retrieves index of the persisting block. It's based on the <see cref="PersistingBlock"/> (if set),
+        /// otherwise on the increment of native Ledger's current index (if <see cref="SnapshotCache"/> is set),
+        /// otherwise 0.
+        /// </summary>
+        /// <returns>Index of the persisting block.</returns>
+        public uint GetPersistingIndex()
+        {
+            return GetPersistingIndex(PersistingBlock, SnapshotCache);
+        }
+
+        /// <summary>
+        /// Retrieves index of the persisting block from the given argument (if provided),
+        /// otherwise from the native Ledger's contract (if <see cref="SnapshotCache"/> is set),
+        /// otherwise 0.
+        /// </summary>
+        /// <returns>Index of the persisting block.</returns>
+        public static uint GetPersistingIndex(Block? persistingBlock, DataCache? snapshot)
+        {
+            return persistingBlock?.Index ?? (snapshot is null ? 0 : NativeContract.Ledger.CurrentIndex(snapshot) + 1 /* Ledger.CurrentIndex returns already persisted block, hence use +1 to define _persisting_ block index */);
         }
     }
 }
