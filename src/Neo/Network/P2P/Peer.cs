@@ -56,6 +56,17 @@ namespace Neo.Network.P2P
         private readonly Dictionary<IPAddress, int> ConnectedAddresses = new();
 
         /// <summary>
+        /// Tracks the number of failed connection attempts per endpoint.
+        /// Used to prevent infinite retries to broken/invalid peers.
+        /// </summary>
+        private readonly ConcurrentDictionary<IPEndPoint, int> _failedConnectionAttempts = new();
+
+        /// <summary>
+        /// Maximum number of connection retry attempts before giving up on a peer.
+        /// </summary>
+        private const int MaxConnectionRetries = 3;
+
+        /// <summary>
         /// A dictionary that stores the connected nodes.
         /// </summary>
         protected readonly ConcurrentDictionary<IActorRef, IPEndPoint> ConnectedPeers = new();
@@ -296,6 +307,8 @@ namespace Neo.Network.P2P
                 Context.Watch(connection);
                 Sender.Tell(new Tcp.Register(connection));
                 ConnectedPeers.TryAdd(connection, remote);
+                // Reset failed connection attempts on successful connection
+                _failedConnectionAttempts.TryRemove(remote, out _);
                 OnTcpConnected(connection);
             }
         }
@@ -310,7 +323,8 @@ namespace Neo.Network.P2P
 
         /// <summary>
         /// Will be triggered when a Tcp.CommandFailed message is received.
-        /// If it's a Tcp.Connect command, remove the related endpoint from ConnectingPeers.
+        /// If it's a Tcp.Connect command, remove the related endpoint from ConnectingPeers
+        /// and restore it to UnconnectedPeers for future retry (up to MaxConnectionRetries times).
         /// </summary>
         /// <param name="cmd">Tcp.Command message/event.</param>
         private void OnTcpCommandFailed(Tcp.Command cmd)
@@ -318,7 +332,22 @@ namespace Neo.Network.P2P
             switch (cmd)
             {
                 case Tcp.Connect connect:
-                    ImmutableInterlocked.Update(ref ConnectingPeers, p => p.Remove(((IPEndPoint)connect.RemoteAddress).UnMap()));
+                    var endpoint = ((IPEndPoint)connect.RemoteAddress).UnMap();
+                    ImmutableInterlocked.Update(ref ConnectingPeers, p => p.Remove(endpoint));
+
+                    // Track failed attempts and only retry up to MaxConnectionRetries times.
+                    // This prevents infinite retries to broken/invalid peers.
+                    var attempts = _failedConnectionAttempts.AddOrUpdate(endpoint, 1, (_, count) => count + 1);
+                    if (attempts < MaxConnectionRetries)
+                    {
+                        // Restore the failed endpoint back to UnconnectedPeers for future retry.
+                        ImmutableInterlocked.Update(ref UnconnectedPeers, p => p.Add(endpoint));
+                    }
+                    else
+                    {
+                        // Max retries reached, remove from tracking to free memory
+                        _failedConnectionAttempts.TryRemove(endpoint, out _);
+                    }
                     break;
             }
         }
