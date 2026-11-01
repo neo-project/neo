@@ -130,7 +130,28 @@ namespace Neo.SmartContract.Native
             }
         }
 
-        private GasDistribution? DistributeGas(ApplicationEngine engine, UInt160 account, NeoAccountState state, bool defer = false)
+        /// <summary>
+        /// Specifies how accrued GAS rewards are handled when settling a NEO account.
+        /// </summary>
+        internal enum GasClaimMode
+        {
+            /// <summary>
+            /// Claims accrued rewards together with any previously deferred GAS.
+            /// </summary>
+            Claim,
+
+            /// <summary>
+            /// Stores accrued rewards for a later claim without minting GAS or invoking payment callbacks.
+            /// </summary>
+            Defer,
+
+            /// <summary>
+            /// Discards accrued and deferred rewards without minting GAS when a contract is destroyed.
+            /// </summary>
+            Discard
+        }
+
+        private GasDistribution? DistributeGas(ApplicationEngine engine, UInt160 account, NeoAccountState state, GasClaimMode mode = GasClaimMode.Claim)
         {
             // PersistingBlock is null when running under the debugger
             if (engine.PersistingBlock is null) return null;
@@ -147,7 +168,12 @@ namespace Neo.SmartContract.Native
             if (engine.IsHardforkEnabled(Hardfork.HF_Huyao))
             {
                 var key = CreateStorageKey(Prefix_DeferredGas, account);
-                if (defer)
+                if (mode == GasClaimMode.Discard)
+                {
+                    engine.SnapshotCache.Delete(key);
+                    return null;
+                }
+                if (mode == GasClaimMode.Defer)
                 {
                     // Settle before clearing votes or changing the balance, without
                     // losing either reward or invoking a blocked contract.
@@ -492,8 +518,11 @@ namespace Neo.SmartContract.Native
             return await VoteInternal(engine, account, voteTo);
         }
 
-        internal async ContractTask<bool> VoteInternal(ApplicationEngine engine, UInt160 account, ECPoint? voteTo, bool claimGas = true)
+        internal async ContractTask<bool> VoteInternal(ApplicationEngine engine, UInt160 account, ECPoint? voteTo, GasClaimMode gasClaimMode = GasClaimMode.Claim)
         {
+            // Deferred rewards may outlive the NEO account record after a full transfer.
+            if (gasClaimMode == GasClaimMode.Discard && engine.IsHardforkEnabled(Hardfork.HF_Huyao))
+                engine.SnapshotCache.Delete(CreateStorageKey(Prefix_DeferredGas, account));
             NeoAccountState? stateAccount = engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_Account, account))?.GetInteroperable<NeoAccountState>();
             if (stateAccount is null) return false;
             if (stateAccount.Balance == 0) return false;
@@ -513,7 +542,7 @@ namespace Neo.SmartContract.Native
                 else
                     item.Add(-stateAccount.Balance);
             }
-            GasDistribution? gasDistribution = DistributeGas(engine, account, stateAccount, defer: !claimGas);
+            GasDistribution? gasDistribution = DistributeGas(engine, account, stateAccount, gasClaimMode);
             if (stateAccount.VoteTo != null)
             {
                 StorageKey key = CreateStorageKey(Prefix_Candidate, stateAccount.VoteTo);
