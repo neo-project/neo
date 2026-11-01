@@ -90,6 +90,7 @@ namespace Neo.SmartContract.Native
             if (type == typeof(long)) return ContractParameterType.Integer;
             if (type == typeof(ulong)) return ContractParameterType.Integer;
             if (type == typeof(BigInteger)) return ContractParameterType.Integer;
+            if (type == typeof(BigInteger?)) return ContractParameterType.Integer;
             if (type == typeof(byte[])) return ContractParameterType.ByteArray;
             if (type == typeof(string)) return ContractParameterType.String;
             if (type == typeof(UInt160)) return ContractParameterType.Hash160;
