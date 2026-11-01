@@ -200,5 +200,45 @@ namespace Neo.UnitTests.Cryptography.ECC
             Assert.IsNotNull(zeroSqrt);
             Assert.AreEqual(BigInteger.Zero, zeroSqrt.Value);
         }
+
+        [TestMethod]
+        [DataRow(1, 3, 1, 1)]
+        [DataRow(1, 3, 1, 2)]
+        [DataRow(1, 3, 1, 7)]
+        [DataRow(1, 3, 1, 8)]
+        [DataRow(1, 3, 1, 15)]
+        [DataRow(1, 3, 1, 16)]
+        [DataRow(1, 3, 1, 100)]
+        [DataRow(1, 5, 7, 33)]
+        [DataRow(1, 5, 7, 64)]
+        public void TestFastLucasSequence(int p, int P, int Q, int k)
+        {
+            var result = ECFieldElement.FastLucasSequence(new BigInteger(p), new BigInteger(P), new BigInteger(Q), new BigInteger(k));
+            Assert.HasCount(2, result);
+
+            var (expectedU, expectedV) = NaiveLucasSequence(p, P, Q, k);
+            Assert.AreEqual(expectedU, result[0]);
+            Assert.AreEqual(expectedV, result[1]);
+        }
+
+        private static (BigInteger U, BigInteger V) NaiveLucasSequence(BigInteger p, BigInteger P, BigInteger Q, BigInteger k)
+        {
+            BigInteger u0 = 0, u1 = 1;
+            BigInteger v0 = 2, v1 = P;
+
+            if (k == 0) return (u0, v0.Mod(p));
+
+            for (BigInteger i = 1; i < k; i++)
+            {
+                var u2 = (P * u1 - Q * u0).Mod(p);
+                var v2 = (P * v1 - Q * v0).Mod(p);
+                u0 = u1;
+                u1 = u2;
+                v0 = v1;
+                v1 = v2;
+            }
+
+            return (u1.Mod(p), v1.Mod(p));
+        }
     }
 }
