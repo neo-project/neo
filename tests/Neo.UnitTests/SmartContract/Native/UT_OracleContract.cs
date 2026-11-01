@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.Extensions;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract;
@@ -53,6 +54,44 @@ namespace Neo.UnitTests.SmartContract.Native
         {
             var key = new KeyBuilder(NativeContract.Oracle.Id, 7).AddBigEndian(id);
             _snapshot.Add(key, StorageItem.CreateSealed(request));
+        }
+
+        [TestMethod]
+        [DataRow(2u, 10000000L, false)]
+        [DataRow(2u, 9999999L, true)]
+        [DataRow(1u, 10000000L, true)]
+        [DataRow(0u, 10000000L, true)]
+        [DataRow(1u, 49999999L, true)]
+        [DataRow(1u, 50000000L, false)]
+        [DataRow(0u, 50000000L, false)]
+        public void RequestResponseBudgetIsGatedByHuyao(uint activationHeight, long budget, bool insufficient)
+        {
+            var settings = TestProtocolSettings.Default with
+            {
+                Hardforks = TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_Huyao, activationHeight)
+            };
+            using var engine = ApplicationEngine.Create(TriggerType.Application, EmptyTx(), _snapshot, settings: settings);
+            using var script = new ScriptBuilder();
+            script.EmitDynamicCall(NativeContract.Oracle.Hash, "request",
+                "https://example.invalid", null, "callback", null, budget);
+            engine.LoadScript(script.ToArray());
+            // Model a deployed caller without deploying an unrelated test contract.
+            engine.CurrentContext.GetState<ExecutionContextState>().ScriptHash = NativeContract.StdLib.Hash;
+            Assert.AreEqual(insufficient ? VMState.FAULT : VMState.HALT, engine.Execute());
+            if (insufficient)
+            {
+                var exception = engine.FaultException.GetBaseException();
+                Assert.IsInstanceOfType<ArgumentException>(exception);
+                long minimum = activationHeight > 1 ? 10000000L : 50000000L;
+                Assert.Contains($"must be at least {minimum}", exception.Message);
+                Assert.IsEmpty(NativeContract.Oracle.GetRequestsByUrl(_snapshot, "https://example.invalid"));
+            }
+            else
+            {
+                var requests = NativeContract.Oracle.GetRequestsByUrl(_snapshot, "https://example.invalid").ToArray();
+                Assert.HasCount(1, requests);
+                Assert.AreEqual(budget, requests[0].Item2.GasForResponse);
+            }
         }
 
         private static Transaction EmptyTx(TransactionAttribute[] attributes = null)
