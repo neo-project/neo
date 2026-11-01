@@ -86,12 +86,13 @@ namespace Neo.SmartContract
         }
 
         /// <summary>
-        /// Serializes a <see cref="StackItem"/> to JSON.
+        /// Serializes a <see cref="StackItem"/> to JSON, optionally rejecting repeated compound references.
         /// </summary>
-        /// <param name="item">The <see cref="StackItem"/> to convert.</param>
+        /// <param name="item">The item to convert.</param>
         /// <param name="maxSize">The maximum size of the JSON output.</param>
+        /// <param name="rejectRepeatedReferences">Whether to reject cycles and shared arrays, structs and maps.</param>
         /// <returns>A byte array containing the JSON output.</returns>
-        public static byte[] SerializeToByteArray(StackItem item, uint maxSize)
+        public static byte[] SerializeToByteArray(StackItem item, uint maxSize, bool rejectRepeatedReferences = true)
         {
             using MemoryStream ms = new();
             using Utf8JsonWriter writer = new(ms, new JsonWriterOptions
@@ -100,12 +101,16 @@ namespace Neo.SmartContract
                 SkipValidation = false
             });
             Stack stack = new();
+            HashSet<CompoundType>? serialized = rejectRepeatedReferences
+                ? new(ReferenceEqualityComparer.Instance) : null;
             stack.Push(item);
             while (stack.Count > 0)
             {
                 switch (stack.Pop())
                 {
                     case Array array:
+                        if (serialized is not null && !serialized.Add(array))
+                            throw new NotSupportedException("Repeated compound references cannot be serialized to JSON.");
                         writer.WriteStartArray();
                         stack.Push(JsonTokenType.EndArray);
                         for (int i = array.Count - 1; i >= 0; i--)
@@ -129,6 +134,8 @@ namespace Neo.SmartContract
                         writer.WriteBooleanValue(boolean.GetBoolean());
                         break;
                     case Map map:
+                        if (serialized is not null && !serialized.Add(map))
+                            throw new NotSupportedException("Repeated compound references cannot be serialized to JSON.");
                         writer.WriteStartObject();
                         stack.Push(JsonTokenType.EndObject);
                         foreach (var pair in map.Reverse())
