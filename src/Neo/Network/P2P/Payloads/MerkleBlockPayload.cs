@@ -16,6 +16,7 @@ using System;
 using System.Collections;
 using System.IO;
 using System.Linq;
+using System.Numerics;
 
 namespace Neo.Network.P2P.Payloads
 {
@@ -44,7 +45,7 @@ namespace Neo.Network.P2P.Payloads
         /// </summary>
         public ReadOnlyMemory<byte> Flags;
 
-        public int Size => Header.Size + sizeof(int) + Hashes.GetVarSize() + Flags.GetVarSize();
+        public int Size => Header.Size + TxCount.GetVarSize() + Hashes.GetVarSize() + Flags.GetVarSize();
 
         /// <summary>
         /// Creates a new instance of the <see cref="MerkleBlockPayload"/> class.
@@ -71,7 +72,10 @@ namespace Neo.Network.P2P.Payloads
         {
             Header = reader.ReadSerializable<Header>();
             TxCount = (int)reader.ReadVarInt(ushort.MaxValue);
-            Hashes = reader.ReadSerializableArray<UInt256>(TxCount);
+            // Odd tree levels duplicate their last subtree. A fully expanded proof
+            // can therefore contain up to the next power of two hashes.
+            int maxHashes = (int)BitOperations.RoundUpToPowerOf2((uint)TxCount);
+            Hashes = reader.ReadSerializableArray<UInt256>(maxHashes);
             Flags = reader.ReadVarMemory((Math.Max(TxCount, 1) + 7) / 8);
         }
 
