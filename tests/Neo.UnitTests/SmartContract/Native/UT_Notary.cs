@@ -127,6 +127,63 @@ namespace Neo.UnitTests.SmartContract.Native
         }
 
         [TestMethod]
+        [DataRow(-1)]
+        [DataRow(0)]
+        [DataRow(19)]
+        [DataRow(20)]
+        [DataRow(21)]
+        [DataRow(32)]
+        public void Check_OnNEP17Payment_RecipientLength(int length)
+        {
+            var snapshot = _snapshot.CloneCache();
+            var persistingBlock = new Block
+            {
+                Header = new Header
+                {
+                    PrevHash = UInt256.Zero,
+                    MerkleRoot = UInt256.Zero,
+                    Index = 1000,
+                    NextConsensus = UInt160.Zero,
+                    Witness = null!
+                },
+                Transactions = []
+            };
+            var from = Contract.GetBFTAddress(TestProtocolSettings.Default.StandbyValidators).ToArray();
+            var recipient = UInt160.Parse("01ff00ff00ff00ff00ff00ff00ff00ff00ff00a4").ToArray();
+            var recipientBytes = length < 0 ? null : new byte[length];
+            if (recipientBytes != null)
+                recipient.AsSpan(0, Math.Min(length, recipient.Length)).CopyTo(recipientBytes);
+            var storageKey = new KeyBuilder(NativeContract.Ledger.Id, 12);
+            snapshot.Add(storageKey, new(new HashIndexState { Hash = UInt256.Zero, Index = persistingBlock.Index - 1 }));
+            var data = new ContractParameter
+            {
+                Type = ContractParameterType.Array,
+                Value = new List<ContractParameter>()
+                {
+                    length < 0
+                        ? new() { Type = ContractParameterType.Any }
+                        : new() { Type = ContractParameterType.ByteArray, Value = recipientBytes },
+                    new() { Type = ContractParameterType.Integer, Value = persistingBlock.Index + 100 }
+                }
+            };
+            BigInteger amount = 2 * 1000_0000 + 1;
+            if (length == -1 || length == UInt160.Length)
+            {
+                Assert.IsTrue(NativeContract.GAS.TransferWithTransaction(
+                    snapshot, from, NativeContract.Notary.Hash.ToArray(), amount, true, persistingBlock, data));
+                Assert.AreEqual(amount, Call_BalanceOf(snapshot, length == -1 ? from : recipient, persistingBlock));
+                Assert.AreEqual(BigInteger.Zero, Call_BalanceOf(snapshot, length == -1 ? recipient : from, persistingBlock));
+            }
+            else
+            {
+                Assert.ThrowsExactly<TargetInvocationException>(() => NativeContract.GAS.TransferWithTransaction(
+                    snapshot, from, NativeContract.Notary.Hash.ToArray(), amount, true, persistingBlock, data));
+                Assert.AreEqual(BigInteger.Zero, Call_BalanceOf(snapshot, recipient, persistingBlock));
+                Assert.AreEqual(BigInteger.Zero, Call_BalanceOf(snapshot, from, persistingBlock));
+            }
+        }
+
+        [TestMethod]
         public void Check_ExpirationOf()
         {
             var snapshot = _snapshot.CloneCache();
