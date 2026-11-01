@@ -27,6 +27,57 @@ namespace Neo.UnitTests.SmartContract
     public class UT_JsonSerializer_ByteArray
     {
         [TestMethod]
+        public void SerializeToByteArray_RejectsCyclesAndSharedReferences()
+        {
+            var cycle = new Array();
+            for (int i = 0; i < 2000; i++) cycle.Add(cycle);
+            Assert.ThrowsExactly<NotSupportedException>(() =>
+                JsonSerializer.SerializeToByteArray(cycle, 65535, true));
+
+            var map = new Map();
+            var indirect = new Array { map };
+            map["cycle"] = indirect;
+            Assert.ThrowsExactly<NotSupportedException>(() =>
+                JsonSerializer.SerializeToByteArray(indirect, 65535, true));
+
+            foreach (CompoundType child in new CompoundType[] { new Array(), new Struct(), new Map() })
+            {
+                var shared = new Array { child, child };
+                Assert.ThrowsExactly<NotSupportedException>(() =>
+                    JsonSerializer.SerializeToByteArray(shared, 65535, true));
+                // Legacy behavior must remain available for execution before Huyao.
+                Assert.AreEqual(child is Map ? "[{},{}]" : "[[],[]]",
+                    Encoding.UTF8.GetString(JsonSerializer.SerializeToByteArray(shared, 65535, false)));
+            }
+        }
+
+        [TestMethod]
+        public void SerializeToByteArray_TrackingUsesIdentityAndPreservesLimits()
+        {
+            var item = new Array { new Array(), new Array(), new Struct(), new Map(), (ByteString)"x", (ByteString)"x" };
+            var expected = JsonSerializer.SerializeToByteArray(item, 65535);
+            Assert.AreSequenceEqual(expected, JsonSerializer.SerializeToByteArray(item, (uint)expected.Length, true));
+            Assert.ThrowsExactly<InvalidOperationException>(() =>
+                JsonSerializer.SerializeToByteArray(item, (uint)expected.Length - 1, true));
+            var cycle = new Array();
+            cycle.Add(cycle);
+            Assert.ThrowsExactly<InvalidOperationException>(() => JsonSerializer.SerializeToByteArray(cycle, 64, false));
+            Assert.ThrowsExactly<NotSupportedException>(() => JsonSerializer.SerializeToByteArray(cycle, 64));
+        }
+
+        [TestMethod]
+        public void SerializeToByteArray_TrackedMapRetainsValidation()
+        {
+            var map = new Map { ["key"] = new Array { StackItem.True, StackItem.Null, new Integer(42) } };
+            Assert.AreSequenceEqual(JsonSerializer.SerializeToByteArray(map, 256),
+                JsonSerializer.SerializeToByteArray(map, 256, true));
+            Assert.ThrowsExactly<FormatException>(() => JsonSerializer.SerializeToByteArray(
+                new Map { [new Integer(1)] = StackItem.True }, 256, true));
+            map["self"] = map;
+            Assert.ThrowsExactly<NotSupportedException>(() => JsonSerializer.SerializeToByteArray(map, 256, true));
+        }
+
+        [TestMethod]
         public void SerializeToByteArray_Primitives()
         {
             var nullJson = Encoding.UTF8.GetString(JsonSerializer.SerializeToByteArray(StackItem.Null, 64));
