@@ -82,11 +82,13 @@ namespace Neo.UnitTests.SmartContract.Native
             }
         }
 
-        private static (NeoSystem System, Transaction Tx) PersistTransaction(bool fault, uint jackalopeHeight = 0)
+        private static (NeoSystem System, Transaction Tx) PersistTransaction(bool fault, uint iaraHeight = 0)
         {
             var settings = TestProtocolSettings.Default with
             {
-                Hardforks = TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_Jackalope, jackalopeHeight)
+                Hardforks = TestProtocolSettings.Default.Hardforks
+                    .SetItem(Hardfork.HF_Iara, iaraHeight)
+                    .SetItem(Hardfork.HF_Jackalope, iaraHeight)
             };
             var system = new TestBlockchain.TestNeoSystem(settings);
             var snapshot = system.GetSnapshotCache();
@@ -144,7 +146,7 @@ namespace Neo.UnitTests.SmartContract.Native
         }
 
         [TestMethod]
-        public void GetTransactionVMState_BeforeJackalope_Halt_ReturnsNone()
+        public void GetTransactionVMState_BeforeIara_Halt_ReturnsNone()
         {
             var (system, tx) = PersistTransaction(false, 2);
             Assert.IsNotNull(NativeContract.Ledger.GetTransactionState(system.StoreView, tx.Hash));
@@ -152,7 +154,7 @@ namespace Neo.UnitTests.SmartContract.Native
         }
 
         [TestMethod]
-        public void GetTransactionVMState_BeforeJackalope_Fault_ReturnsNone()
+        public void GetTransactionVMState_BeforeIara_Fault_ReturnsNone()
         {
             var (system, tx) = PersistTransaction(true, 2);
             Assert.IsNotNull(NativeContract.Ledger.GetTransactionState(system.StoreView, tx.Hash));
@@ -160,7 +162,7 @@ namespace Neo.UnitTests.SmartContract.Native
         }
 
         [TestMethod]
-        public void GetTransactionVMState_AtJackalopeActivation_Halt_ReturnsHalt()
+        public void GetTransactionVMState_AtIaraActivation_Halt_ReturnsHalt()
         {
             var (system, tx) = PersistTransaction(false, 1);
             AssertVMState(system, tx.Hash, VMState.HALT);
