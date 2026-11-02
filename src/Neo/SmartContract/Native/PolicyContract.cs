@@ -786,7 +786,7 @@ namespace Neo.SmartContract.Native
                     throw new InvalidOperationException($"Hardfork {hardfork} is already scheduled at {existingHeight}.");
             }
 
-            // Ensure the new activation height is aligned with other scheduled harfork heights.
+            // Ensure the new activation height is aligned with other scheduled hardfork heights.
             bool ancestorScheduled = false;
             foreach (var (otherKey, value) in engine.SnapshotCache.Find(CreateStorageKey(Prefix_Hardfork), SeekDirection.Forward))
             {
