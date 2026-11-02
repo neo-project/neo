@@ -485,7 +485,7 @@ namespace Neo.UnitTests.SmartContract.Native
             var persistingBlock = CreatePersistingBlock(snapshot, 0);
             using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, persistingBlock, TestProtocolSettings.Default, TestGas);
 
-            var actualPrice = NativeContract.TemporaryStorage.CalculateStoragePrice(engine, key, value, lifetime, out var _);
+            var actualPrice = NativeContract.TemporaryStorage.CalculateStoragePrice(engine, null, key, value, lifetime, 0);
             Assert.AreEqual(expectedPrice, actualPrice);
         }
 
@@ -498,18 +498,123 @@ namespace Neo.UnitTests.SmartContract.Native
 
             byte[] key = new byte[1 + 4 + ApplicationEngine.MaxStorageKeySize];
             byte[] value = new byte[8 + ApplicationEngine.MaxStorageValueSize];
-            var actualPrice = NativeContract.TemporaryStorage.CalculateStoragePrice(engine, key, value, 0, out var _); // TTL: 0
+            var actualPrice = NativeContract.TemporaryStorage.CalculateStoragePrice(engine, null, key, value, 0, 0); // TTL: 0
             Assert.AreEqual(656_120_000, actualPrice);
-            actualPrice = NativeContract.TemporaryStorage.CalculateStoragePrice(engine, key, value, PolicyContract.MaxTemporaryStorageMaxTTL / 10, out var _); // TTL: 10% of a year
+            actualPrice = NativeContract.TemporaryStorage.CalculateStoragePrice(engine, null, key, value, PolicyContract.MaxTemporaryStorageMaxTTL / 10, 0); // TTL: 10% of a year
             Assert.AreEqual(656_120_000, actualPrice);
-            actualPrice = NativeContract.TemporaryStorage.CalculateStoragePrice(engine, key, value, PolicyContract.MaxTemporaryStorageMaxTTL / 2, out var _); // TTL: 1/2 of a year
+            actualPrice = NativeContract.TemporaryStorage.CalculateStoragePrice(engine, null, key, value, PolicyContract.MaxTemporaryStorageMaxTTL / 2, 0); // TTL: 1/2 of a year
             Assert.AreEqual(3_280_600_000, actualPrice);
-            actualPrice = NativeContract.TemporaryStorage.CalculateStoragePrice(engine, key, value, PolicyContract.MaxTemporaryStorageMaxTTL, out var _); // TTL: year
+            actualPrice = NativeContract.TemporaryStorage.CalculateStoragePrice(engine, null, key, value, PolicyContract.MaxTemporaryStorageMaxTTL, 0); // TTL: year
             Assert.AreEqual(6_561_200_000, actualPrice);
-            actualPrice = NativeContract.TemporaryStorage.CalculateStoragePrice(engine, key, value, PolicyContract.MaxTemporaryStorageMaxTTL + 1, out var _); // TTL: >year
+            actualPrice = NativeContract.TemporaryStorage.CalculateStoragePrice(engine, null, key, value, PolicyContract.MaxTemporaryStorageMaxTTL + 1, 0); // TTL: >year
             Assert.AreEqual(6_561_200_000, actualPrice);
-            actualPrice = NativeContract.TemporaryStorage.CalculateStoragePrice(engine, key, value, ulong.MaxValue, out var _); // TTL: max
+            actualPrice = NativeContract.TemporaryStorage.CalculateStoragePrice(engine, null, key, value, ulong.MaxValue, 0); // TTL: max
             Assert.AreEqual(6_561_200_000, actualPrice);
+        }
+
+        [TestMethod]
+        public void Test_CalculateStoragePrice_EdgeCases()
+        {
+            const ulong timestamp = 1_000_000;
+            var snapshot = _snapshotCache.CloneCache();
+            var persistingBlock = CreatePersistingBlock(snapshot, timestamp);
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, persistingBlock, TestProtocolSettings.Default, TestGas);
+
+            byte[] key = [0x00];
+            long price = NativeContract.Policy.GetStoragePrice(snapshot);
+            Assert.IsPositive(price);
+            ulong ttl = PolicyContract.MaxTemporaryStorageMaxTTL;
+            Assert.IsPositive(ttl);
+
+            // Existing record layout: 8 bytes of validTill + user value.
+            static StorageItem MakeRecord(ulong validTill, int valueLen)
+            {
+                byte[] recordValue = new byte[8 + valueLen];
+                BinaryPrimitives.WriteUInt64BigEndian(recordValue, validTill);
+
+                var item = new StorageItem { Value = recordValue };
+                return item;
+            }
+            long Calc(StorageItem record, byte[] k, byte[] v, ulong oldLifetime, ulong newLifetime)
+                => NativeContract.TemporaryStorage.CalculateStoragePrice(engine, record, k, v, oldLifetime, newLifetime);
+
+            var record = MakeRecord(timestamp + 1, 16); // not expired, 16 bytes of value.
+            byte[] value = new byte[16];
+
+            // Old part only (same value size): (16-1)/4+1 = 4 bytes charged for the whole TTL.
+            Assert.AreEqual(4 * price, Calc(record, key, value, ttl, 0));
+
+            // New part only: key and value are charged as for a new record for the whole TTL.
+            Assert.AreEqual(17 * price, Calc(record, key, value, 0, ttl));
+
+            // Both parts, half of TTL each.
+            Assert.AreEqual(4 * price / 2 + 17 * price / 2, Calc(record, key, value, ttl / 2, ttl / 2));
+
+            // Both parts, third of TTL each.
+            Assert.AreEqual(4 * price / 3 + 17 * price / 3, Calc(record, key, value, ttl / 3, ttl / 3));
+
+            // Minimum is the sum of the minimums of both parts.
+            Assert.AreEqual(4 * price / 10 + 17 * price / 10, Calc(record, key, value, 1, 1));
+
+            // Old part only with the minimal lifetime: 10% of the old price.
+            Assert.AreEqual(4 * price / 10, Calc(record, key, value, 1, 0));
+
+            // New part only with the minimal lifetime: 10% of the new price.
+            Assert.AreEqual(17 * price / 10, Calc(record, key, value, 0, 1));
+
+            // Both lifetimes are zero: the record is treated as newly-added and the minimal fee is charged.
+            Assert.AreEqual(17 * price / 10, Calc(record, key, value, 0, 0));
+            Assert.AreEqual(17 * price / 10, Calc(null, key, value, 0, 0));
+
+            // Lifetimes exceeding the max TTL are capped for each part independently.
+            Assert.AreEqual(4 * price, Calc(record, key, value, ttl * 2, 0));
+            Assert.AreEqual(17 * price, Calc(record, key, value, 0, ttl * 2));
+            Assert.AreEqual(4 * price + 17 * price, Calc(record, key, value, ulong.MaxValue, ulong.MaxValue));
+
+            // Value is bigger than the old one: old part is (16-1)/4+1 + (32-16) = 20 bytes, new part is 1+32 bytes.
+            byte[] bigValue = new byte[32];
+            Assert.AreEqual(20 * price, Calc(record, key, bigValue, ttl, 0));
+            Assert.AreEqual(33 * price, Calc(record, key, bigValue, 0, ttl));
+            Assert.AreEqual(53 * price, Calc(record, key, bigValue, ttl, ttl));
+
+            // Value is smaller than the old one: old part is (3-1)/4+1 = 1 byte, new part is 1+3 bytes.
+            byte[] smallValue = new byte[3];
+            Assert.AreEqual(1 * price, Calc(record, key, smallValue, ttl, 0));
+            Assert.AreEqual(4 * price, Calc(record, key, smallValue, 0, ttl));
+
+            // Value size is not a multiple of 4: (5-1)/4+1 = 2 bytes.
+            Assert.AreEqual(2 * price, Calc(record, key, new byte[5], ttl, 0));
+
+            // Empty value: the old part is free, the new part charges the key only.
+            byte[] emptyValue = [];
+            Assert.AreEqual(0L, Calc(record, key, emptyValue, ttl, 0));
+            Assert.AreEqual(1 * price, Calc(record, key, emptyValue, 0, ttl));
+            Assert.AreEqual(1 * price, Calc(record, key, emptyValue, ttl, ttl));
+            Assert.AreEqual(1 * price / 10, Calc(record, key, emptyValue, 0, 0));
+
+            // Longer key is charged for the new part only.
+            byte[] longKey = new byte[ApplicationEngine.MaxStorageKeySize];
+            Assert.AreEqual(4 * price, Calc(record, longKey, value, ttl, 0));
+            Assert.AreEqual((longKey.Length + value.Length) * price, Calc(record, longKey, value, 0, ttl));
+
+            // Existing record with the empty value: nothing is charged at the "old" rate, so the whole value is charged.
+            var emptyRecord = MakeRecord(timestamp + 1, 0);
+            Assert.AreEqual(16 * price, Calc(emptyRecord, key, value, ttl, 0));
+            Assert.AreEqual(17 * price, Calc(emptyRecord, key, value, 0, ttl));
+
+            // The record is still traceable if validTill equals the current block timestamp.
+            Assert.AreEqual(4 * price, Calc(MakeRecord(timestamp, 16), key, value, ttl, 0));
+
+            // Expired record is treated as a missing one even for the "old" part.
+            var expired = MakeRecord(timestamp - 1, 16);
+            Assert.AreEqual(17 * price, Calc(expired, key, value, ttl, 0));
+            Assert.AreEqual(17 * price, Calc(expired, key, value, 0, ttl));
+            Assert.AreEqual(17 * price / 2, Calc(expired, key, value, ttl / 2, 0));
+
+            // Missing record is treated as a new one for the "old" part as well.
+            Assert.AreEqual(17 * price, Calc(null, key, value, ttl, 0));
+            Assert.AreEqual(17 * price, Calc(null, key, value, 0, ttl));
+            Assert.AreEqual(2 * 17 * price, Calc(null, key, value, ttl, ttl));
         }
 
         private static StackItem CallFromContract(DataCache snapshot, Block persistingBlock, UInt160 caller, string method, params ContractParameter[] args)
