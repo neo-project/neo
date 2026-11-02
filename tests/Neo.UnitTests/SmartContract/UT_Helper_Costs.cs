@@ -11,6 +11,9 @@
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.SmartContract;
+using Neo.Cryptography.ECC;
+using Neo.Wallets;
+using System.Linq;
 using System.Numerics;
 using static Neo.SmartContract.Helper;
 
@@ -40,13 +43,30 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void MultiSignatureContractCost_ScalesWithMAndN()
         {
-            var cost11 = MultiSignatureContractCost(TestProtocolSettings.Default, 1, ExecFeeFactor, 1, 1);
-            var cost12 = MultiSignatureContractCost(TestProtocolSettings.Default, 1, ExecFeeFactor, 1, 2);
-            var cost22 = MultiSignatureContractCost(TestProtocolSettings.Default, 1, ExecFeeFactor, 2, 2);
+            var cost11 = CalculateCost(CreateScript(1, 1));
+            var cost12 = CalculateCost(CreateScript(1, 2));
+            var cost22 = CalculateCost(CreateScript(2, 2));
 
             Assert.IsTrue(cost11 > 0);
             Assert.IsTrue(cost12 > cost11);
             Assert.IsTrue(cost22 > cost12);
+        }
+
+        private static byte[] CreateScript(int m, int n)
+        {
+            var keys = Enumerable.Range(1, n).Select(i =>
+            {
+                var privateKey = new byte[32];
+                privateKey[^1] = (byte)i;
+                return new KeyPair(privateKey).PublicKey;
+            }).ToArray();
+            return Contract.CreateMultiSigRedeemScript(m, keys);
+        }
+
+        private static long CalculateCost(byte[] script)
+        {
+            Assert.IsTrue(IsMultiSigContract(script, out var parameters));
+            return MultiSignatureContractCost(TestProtocolSettings.Default, 1, ExecFeeFactor, parameters);
         }
     }
 }

@@ -350,9 +350,9 @@ namespace Neo.Network.P2P.Payloads
             {
                 if (IsSignatureContract(Witnesses[i].VerificationScript.Span) && IsSingleSignatureInvocationScript(Witnesses[i].InvocationScript, out var _))
                     netFeeDatoshi -= SignatureContractCost(settings, height + 1, execFeeFactor);
-                else if (IsMultiSigContract(Witnesses[i].VerificationScript.Span, out int m, out int n) && IsMultiSignatureInvocationScript(m, Witnesses[i].InvocationScript, out var _))
+                else if (IsMultiSigContract(Witnesses[i].VerificationScript.Span, out var parameters) && IsMultiSignatureInvocationScript(parameters.M, Witnesses[i].InvocationScript, out var _))
                 {
-                    netFeeDatoshi -= MultiSignatureContractCost(settings, height + 1, execFeeFactor, m, n);
+                    netFeeDatoshi -= MultiSignatureContractCost(settings, height + 1, execFeeFactor, parameters);
                 }
                 else
                 {

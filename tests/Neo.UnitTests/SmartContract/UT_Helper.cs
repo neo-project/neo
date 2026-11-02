@@ -199,7 +199,7 @@ namespace Neo.UnitTests.SmartContract
             Assert.AreEqual(VMState.HALT, engine.Execute());
             Assert.IsTrue(engine.ResultStack.Pop().GetBoolean());
 
-            Assert.AreEqual(MultiSignatureContractCost(settings, engine.GetPersistingIndex(), PolicyContract.DefaultExecFeeFactor * ApplicationEngine.FeeFactor, 1, 1), engine.FeeConsumed);
+            Assert.AreEqual(CalculateMultiSigCost(settings, engine.GetPersistingIndex(), PolicyContract.DefaultExecFeeFactor * ApplicationEngine.FeeFactor, contract.Script), engine.FeeConsumed);
         }
 
         [TestMethod]
@@ -219,12 +219,13 @@ namespace Neo.UnitTests.SmartContract
             Assert.AreEqual(huyao ? 999531 : 999916, SignatureContractCost(settings, 1, execFeeFactor));
             // Before Huyao: (8.000 * 5 + 1.000 * 2 + 0 + 32768.000 * 3) * 30.5001 = 2999562.8346000, rounded up.
             // Since Huyao: (1.685 * 5 + 2.187 * 2 + 0 + 32768.000 * 3) * 30.5001 = 2998672.2011799, rounded up.
-            Assert.AreEqual(huyao ? 2998673 : 2999563, MultiSignatureContractCost(settings, 1, execFeeFactor, 2, 3));
+            var multisig = CreateMultiSigScript(2, 3);
+            Assert.AreEqual(huyao ? 2998673 : 2999563, CalculateMultiSigCost(settings, 1, execFeeFactor, multisig));
             if (!huyao)
             {
                 // An integer factor gives the same result as multiplying the legacy prices by it.
                 Assert.AreEqual(30 * 32784, SignatureContractCost(settings, 1, 30 * ApplicationEngine.FeeFactor));
-                Assert.AreEqual(30 * 98346, MultiSignatureContractCost(settings, 1, 30 * ApplicationEngine.FeeFactor, 2, 3));
+                Assert.AreEqual(30 * 98346, CalculateMultiSigCost(settings, 1, 30 * ApplicationEngine.FeeFactor, multisig));
             }
         }
 
@@ -286,6 +287,23 @@ namespace Neo.UnitTests.SmartContract
                 .GetInteroperable<HashIndexState>().Index = persistedHeight;
             snapshot.GetAndChange(StorageKey.Create(NativeContract.Policy.Id, 18))!.Set(storedExecFeeFactor);
             return snapshot;
+        }
+
+        private static byte[] CreateMultiSigScript(int m, int n)
+        {
+            var keys = Enumerable.Range(1, n).Select(i =>
+            {
+                var privateKey = new byte[32];
+                privateKey[^1] = (byte)i;
+                return new KeyPair(privateKey).PublicKey;
+            }).ToArray();
+            return Contract.CreateMultiSigRedeemScript(m, keys);
+        }
+
+        private static long CalculateMultiSigCost(ProtocolSettings settings, uint index, BigInteger factor, byte[] script)
+        {
+            Assert.IsTrue(IsMultiSigContract(script, out var parameters));
+            return MultiSignatureContractCost(settings, index, factor, parameters);
         }
 
         // Creates a transaction signed by a single-signature or 2-of-3 multi-signature account.
