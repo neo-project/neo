@@ -54,8 +54,7 @@ namespace Neo
             if (string.IsNullOrEmpty(name))
                 return false;
 
-            // [Flags] lets TryParse accept comma-separated aliases that collapse onto a
-            // named value ("Basilisk, HF_Cockatrice" == HF_Domovoi). Require the canonical name.
+            // Enum.TryParse also accepts numeric names (e.g. "8"). Require the canonical "HF_*" name.
             var key = "HF_" + name;
             if (!Enum.TryParse(key, ignoreCase: false, out hardfork))
                 return false;
