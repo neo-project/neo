@@ -1279,5 +1279,38 @@ namespace Neo.UnitTests.Ledger
 
             Assert.IsFalse(_unit.ContainsKey(mempooled.Hash));
         }
+
+        [TestMethod]
+        public void UpdatePoolForBlockPersisted_UnverifiedConflictDoesNotSurviveBlockPersist()
+        {
+            var snapshot = GetSnapshot();
+
+            var unverifiedConflicted = CreateTransaction(5000);
+            Assert.AreEqual(VerifyResult.Succeed, _unit.TryAdd(unverifiedConflicted, snapshot));
+            _unit.InvalidateVerifiedTransactions();
+            Assert.AreEqual(0, _unit.VerifiedCount);
+            Assert.AreEqual(1, _unit.UnVerifiedCount);
+
+            var cancellingBlockTx = CreateTransaction(5000);
+            cancellingBlockTx.Signers = [new Signer { Account = senderAccount, Scopes = WitnessScope.None }];
+            cancellingBlockTx.Attributes = [new Conflicts { Hash = unverifiedConflicted.Hash }];
+
+            _unit.UpdatePoolForBlockPersisted(new Block
+            {
+                Header = new Header
+                {
+                    PrevHash = null!,
+                    MerkleRoot = null!,
+                    NextConsensus = null!,
+                    Witness = null!
+                },
+                Transactions = [cancellingBlockTx]
+            }, snapshot);
+
+            // cancellingBlockTx persisted with [Conflicts(unverifiedConflicted.Hash)] should discard
+            // unverifiedConflicted transaction. unverifiedConflicted should not survive UpdatePoolForBlockPersisted.
+            Assert.IsFalse(_unit.ContainsKey(unverifiedConflicted.Hash));
+            Assert.AreEqual(0, _unit.VerifiedCount);
+        }
     }
 }

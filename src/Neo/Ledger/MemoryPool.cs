@@ -553,7 +553,7 @@ namespace Neo.Ledger
                 foreach (var t in block.Transactions)
                     persisted.Add(t.Hash);
                 var stale = new List<UInt256>();
-                foreach (var item in _sortedTransactions)
+                foreach (var item in _sortedTransactions.Concat(_unverifiedSortedTransactions))
                 {
                     if ((conflicts.TryGetValue(item.Tx.Hash, out var signersList) && HasCommonAccount(signersList, item.Tx.Signers)) || ContainsPersistedConflict(item.Tx, persisted))
                     {
