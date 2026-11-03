@@ -57,86 +57,119 @@ namespace Neo.UnitTests.SmartContract.Native
             _snapshot.Add(key, StorageItem.CreateSealed(request));
         }
 
-        [TestMethod]
-        [DataRow(2u, 9, 10000000L, false)]
-        [DataRow(2u, 22, 9999999L, true)]
-        [DataRow(1u, 0, 10000000L, false)]
-        [DataRow(1u, 1, 10000000L, false)]
-        [DataRow(1u, 4, 10000000L, false)]
-        [DataRow(1u, 8, 9999999L, true)]
-        [DataRow(1u, 8, 10000000L, false)]
-        [DataRow(1u, 9, 10000000L, true)]
-        [DataRow(1u, 9, 29999999L, true)]
-        [DataRow(1u, 9, 30000000L, false)]
-        [DataRow(1u, 22, 29999999L, true)]
-        [DataRow(1u, 22, 30000000L, false)]
-        [DataRow(0u, 4, 10000000L, false)]
-        [DataRow(0u, 22, 30000000L, false)]
-        public void RequestResponseBudgetIsGatedByHuyao(uint activationHeight, int nodeCount, long budget, bool insufficient)
+        private void SeedOracleNodes(int count)
         {
-            if (nodeCount > 0)
-            {
-                var nodes = new Neo.VM.Types.Array(Enumerable.Range(1, nodeCount)
-                    .Select(i => new KeyPair(Enumerable.Repeat((byte)i, 32).ToArray()).PublicKey)
-                    .OrderBy(p => p).Select(p => (StackItem)(ByteString)p.EncodePoint(true)));
-                _snapshot.Add(NativeContract.RoleManagement.CreateStorageKey((byte)Role.Oracle, 1u),
-                    new StorageItem(BinarySerializer.Serialize(nodes, ExecutionEngineLimits.Default)));
-            }
+            if (count == 0) return;
+            var nodes = new Neo.VM.Types.Array(Enumerable.Range(1, count)
+                .Select(i => new KeyPair(Enumerable.Repeat((byte)i, 32).ToArray()).PublicKey)
+                .OrderBy(p => p).Select(p => (StackItem)(ByteString)p.EncodePoint(true)));
+            _snapshot.Add(NativeContract.RoleManagement.CreateStorageKey((byte)Role.Oracle, 1u),
+                new StorageItem(BinarySerializer.Serialize(nodes, ExecutionEngineLimits.Default)));
+        }
+
+        [TestMethod]
+        [DataRow(2u, 22, 10000000L)]
+        [DataRow(1u, 0, 10000000L)]
+        [DataRow(1u, 1, 10000000L)]
+        [DataRow(1u, 4, 13000000L)]
+        [DataRow(1u, 8, 22000000L)]
+        [DataRow(1u, 9, 24000000L)]
+        [DataRow(1u, 22, 51000000L)]
+        [DataRow(0u, 4, 13000000L)]
+        public void RequestResponseBudgetIsGatedByHuyao(uint activationHeight, int nodeCount, long minimum)
+        {
+            SeedOracleNodes(nodeCount);
             var settings = TestProtocolSettings.Default with
             {
                 Hardforks = TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_Huyao, activationHeight)
             };
-            using var engine = ApplicationEngine.Create(TriggerType.Application, EmptyTx(), _snapshot, settings: settings);
-            using var script = new ScriptBuilder();
-            script.EmitDynamicCall(NativeContract.Oracle.Hash, "request",
-                "https://example.invalid", null, "callback", null, budget);
-            engine.LoadScript(script.ToArray());
-            // Model a deployed caller without deploying an unrelated test contract.
-            engine.CurrentContext.GetState<ExecutionContextState>().ScriptHash = NativeContract.StdLib.Hash;
-            Assert.AreEqual(insufficient ? VMState.FAULT : VMState.HALT, engine.Execute());
-            if (insufficient)
+            foreach (long budget in new[] { minimum - 1, minimum })
             {
-                var exception = engine.FaultException.GetBaseException();
-                Assert.IsInstanceOfType<ArgumentException>(exception);
-                long minimum = activationHeight > 1 || nodeCount <= 8 ? 10000000L : 30000000L;
-                Assert.Contains($"must be at least {minimum}", exception.Message);
-                Assert.IsEmpty(NativeContract.Oracle.GetRequestsByUrl(_snapshot, "https://example.invalid"));
-            }
-            else
-            {
-                var requests = NativeContract.Oracle.GetRequestsByUrl(_snapshot, "https://example.invalid").ToArray();
-                Assert.HasCount(1, requests);
-                Assert.AreEqual(budget, requests[0].Item2.GasForResponse);
+                var snapshot = _snapshot.CloneCache();
+                using var engine = ApplicationEngine.Create(TriggerType.Application, EmptyTx(), snapshot, settings: settings);
+                using var script = new ScriptBuilder();
+                script.EmitDynamicCall(NativeContract.Oracle.Hash, "request",
+                    "https://example.invalid", null, "callback", null, budget);
+                engine.LoadScript(script.ToArray());
+                engine.CurrentContext.GetState<ExecutionContextState>().ScriptHash = NativeContract.StdLib.Hash;
+                Assert.AreEqual(budget < minimum ? VMState.FAULT : VMState.HALT, engine.Execute(), engine.FaultException?.ToString());
+                if (budget < minimum)
+                {
+                    Assert.Contains($"must be at least {minimum}", engine.FaultException.GetBaseException().Message);
+                    Assert.IsEmpty(NativeContract.Oracle.GetRequestsByUrl(snapshot, "https://example.invalid"));
+                }
+                else
+                {
+                    var requests = NativeContract.Oracle.GetRequestsByUrl(snapshot, "https://example.invalid").ToArray();
+                    Assert.HasCount(1, requests);
+                    Assert.AreEqual(budget, requests[0].Item2.GasForResponse);
+                }
             }
         }
 
         [TestMethod]
-        [DataRow(4, 10000000L)]
-        [DataRow(8, 10000000L)]
-        [DataRow(9, 30000000L)]
-        [DataRow(22, 30000000L)]
-        public void FixedResponseBudgetsCoverEmptyResponseNetworkFee(int nodeCount, long budget)
+        [DataRow(4, 10000L, 1000L)]
+        [DataRow(4, 15000L, 1000L)]
+        [DataRow(4, 300000L, 1000L)]
+        [DataRow(1, 300000L, 1000L)]
+        [DataRow(3, 300000L, 1000L)]
+        [DataRow(4, 305000L, 1000L)]
+        [DataRow(8, 300000L, 1000L)]
+        [DataRow(9, 300000L, 1000L)]
+        [DataRow(16, 300000L, 1000L)]
+        [DataRow(17, 300000L, 1000L)]
+        [DataRow(22, 300000L, 1000L)]
+        [DataRow(4, 300000L, 10000L)]
+        [DataRow(4, 1000000L, 1000L)]
+        public void ResponseBudgetCoversNetworkAndFinish(int nodeCount, long picoFactor, long feePerByte)
         {
+            SeedOracleNodes(nodeCount);
+            _snapshot.GetAndChange(NativeContract.Policy.CreateStorageKey(18)).Set(picoFactor);
+            _snapshot.GetAndChange(NativeContract.Policy.CreateStorageKey(10)).Set(feePerByte);
+            var settings = TestProtocolSettings.Default with
+            {
+                Hardforks = TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_Huyao, 0u)
+            };
             var nodes = Enumerable.Range(1, nodeCount)
                 .Select(i => new KeyPair(Enumerable.Repeat((byte)i, 32).ToArray()).PublicKey).ToArray();
             var contract = Contract.CreateMultiSigContract(nodeCount - (nodeCount - 1) / 3, nodes);
-            var tx = EmptyTx([new OracleResponse
-            {
-                Id = 1,
-                Code = OracleResponseCode.InsufficientFunds,
-                Result = ReadOnlyMemory<byte>.Empty
-            }]);
+            var tx = EmptyTx([new OracleResponse { Id = 1, Code = OracleResponseCode.InsufficientFunds, Result = ReadOnlyMemory<byte>.Empty }]);
             tx.Script = OracleResponse.FixedScript;
-            tx.Signers = [
-                new Signer { Account = NativeContract.Oracle.Hash, Scopes = WitnessScope.None },
-                new Signer { Account = contract.ScriptHash, Scopes = WitnessScope.None }
-            ];
+            tx.Signers = [new() { Account = NativeContract.Oracle.Hash }, new() { Account = contract.ScriptHash }];
             tx.Witnesses = [Witness.Empty, new Witness { VerificationScript = contract.Script }];
-            var networkFee = tx.CalculateNetworkFee(_snapshot, TestProtocolSettings.Default,
+            var networkFee = tx.CalculateNetworkFee(_snapshot, settings,
                 hash => hash == contract.ScriptHash ? contract.Script : null);
-            Assert.IsTrue(networkFee < budget, $"{nodeCount} nodes: network fee {networkFee}, budget {budget}");
-            if (nodeCount >= 9)
-                Assert.IsTrue(networkFee > 10000000L, "The old minimum must be insufficient for the larger sets.");
+
+            var callback = new ContractState
+            {
+                Id = 123,
+                Hash = UInt160.Parse("0x0000000000000000000000000000000000000001"),
+                Nef = new NefFile { Compiler = "test", Source = "", Script = new byte[] { (byte)OpCode.INITSLOT, 0, 4, (byte)OpCode.RET }, Tokens = [] },
+                Manifest = TestUtils.CreateDefaultManifest()
+            };
+            callback.Nef.CheckSum = NefFile.ComputeChecksum(callback.Nef);
+            callback.Manifest.Abi.Methods = [new Neo.SmartContract.Manifest.ContractMethodDescriptor
+            {
+                Name = "callback", Offset = 0, ReturnType = ContractParameterType.Void,
+                Parameters = [
+                    new() { Name = "url", Type = ContractParameterType.String },
+                    new() { Name = "userData", Type = ContractParameterType.Any },
+                    new() { Name = "code", Type = ContractParameterType.Integer },
+                    new() { Name = "result", Type = ContractParameterType.ByteArray }
+                ]
+            }];
+            _snapshot.Add(NativeContract.ContractManagement.CreateStorageKey(8, callback.Hash), new StorageItem(callback));
+            var request = SampleRequest();
+            request.CallbackContract = callback.Hash;
+            request.UserData = BinarySerializer.Serialize(StackItem.Null, ExecutionEngineLimits.Default);
+            SeedRequest(1, request);
+            using var engine = ApplicationEngine.Create(TriggerType.Application, tx, _snapshot, settings: settings);
+            long minimum = NativeContract.Oracle.GetMinimumResponseBudget(engine);
+            Assert.AreEqual(0L, engine.FeeConsumed, "Estimation must not execute scripts or charge fees.");
+            engine.LoadScript(tx.Script);
+            Assert.AreEqual(VMState.HALT, engine.Execute(), engine.FaultException?.ToString());
+            long expected = Math.Max(10000000L, (2 * (networkFee + engine.FeeConsumed) + 999999) / 1000000 * 1000000);
+            Assert.AreEqual(expected, minimum, $"nodes={nodeCount}, network={networkFee}, finish={engine.FeeConsumed}");
         }
 
         private static Transaction EmptyTx(TransactionAttribute[] attributes = null)

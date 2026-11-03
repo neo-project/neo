@@ -38,12 +38,6 @@ namespace Neo.SmartContract.Native
         private const int MaxCallbackLength = 32;
         private const int MaxUserDataLength = 512;
         private const long MinGasForResponse = 0_10000000;
-        // At default fees, an empty response fits 0.1 GAS for up to eight Oracle
-        // nodes. Larger sets need 0.3 GAS to cover verification and bytes through
-        // 15-of-22, the largest BFT quorum fitting the current witness limits.
-        // These fixed budgets do not guarantee callback execution or cover future
-        // policy/role changes, and cannot make oversized witnesses valid.
-        private const long MinGasForResponseLargeOracleSet = 0_30000000;
 
         private const byte Prefix_Price = 5;
         private const byte Prefix_RequestId = 9;
@@ -244,11 +238,8 @@ namespace Neo.SmartContract.Native
             if (callback.StartsWith('_'))
                 throw new ArgumentException("Callback cannot start with underscore.");
 
-            long minimum = MinGasForResponse;
-            if (engine.IsHardforkEnabled(Hardfork.HF_Huyao)
-                && RoleManagement.GetDesignatedByRole(engine.SnapshotCache, Role.Oracle,
-                    engine.GetPersistingIndex()).Length > 8)
-                minimum = MinGasForResponseLargeOracleSet;
+            var minimum = engine.IsHardforkEnabled(Hardfork.HF_Huyao)
+                ? GetMinimumResponseBudget(engine) : MinGasForResponse;
             if (gasForResponse < minimum)
                 throw new ArgumentException($"gasForResponse {gasForResponse} must be at least {minimum} Datoshi.");
 
@@ -294,6 +285,27 @@ namespace Neo.SmartContract.Native
                 url,
                 filter ?? StackItem.Null
             });
+        }
+
+        // Calibrated against empty responses and finish with a no-op callback under
+        // Huyao. This is a minimum estimate, not a guarantee for arbitrary callbacks,
+        // future policy changes, or Oracle sets exceeding the witness size limits.
+        internal long GetMinimumResponseBudget(ApplicationEngine engine)
+        {
+            var n = RoleManagement.GetDesignatedByRole(engine.SnapshotCache, Role.Oracle, engine.GetPersistingIndex()).Length;
+            if (n <= 0) return MinGasForResponse;
+            var m = n - (n - 1) / 3;
+            // 32,768 per public key, Oracle.verify and System.Contract.Call (finish).
+            // The remaining units conservatively cover push and native-wrapper opcodes.
+            var cpu = (n + 2) * 32768L + (m + n) * 8L + 64;
+            var executionFee = (long)(cpu * engine.ExecFeePicoFactor).DivideCeiling(ApplicationEngine.FeeFactor);
+            // 66 bytes/signature, 34 bytes/public key; 136 bounds the fixed fields
+            // and variable-length prefixes for all supported role sets (up to 32).
+            long size = 136 + 66 * m + 34 * n;
+            var fee = checked(executionFee + size * Policy.GetFeePerByte(engine.SnapshotCache)
+                + Policy.GetAttributeFeeV1(engine.SnapshotCache, (byte)TransactionAttributeType.OracleResponse));
+            const long RoundingUnit = 0_01000000;
+            return Math.Max(MinGasForResponse, checked((2 * fee + RoundingUnit - 1) / RoundingUnit * RoundingUnit));
         }
 
         [ContractMethod(CpuFee = 1 << 15)]
