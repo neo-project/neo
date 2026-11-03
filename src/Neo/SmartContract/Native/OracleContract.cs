@@ -247,7 +247,7 @@ namespace Neo.SmartContract.Native
             long minimum = MinGasForResponse;
             if (engine.IsHardforkEnabled(Hardfork.HF_Huyao)
                 && RoleManagement.GetDesignatedByRole(engine.SnapshotCache, Role.Oracle,
-                    engine.PersistingBlock?.Index ?? Ledger.CurrentIndex(engine.SnapshotCache) + 1).Length > 8)
+                    engine.GetPersistingIndex()).Length > 8)
                 minimum = MinGasForResponseLargeOracleSet;
             if (gasForResponse < minimum)
                 throw new ArgumentException($"gasForResponse {gasForResponse} must be at least {minimum} Datoshi.");
