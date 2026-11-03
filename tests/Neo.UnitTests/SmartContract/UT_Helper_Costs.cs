@@ -10,8 +10,8 @@
 // modifications are permitted.
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Neo.SmartContract;
 using Neo.Cryptography.ECC;
+using Neo.SmartContract;
 using Neo.Wallets;
 using System.Linq;
 using System.Numerics;
