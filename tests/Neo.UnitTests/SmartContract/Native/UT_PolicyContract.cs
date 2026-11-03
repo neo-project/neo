@@ -40,6 +40,77 @@ namespace Neo.UnitTests.SmartContract.Native
         }
 
         [TestMethod]
+        [DataRow(false, false)]
+        [DataRow(false, true)]
+        [DataRow(true, false)]
+        [DataRow(true, true)]
+        public void Transfer_RoutesGasAfterBlockingDuringPayment(bool destroy, bool huyao)
+        {
+            using var snapshot = TestBlockchain.GetTestSnapshotCache();
+            using var callback = new ScriptBuilder();
+            callback.Emit(OpCode.CLEAR);
+            if (destroy)
+                callback.EmitDynamicCall(NativeContract.ContractManagement.Hash, "destroy");
+            else
+            {
+                callback.EmitSysCall(ApplicationEngine.System_Runtime_GetExecutingScriptHash);
+                callback.EmitPush(1);
+                callback.Emit(OpCode.PACK);
+                callback.EmitPush((int)CallFlags.All);
+                callback.EmitPush("blockAccount");
+                callback.EmitPush(NativeContract.Policy.Hash);
+                callback.EmitSysCall(ApplicationEngine.System_Contract_Call);
+            }
+            callback.Emit(OpCode.DROP);
+            callback.Emit(OpCode.RET);
+            var manifest = TestUtils.CreateManifest("onNEP17Payment", ContractParameterType.Void,
+                ContractParameterType.Hash160, ContractParameterType.Integer, ContractParameterType.Any);
+            var contract = TestUtils.GetContract(callback.ToArray(), manifest);
+            snapshot.AddContract(contract.Hash, contract);
+            var sender = UInt160.Parse("0x0000000000000000000000000000000000001234");
+            snapshot.Add(NativeContract.NEO.CreateStorageKey(20, contract.Hash),
+                new StorageItem(new NeoToken.NeoAccountState { Balance = 100, BalanceHeight = 0 }));
+            snapshot.Add(NativeContract.NEO.CreateStorageKey(20, sender),
+                new StorageItem(new NeoToken.NeoAccountState { Balance = 10, BalanceHeight = 1000 }));
+            var block = new Block
+            {
+                Header = new Header
+                {
+                    Index = 1000,
+                    Timestamp = 1_000_000,
+                    PrevHash = UInt256.Zero,
+                    MerkleRoot = UInt256.Zero,
+                    NextConsensus = UInt160.Zero,
+                    Witness = Witness.Empty
+                },
+                Transactions = []
+            };
+            var settings = TestProtocolSettings.Default with
+            {
+                Hardforks = TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_Huyao, huyao ? 1000u : 1001u)
+            };
+            using var engine = ApplicationEngine.Create(TriggerType.Application,
+                new Nep17NativeContractExtensions.ManualWitness(sender, NativeContract.NEO.GetCommitteeAddress(snapshot)),
+                snapshot, block, settings);
+            var expected = NativeContract.NEO.UnclaimedGas(engine, contract.Hash, 1000);
+            var before = NativeContract.GAS.BalanceOf(snapshot, NativeContract.Treasury.Hash);
+            using var script = new ScriptBuilder();
+            script.EmitDynamicCall(NativeContract.NEO.Hash, "transfer", sender, contract.Hash, 1, null);
+            engine.LoadScript(script.ToArray());
+            if (!huyao && !destroy)
+            {
+                Assert.AreEqual(VMState.FAULT, engine.Execute());
+                Assert.IsFalse(NativeContract.Policy.IsBlocked(snapshot, contract.Hash));
+                return;
+            }
+            Assert.AreEqual(VMState.HALT, engine.Execute(), engine.FaultException?.ToString());
+            Assert.IsTrue(NativeContract.Policy.IsBlocked(snapshot, contract.Hash));
+            Assert.AreEqual(before + (huyao ? expected : BigInteger.Zero), NativeContract.GAS.BalanceOf(snapshot, NativeContract.Treasury.Hash),
+                $"GAS at blocked account: {NativeContract.GAS.BalanceOf(snapshot, contract.Hash)}");
+            Assert.AreEqual(huyao ? BigInteger.Zero : expected, NativeContract.GAS.BalanceOf(snapshot, contract.Hash));
+        }
+
+        [TestMethod]
         [DataRow(false)]
         [DataRow(true)]
         public void BlockAccount_GasClaimDependsOnHuyao(bool activated)
