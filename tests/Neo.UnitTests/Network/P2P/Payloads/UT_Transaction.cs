@@ -53,7 +53,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [DataRow(-1, true)]
         [DataRow(0, true)]
         [DataRow(1, true)]
-        public void Deserialize_TransactionSizeIsCheckedByVerification(int offset, bool inBlock)
+        public void Deserialize_TransactionSizeLimit(int offset, bool inBlock)
         {
             var accounts = Enumerable.Range(1, 16)
                 .Select(i => new UInt160(new byte[] { (byte)i }.Concat(new byte[19]).ToArray())).ToArray();
@@ -73,7 +73,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                     VerificationScript = new byte[Witness.MaxVerificationScript]
                 }).ToArray()
             };
-            tx.Script = Enumerable.Repeat((byte)OpCode.NOP, tx.Script.Length + Transaction.MaxTransactionSize + offset - tx.Size).ToArray();
+            tx.Script = new byte[tx.Script.Length + Transaction.MaxTransactionSize + offset - tx.Size];
             Assert.AreEqual(Transaction.MaxTransactionSize + offset, tx.Size);
 
             if (inBlock)
@@ -90,18 +90,18 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                     Transactions = [tx]
                 };
                 var bytes = block.ToArray();
-                var deserialized = bytes.AsSerializable<Block>();
-                Assert.AreSequenceEqual(bytes, deserialized.ToArray());
-                Assert.AreEqual(offset > 0 ? VerifyResult.OverSize : VerifyResult.Succeed,
-                    deserialized.Transactions[0].VerifyStateIndependent(TestProtocolSettings.Default));
+                if (offset > 0)
+                    Assert.ThrowsExactly<FormatException>(() => bytes.AsSerializable<Block>());
+                else
+                    Assert.AreSequenceEqual(bytes, bytes.AsSerializable<Block>().ToArray());
             }
             else
             {
                 var bytes = tx.ToArray();
-                var deserialized = bytes.AsSerializable<Transaction>();
-                Assert.AreSequenceEqual(bytes, deserialized.ToArray());
-                Assert.AreEqual(offset > 0 ? VerifyResult.OverSize : VerifyResult.Succeed,
-                    deserialized.VerifyStateIndependent(TestProtocolSettings.Default));
+                if (offset > 0)
+                    Assert.ThrowsExactly<FormatException>(() => bytes.AsSerializable<Transaction>());
+                else
+                    Assert.AreSequenceEqual(bytes, bytes.AsSerializable<Transaction>().ToArray());
             }
         }
 
