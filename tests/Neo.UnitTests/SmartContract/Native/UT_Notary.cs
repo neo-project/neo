@@ -127,13 +127,25 @@ namespace Neo.UnitTests.SmartContract.Native
         }
 
         [TestMethod]
-        [DataRow(-1)]
-        [DataRow(0)]
-        [DataRow(19)]
-        [DataRow(20)]
-        [DataRow(21)]
-        [DataRow(32)]
-        public void Check_OnNEP17Payment_RecipientLength(int length)
+        [DataRow(-1, 1001u)]
+        [DataRow(0, 1001u)]
+        [DataRow(19, 1001u)]
+        [DataRow(20, 1001u)]
+        [DataRow(21, 1001u)]
+        [DataRow(32, 1001u)]
+        [DataRow(-1, 1000u)]
+        [DataRow(0, 1000u)]
+        [DataRow(19, 1000u)]
+        [DataRow(20, 1000u)]
+        [DataRow(21, 1000u)]
+        [DataRow(32, 1000u)]
+        [DataRow(-1, 999u)]
+        [DataRow(0, 999u)]
+        [DataRow(19, 999u)]
+        [DataRow(20, 999u)]
+        [DataRow(21, 999u)]
+        [DataRow(32, 999u)]
+        public void Check_OnNEP17Payment_RecipientLength(int length, uint activationHeight)
         {
             var snapshot = _snapshot.CloneCache();
             var persistingBlock = new Block
@@ -167,17 +179,28 @@ namespace Neo.UnitTests.SmartContract.Native
                 }
             };
             BigInteger amount = 2 * 1000_0000 + 1;
-            if (length == -1 || length == UInt160.Length)
+            var settings = TestProtocolSettings.Default with
             {
-                Assert.IsTrue(NativeContract.GAS.TransferWithTransaction(
-                    snapshot, from, NativeContract.Notary.Hash.ToArray(), amount, true, persistingBlock, data));
+                Hardforks = TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_Huyao, activationHeight)
+            };
+            using var engine = ApplicationEngine.Create(TriggerType.Application,
+                new Transaction { Signers = [new() { Account = new UInt160(from), Scopes = WitnessScope.Global }], Attributes = [], Witnesses = [] },
+                snapshot, persistingBlock, settings: settings);
+            using var script = new ScriptBuilder();
+            script.EmitDynamicCall(NativeContract.GAS.Hash, "transfer", from, NativeContract.Notary.Hash.ToArray(), amount, data);
+            engine.LoadScript(script.ToArray());
+            bool valid = length == -1 || length == UInt160.Length
+                || (activationHeight > persistingBlock.Index && length > UInt160.Length);
+            Assert.AreEqual(valid ? VMState.HALT : VMState.FAULT, engine.Execute(), engine.FaultException?.ToString());
+            if (valid)
+            {
+                Assert.IsTrue(engine.ResultStack.Pop().GetBoolean());
                 Assert.AreEqual(amount, Call_BalanceOf(snapshot, length == -1 ? from : recipient, persistingBlock));
                 Assert.AreEqual(BigInteger.Zero, Call_BalanceOf(snapshot, length == -1 ? recipient : from, persistingBlock));
             }
             else
             {
-                Assert.ThrowsExactly<TargetInvocationException>(() => NativeContract.GAS.TransferWithTransaction(
-                    snapshot, from, NativeContract.Notary.Hash.ToArray(), amount, true, persistingBlock, data));
+                Assert.IsNotNull(engine.FaultException);
                 Assert.AreEqual(BigInteger.Zero, Call_BalanceOf(snapshot, recipient, persistingBlock));
                 Assert.AreEqual(BigInteger.Zero, Call_BalanceOf(snapshot, from, persistingBlock));
             }
