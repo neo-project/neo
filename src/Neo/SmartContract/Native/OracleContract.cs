@@ -295,10 +295,23 @@ namespace Neo.SmartContract.Native
             var n = RoleManagement.GetDesignatedByRole(engine.SnapshotCache, Role.Oracle, engine.GetPersistingIndex()).Length;
             if (n <= 0) return MinGasForResponse;
             var m = n - (n - 1) / 3;
-            // 32,768 per public key, Oracle.verify and System.Contract.Call (finish).
-            // The remaining units conservatively cover push and native-wrapper opcodes.
-            var cpu = (n + 2) * 32768L + (m + n) * 8L + 64;
-            var executionFee = (long)(cpu * engine.ExecFeePicoFactor).DivideCeiling(ApplicationEngine.FeeFactor);
+            // These opcodes have static Huyao prices. Count the multisig pushes,
+            // the fixed finish script and both native wrappers without building scripts.
+            long OpcodePrice(OpCode opcode) => engine.OpcodeV1(1, opcode, new RunStats());
+            var opcodePrice = (m + n + 2) * OpcodePrice(OpCode.PUSHDATA1)
+                + OpcodePrice(m <= 16 ? (OpCode)((byte)OpCode.PUSH0 + m) : OpCode.PUSHINT8)
+                + OpcodePrice(n <= 16 ? (OpCode)((byte)OpCode.PUSH0 + n) : OpCode.PUSHINT8)
+                + OpcodePrice(OpCode.NEWARRAY0) + OpcodePrice(OpCode.PUSH15)
+                + 2 * OpcodePrice(OpCode.PUSH0) + 2 * OpcodePrice(OpCode.RET)
+                + 4 * OpcodePrice(OpCode.SYSCALL);
+            var nativeCpu = GetContractMethods(engine).Values
+                .Where(p => p.Descriptor.Name is "verify" or "finish").Sum(p => p.CpuFee);
+            var execution = (opcodePrice + nativeCpu * ApplicationEngine.OpcodePriceMultiplier) * engine.ExecFeePicoFactor
+                + n * engine.GetSysCallPrice(ApplicationEngine.System_Crypto_CheckSig)
+                + engine.GetSysCallPrice(ApplicationEngine.System_Crypto_CheckMultisig)
+                + engine.GetSysCallPrice(ApplicationEngine.System_Contract_Call)
+                + 2 * engine.GetSysCallPrice(ApplicationEngine.System_Contract_CallNative);
+            var executionFee = (long)execution.DivideCeiling(ApplicationEngine.FeeFactor * ApplicationEngine.OpcodePriceMultiplier);
             // 66 bytes/signature, 34 bytes/public key; 136 bounds the fixed fields
             // and variable-length prefixes for all supported role sets (up to 32).
             long size = 136 + 66 * m + 34 * n;
