@@ -705,13 +705,18 @@ namespace Neo.SmartContract
         /// <param name="applyFactor">Indicates whether to apply the fee factor to the gas argument.</param>
         protected internal void AddFemtoGas(BigInteger gas, bool applyFactor)
         {
+            AddFemtoGas(gas, applyFactor, respectWhitelist: true);
+        }
+
+        private void AddFemtoGas(BigInteger gas, bool applyFactor, bool respectWhitelist)
+        {
             if (gas < 0)
             {
                 throw new InvalidOperationException("AddFemtoGas can't be negative.");
             }
 
             // Check whitelist.
-            if (_whitelisted)
+            if (respectWhitelist && _whitelisted)
             {
                 // The execution is whitelisted.
                 return;
@@ -789,7 +794,9 @@ namespace Neo.SmartContract
             if (IsHardforkEnabled(Hardfork.HF_Faun) &&
                 NativeContract.Policy.IsWhitelistFeeContract(SnapshotCache, contract.Hash, method, out var fixedFee))
             {
-                AddFee(fixedFee.Value, true);
+                // The callee's fixed fee is payable even when the caller's execution is exempt.
+                // Keep the cached caller state intact for instruction pricing after this call.
+                AddFemtoGas((BigInteger)fixedFee.Value * OpcodePriceMultiplier, true, respectWhitelist: false);
                 state.WhiteListed = true;
             }
 
