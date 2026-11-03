@@ -18,6 +18,7 @@ using Neo.SmartContract.Native;
 using Neo.UnitTests.Extensions;
 using Neo.VM;
 using Neo.VM.Types;
+using Neo.Wallets;
 using System;
 using System.Linq;
 
@@ -57,15 +58,30 @@ namespace Neo.UnitTests.SmartContract.Native
         }
 
         [TestMethod]
-        [DataRow(2u, 10000000L, false)]
-        [DataRow(2u, 9999999L, true)]
-        [DataRow(1u, 10000000L, true)]
-        [DataRow(0u, 10000000L, true)]
-        [DataRow(1u, 49999999L, true)]
-        [DataRow(1u, 50000000L, false)]
-        [DataRow(0u, 50000000L, false)]
-        public void RequestResponseBudgetIsGatedByHuyao(uint activationHeight, long budget, bool insufficient)
+        [DataRow(2u, 9, 10000000L, false)]
+        [DataRow(2u, 22, 9999999L, true)]
+        [DataRow(1u, 0, 10000000L, false)]
+        [DataRow(1u, 1, 10000000L, false)]
+        [DataRow(1u, 4, 10000000L, false)]
+        [DataRow(1u, 8, 9999999L, true)]
+        [DataRow(1u, 8, 10000000L, false)]
+        [DataRow(1u, 9, 10000000L, true)]
+        [DataRow(1u, 9, 29999999L, true)]
+        [DataRow(1u, 9, 30000000L, false)]
+        [DataRow(1u, 22, 29999999L, true)]
+        [DataRow(1u, 22, 30000000L, false)]
+        [DataRow(0u, 4, 10000000L, false)]
+        [DataRow(0u, 22, 30000000L, false)]
+        public void RequestResponseBudgetIsGatedByHuyao(uint activationHeight, int nodeCount, long budget, bool insufficient)
         {
+            if (nodeCount > 0)
+            {
+                var nodes = new Neo.VM.Types.Array(Enumerable.Range(1, nodeCount)
+                    .Select(i => new KeyPair(Enumerable.Repeat((byte)i, 32).ToArray()).PublicKey)
+                    .OrderBy(p => p).Select(p => (StackItem)(ByteString)p.EncodePoint(true)));
+                _snapshot.Add(NativeContract.RoleManagement.CreateStorageKey((byte)Role.Oracle, 1u),
+                    new StorageItem(BinarySerializer.Serialize(nodes, ExecutionEngineLimits.Default)));
+            }
             var settings = TestProtocolSettings.Default with
             {
                 Hardforks = TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_Huyao, activationHeight)
@@ -82,7 +98,7 @@ namespace Neo.UnitTests.SmartContract.Native
             {
                 var exception = engine.FaultException.GetBaseException();
                 Assert.IsInstanceOfType<ArgumentException>(exception);
-                long minimum = activationHeight > 1 ? 10000000L : 50000000L;
+                long minimum = activationHeight > 1 || nodeCount <= 8 ? 10000000L : 30000000L;
                 Assert.Contains($"must be at least {minimum}", exception.Message);
                 Assert.IsEmpty(NativeContract.Oracle.GetRequestsByUrl(_snapshot, "https://example.invalid"));
             }
@@ -92,6 +108,35 @@ namespace Neo.UnitTests.SmartContract.Native
                 Assert.HasCount(1, requests);
                 Assert.AreEqual(budget, requests[0].Item2.GasForResponse);
             }
+        }
+
+        [TestMethod]
+        [DataRow(4, 10000000L)]
+        [DataRow(8, 10000000L)]
+        [DataRow(9, 30000000L)]
+        [DataRow(22, 30000000L)]
+        public void FixedResponseBudgetsCoverEmptyResponseNetworkFee(int nodeCount, long budget)
+        {
+            var nodes = Enumerable.Range(1, nodeCount)
+                .Select(i => new KeyPair(Enumerable.Repeat((byte)i, 32).ToArray()).PublicKey).ToArray();
+            var contract = Contract.CreateMultiSigContract(nodeCount - (nodeCount - 1) / 3, nodes);
+            var tx = EmptyTx([new OracleResponse
+            {
+                Id = 1,
+                Code = OracleResponseCode.InsufficientFunds,
+                Result = ReadOnlyMemory<byte>.Empty
+            }]);
+            tx.Script = OracleResponse.FixedScript;
+            tx.Signers = [
+                new Signer { Account = NativeContract.Oracle.Hash, Scopes = WitnessScope.None },
+                new Signer { Account = contract.ScriptHash, Scopes = WitnessScope.None }
+            ];
+            tx.Witnesses = [Witness.Empty, new Witness { VerificationScript = contract.Script }];
+            var networkFee = tx.CalculateNetworkFee(_snapshot, TestProtocolSettings.Default,
+                hash => hash == contract.ScriptHash ? contract.Script : null);
+            Assert.IsTrue(networkFee < budget, $"{nodeCount} nodes: network fee {networkFee}, budget {budget}");
+            if (nodeCount >= 9)
+                Assert.IsTrue(networkFee > 10000000L, "The old minimum must be insufficient for the larger sets.");
         }
 
         private static Transaction EmptyTx(TransactionAttribute[] attributes = null)

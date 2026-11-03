@@ -38,13 +38,12 @@ namespace Neo.SmartContract.Native
         private const int MaxCallbackLength = 32;
         private const int MaxUserDataLength = 512;
         private const long MinGasForResponse = 0_10000000;
-        // At default fees (ExecFeeFactor = 30, FeePerByte = 1,000 datoshi), an empty
-        // Oracle response costs ~0.1075 GAS with a 7-of-9 multisig, or ~0.2452 GAS
-        // with 15-of-22 (the largest BFT quorum fitting the current witness limits):
-        // ~22 * 32,768 * 30 for signatures + ~0.0099 GAS for Oracle verification
-        // + ~1,900 * 1,000 datoshi for bytes and minor opcode costs. 0.5 GAS gives
-        // roughly 2x headroom; this is not a guarantee against future policy changes.
-        private const long MinGasForResponseHuyao = 0_50000000;
+        // At default fees, an empty response fits 0.1 GAS for up to eight Oracle
+        // nodes. Larger sets need 0.3 GAS to cover verification and bytes through
+        // 15-of-22, the largest BFT quorum fitting the current witness limits.
+        // These fixed budgets do not guarantee callback execution or cover future
+        // policy/role changes, and cannot make oversized witnesses valid.
+        private const long MinGasForResponseLargeOracleSet = 0_30000000;
 
         private const byte Prefix_Price = 5;
         private const byte Prefix_RequestId = 9;
@@ -245,8 +244,11 @@ namespace Neo.SmartContract.Native
             if (callback.StartsWith('_'))
                 throw new ArgumentException("Callback cannot start with underscore.");
 
-            long minimum = engine.IsHardforkEnabled(Hardfork.HF_Huyao)
-                ? MinGasForResponseHuyao : MinGasForResponse;
+            long minimum = MinGasForResponse;
+            if (engine.IsHardforkEnabled(Hardfork.HF_Huyao)
+                && RoleManagement.GetDesignatedByRole(engine.SnapshotCache, Role.Oracle,
+                    engine.PersistingBlock?.Index ?? Ledger.CurrentIndex(engine.SnapshotCache) + 1).Length > 8)
+                minimum = MinGasForResponseLargeOracleSet;
             if (gasForResponse < minimum)
                 throw new ArgumentException($"gasForResponse {gasForResponse} must be at least {minimum} Datoshi.");
 
