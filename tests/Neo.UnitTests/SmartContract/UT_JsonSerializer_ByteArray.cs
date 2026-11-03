@@ -27,7 +27,7 @@ namespace Neo.UnitTests.SmartContract
     public class UT_JsonSerializer_ByteArray
     {
         [TestMethod]
-        public void SerializeToByteArray_RejectsCyclesAndSharedReferences()
+        public void SerializeToByteArray_RejectsCyclesButAllowsSharedReferences()
         {
             var cycle = new Array();
             for (int i = 0; i < 2000; i++) cycle.Add(cycle);
@@ -43,12 +43,25 @@ namespace Neo.UnitTests.SmartContract
             foreach (CompoundType child in new CompoundType[] { new Array(), new Struct(), new Map() })
             {
                 var shared = new Array { child, child };
-                Assert.ThrowsExactly<NotSupportedException>(() =>
-                    JsonSerializer.SerializeToByteArray(shared, 65535, true));
-                // Legacy behavior must remain available for execution before Huyao.
+                Assert.AreEqual(child is Map ? "[{},{}]" : "[[],[]]",
+                    Encoding.UTF8.GetString(JsonSerializer.SerializeToByteArray(shared, 65535, true)));
                 Assert.AreEqual(child is Map ? "[{},{}]" : "[[],[]]",
                     Encoding.UTF8.GetString(JsonSerializer.SerializeToByteArray(shared, 65535, false)));
             }
+        }
+
+        [TestMethod]
+        public void SerializeToByteArray_SharedDescendantsLeaveActivePath()
+        {
+            var child = new Array { new Integer(42) };
+            var map = new Map { ["a"] = child, ["b"] = child };
+            var root = new Array { map, child, new Struct { child }, map };
+            var expected = JsonSerializer.SerializeToByteArray(root, 65535, false);
+            Assert.AreSequenceEqual(expected, JsonSerializer.SerializeToByteArray(root, (uint)expected.Length, true));
+            Assert.ThrowsExactly<InvalidOperationException>(() =>
+                JsonSerializer.SerializeToByteArray(root, (uint)expected.Length - 1, true));
+            child.Add(root);
+            Assert.ThrowsExactly<NotSupportedException>(() => JsonSerializer.SerializeToByteArray(root, 65535, true));
         }
 
         [TestMethod]

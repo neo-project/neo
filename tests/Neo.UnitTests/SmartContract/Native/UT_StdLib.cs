@@ -506,21 +506,21 @@ namespace Neo.UnitTests.SmartContract.Native
             using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: settings);
             Assert.AreEqual(enabled, engine.IsHardforkEnabled(Hardfork.HF_Huyao));
             engine.LoadScript(script.ToArray());
-            Assert.AreEqual(enabled ? VMState.FAULT : VMState.HALT, engine.Execute());
-            if (enabled)
-                Assert.IsInstanceOfType<NotSupportedException>(engine.FaultException.GetBaseException());
-            else
-                Assert.AreEqual("[[],[]]", engine.ResultStack.Pop().GetString());
+            Assert.AreEqual(VMState.HALT, engine.Execute());
+            Assert.AreEqual("[[],[]]", engine.ResultStack.Pop().GetString());
         }
 
         [TestMethod]
-        public void JsonSerializeCycleHuyao()
+        [DataRow(2u, false)]
+        [DataRow(1u, true)]
+        [DataRow(0u, true)]
+        public void JsonSerializeCycleHuyao(uint activationHeight, bool enabled)
         {
             using var system = TestBlockchain.GetSystem();
             using var snapshot = system.GetSnapshotCache();
             var settings = TestProtocolSettings.Default with
             {
-                Hardforks = TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_Huyao, 1)
+                Hardforks = TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_Huyao, activationHeight)
             };
             using var script = new ScriptBuilder();
             script.Emit(OpCode.NEWARRAY0);
@@ -536,7 +536,10 @@ namespace Neo.UnitTests.SmartContract.Native
             using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: settings);
             engine.LoadScript(script.ToArray());
             Assert.AreEqual(VMState.FAULT, engine.Execute());
-            Assert.IsInstanceOfType<NotSupportedException>(engine.FaultException.GetBaseException());
+            if (enabled)
+                Assert.IsInstanceOfType<NotSupportedException>(engine.FaultException.GetBaseException());
+            else
+                Assert.IsNotInstanceOfType<NotSupportedException>(engine.FaultException.GetBaseException());
         }
 
         [TestMethod]
