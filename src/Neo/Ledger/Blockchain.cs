@@ -226,6 +226,13 @@ namespace Neo.Ledger
             var headerHeight = _system.HeaderCache.Last?.Index ?? currentHeight;
             if (block.Index <= currentHeight)
                 return VerifyResult.AlreadyExists;
+            // Transaction witnesses are not committed by the block hash. Validate
+            // each received body before caching it, even when its header is known.
+            foreach (var transaction in block.Transactions)
+            {
+                var result = transaction.VerifyStateIndependent(_system.Settings);
+                if (result != VerifyResult.Succeed) return result;
+            }
             if (block.Index - 1 > headerHeight)
             {
                 AddUnverifiedBlockToCache(block);
