@@ -48,8 +48,12 @@ namespace Neo.SmartContract.Native
         /// <param name="from">GAS sender</param>
         /// <param name="amount">The amount of GAS sent</param>
         /// <param name="data">Optional data</param>
-        [ContractMethod(CpuFee = 1 << 5, RequiredCallFlags = CallFlags.None)]
-        private void OnNEP17Payment(ApplicationEngine engine, UInt160 from, BigInteger amount, StackItem data) { }
+        [ContractMethod(true, Hardfork.HF_Huyao, CpuFee = 1 << 5, RequiredCallFlags = CallFlags.None, Name = "onNEP17Payment")]
+        private void OnNEP17PaymentV0(ApplicationEngine engine, UInt160 from, BigInteger amount, StackItem data) { }
+
+        // Minting GAS uses a null sender.
+        [ContractMethod(Hardfork.HF_Huyao, CpuFee = 1 << 5, RequiredCallFlags = CallFlags.None, Name = "onNEP17Payment")]
+        private void OnNEP17PaymentV1(ApplicationEngine engine, UInt160? from, BigInteger amount, StackItem data) { }
 
         /// <summary>
         /// OnNEP11Payment callback.

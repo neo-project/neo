@@ -51,7 +51,6 @@ namespace Neo.SmartContract.Native
         private const byte Prefix_GasPerBlock = 29;
         private const byte Prefix_RegisterPrice = 13;
         private const byte Prefix_VoterRewardPerCommittee = 23;
-        private const byte Prefix_DeferredGas = 24;
 
         private const byte NeoHolderRewardRatio = 10;
         private const byte CommitteeRewardRatio = 10;
@@ -103,15 +102,6 @@ namespace Neo.SmartContract.Native
 
         private protected override async ContractTask PostTransferAsync(ApplicationEngine engine, UInt160? from, UInt160? to, BigInteger amount, StackItem data, bool callOnPayment)
         {
-            // A full balance transfer removes the NEO account record, but deferred GAS
-            // must remain claimable with a zero-value transfer after unblocking.
-            if (engine.IsHardforkEnabled(Hardfork.HF_Huyao) && from is not null &&
-                !engine.SnapshotCache.Contains(CreateStorageKey(Prefix_Account, from)))
-            {
-                var distribution = DistributeGas(engine, from, new NeoAccountState());
-                if (distribution is not null)
-                    engine.CurrentContext!.GetState<List<GasDistribution>>().Add(distribution);
-            }
             await base.PostTransferAsync(engine, from, to, amount, data, callOnPayment);
             var list = engine.CurrentContext!.GetState<List<GasDistribution>>();
             foreach (var distribution in list)
@@ -130,28 +120,7 @@ namespace Neo.SmartContract.Native
             }
         }
 
-        /// <summary>
-        /// Specifies how accrued GAS rewards are handled when settling a NEO account.
-        /// </summary>
-        internal enum GasClaimMode
-        {
-            /// <summary>
-            /// Claims accrued rewards together with any previously deferred GAS.
-            /// </summary>
-            Claim,
-
-            /// <summary>
-            /// Stores accrued rewards for a later claim without minting GAS or invoking payment callbacks.
-            /// </summary>
-            Defer,
-
-            /// <summary>
-            /// Discards accrued and deferred rewards without minting GAS when a contract is destroyed.
-            /// </summary>
-            Discard
-        }
-
-        private GasDistribution? DistributeGas(ApplicationEngine engine, UInt160 account, NeoAccountState state, GasClaimMode mode = GasClaimMode.Claim)
+        private GasDistribution? DistributeGas(ApplicationEngine engine, UInt160 account, NeoAccountState state, UInt160? gasRecipient = null)
         {
             // PersistingBlock is null when running under the debugger
             if (engine.PersistingBlock is null) return null;
@@ -165,32 +134,10 @@ namespace Neo.SmartContract.Native
                 var latestGasPerVote = engine.SnapshotCache.TryGet(keyLastest) ?? BigInteger.Zero;
                 state.LastGasPerVote = latestGasPerVote;
             }
-            if (engine.IsHardforkEnabled(Hardfork.HF_Huyao))
-            {
-                var key = CreateStorageKey(Prefix_DeferredGas, account);
-                if (mode == GasClaimMode.Discard)
-                {
-                    engine.SnapshotCache.Delete(key);
-                    return null;
-                }
-                if (mode == GasClaimMode.Defer)
-                {
-                    // Settle before clearing votes or changing the balance, without
-                    // losing either reward or invoking a blocked contract.
-                    if (datoshi != 0)
-                        engine.SnapshotCache.GetAndChange(key, () => new StorageItem(BigInteger.Zero)).Add(datoshi);
-                    return null;
-                }
-                if (engine.SnapshotCache.TryGet(key) is { } pending)
-                {
-                    datoshi += (BigInteger)pending;
-                    engine.SnapshotCache.Delete(key);
-                }
-            }
             if (datoshi == 0) return null;
             return new GasDistribution
             {
-                Account = account,
+                Account = gasRecipient ?? (engine.IsHardforkEnabled(Hardfork.HF_Huyao) && Policy.IsBlocked(engine.SnapshotCache, account) ? Treasury.Hash : account),
                 Amount = datoshi
             };
         }
@@ -416,8 +363,6 @@ namespace Neo.SmartContract.Native
             ArgumentOutOfRangeException.ThrowIfNotEqual(end, expectEnd);
             StorageItem? storage = engine.SnapshotCache.TryGet(CreateStorageKey(Prefix_Account, account));
             var bonus = storage is null ? BigInteger.Zero : CalculateBonus(engine.SnapshotCache, storage.GetInteroperable<NeoAccountState>(), end);
-            if (engine.IsHardforkEnabled(Hardfork.HF_Huyao))
-                bonus += engine.SnapshotCache.TryGet(CreateStorageKey(Prefix_DeferredGas, account)) ?? BigInteger.Zero;
             return bonus;
         }
 
@@ -518,11 +463,8 @@ namespace Neo.SmartContract.Native
             return await VoteInternal(engine, account, voteTo);
         }
 
-        internal async ContractTask<bool> VoteInternal(ApplicationEngine engine, UInt160 account, ECPoint? voteTo, GasClaimMode gasClaimMode = GasClaimMode.Claim)
+        internal async ContractTask<bool> VoteInternal(ApplicationEngine engine, UInt160 account, ECPoint? voteTo, UInt160? gasRecipient = null)
         {
-            // Deferred rewards may outlive the NEO account record after a full transfer.
-            if (gasClaimMode == GasClaimMode.Discard && engine.IsHardforkEnabled(Hardfork.HF_Huyao))
-                engine.SnapshotCache.Delete(CreateStorageKey(Prefix_DeferredGas, account));
             NeoAccountState? stateAccount = engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_Account, account))?.GetInteroperable<NeoAccountState>();
             if (stateAccount is null) return false;
             if (stateAccount.Balance == 0) return false;
@@ -542,7 +484,7 @@ namespace Neo.SmartContract.Native
                 else
                     item.Add(-stateAccount.Balance);
             }
-            GasDistribution? gasDistribution = DistributeGas(engine, account, stateAccount, gasClaimMode);
+            GasDistribution? gasDistribution = DistributeGas(engine, account, stateAccount, gasRecipient);
             if (stateAccount.VoteTo != null)
             {
                 StorageKey key = CreateStorageKey(Prefix_Candidate, stateAccount.VoteTo);

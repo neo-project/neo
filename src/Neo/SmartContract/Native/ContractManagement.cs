@@ -438,9 +438,9 @@ namespace Neo.SmartContract.Native
 
             if (blockBeforeErase)
             {
-                // From Huyao, discard rewards rather than leaving unclaimable deferred GAS.
+                // From Huyao, mint accrued rewards to Treasury when blocking the contract.
                 // Earlier hardforks still claim GAS before removing the contract.
-                await Policy.BlockAccountInternal(engine, hash, discardGas: true);
+                await Policy.BlockAccountInternal(engine, hash);
                 // Clean whitelist (emit event if exists with the old manifest information).
                 Policy.CleanWhitelist(engine, contract);
             }
@@ -454,7 +454,7 @@ namespace Neo.SmartContract.Native
             {
                 // Lock contract (and skip any side calls like onNEP17Payment on votes revoke
                 // because the contract is already removed from the snapshot).
-                await Policy.BlockAccountInternal(engine, hash, discardGas: true);
+                await Policy.BlockAccountInternal(engine, hash);
                 // Clean whitelist (emit event if exists with the old manifest information).
                 Policy.CleanWhitelist(engine, contract);
             }

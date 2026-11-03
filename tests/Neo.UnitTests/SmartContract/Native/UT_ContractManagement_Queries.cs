@@ -35,7 +35,7 @@ namespace Neo.UnitTests.SmartContract.Native
         [DataRow(true, true, 100)]
         [DataRow(true, true, 0)]
         [DataRow(true, true, -1)]
-        public void Destroy_DiscardsGasFromHuyao(bool huyao, bool abortCallback, int balance)
+        public void Destroy_MintsGasToTreasuryFromHuyao(bool huyao, bool abortCallback, int balance)
         {
             using var script = new ScriptBuilder();
             script.EmitDynamicCall(NativeContract.ContractManagement.Hash, "destroy");
@@ -74,8 +74,6 @@ namespace Neo.UnitTests.SmartContract.Native
             if (balance > 0) _snapshot.GetAndChange(NativeContract.NEO.CreateStorageKey(1)).Add(balance);
             _snapshot.GetAndChange(NativeContract.NEO.CreateStorageKey(23, candidate), () => new StorageItem(BigInteger.Zero))
                 .Set(new BigInteger(103_00000000L));
-            var deferredKey = NativeContract.NEO.CreateStorageKey(24, contract.Hash);
-            if (huyao) _snapshot.Add(deferredKey, new StorageItem(new BigInteger(123)));
             var settings = TestProtocolSettings.Default with
             {
                 Hardforks = TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_Huyao, huyao ? 1000u : 1001u)
@@ -94,6 +92,8 @@ namespace Neo.UnitTests.SmartContract.Native
                     },
                     Transactions = []
                 }, settings);
+            var expectedGas = NativeContract.NEO.UnclaimedGas(engine, contract.Hash, 1000);
+            var treasuryGasBefore = NativeContract.GAS.BalanceOf(_snapshot, NativeContract.Treasury.Hash);
             using var invocation = new ScriptBuilder();
             invocation.EmitDynamicCall(contract.Hash, "destroySelf");
             engine.LoadScript(invocation.ToArray());
@@ -107,7 +107,7 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.AreEqual(VMState.HALT, engine.Execute(), engine.FaultException?.ToString());
             Assert.IsNull(NativeContract.ContractManagement.GetContract(_snapshot, contract.Hash));
             Assert.IsTrue(NativeContract.Policy.IsBlocked(_snapshot, contract.Hash));
-            Assert.IsFalse(_snapshot.Contains(deferredKey));
+            Assert.AreEqual(treasuryGasBefore + (huyao ? expectedGas : BigInteger.Zero), NativeContract.GAS.BalanceOf(_snapshot, NativeContract.Treasury.Hash));
             Assert.AreEqual(huyao, NativeContract.GAS.BalanceOf(_snapshot, contract.Hash).IsZero);
             Assert.AreEqual(BigInteger.Zero, _snapshot[candidateKey].GetInteroperable<NeoToken.CandidateState>().Votes);
             if (balance > 0)

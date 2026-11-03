@@ -600,7 +600,7 @@ namespace Neo.SmartContract.Native
             return await BlockAccountInternal(engine, account);
         }
 
-        internal async ContractTask<bool> BlockAccountInternal(ApplicationEngine engine, UInt160 account, bool discardGas = false)
+        internal async ContractTask<bool> BlockAccountInternal(ApplicationEngine engine, UInt160 account)
         {
             if (IsNative(account)) throw new InvalidOperationException("Cannot block a native contract.");
 
@@ -610,8 +610,7 @@ namespace Neo.SmartContract.Native
 
             if (engine.IsHardforkEnabled(Hardfork.HF_Faun))
                 await NEO.VoteInternal(engine, account, null,
-                    !engine.IsHardforkEnabled(Hardfork.HF_Huyao) ? NeoToken.GasClaimMode.Claim
-                    : discardGas ? NeoToken.GasClaimMode.Discard : NeoToken.GasClaimMode.Defer);
+                    engine.IsHardforkEnabled(Hardfork.HF_Huyao) ? Treasury.Hash : account);
 
             engine.SnapshotCache.Add(key,
                 // Set request time for recover funds
