@@ -362,8 +362,9 @@ namespace Neo.SmartContract.Native
             var expectEnd = engine.PersistingBlock?.Index ?? Ledger.CurrentIndex(engine.SnapshotCache) + 1;
             ArgumentOutOfRangeException.ThrowIfNotEqual(end, expectEnd);
             StorageItem? storage = engine.SnapshotCache.TryGet(CreateStorageKey(Prefix_Account, account));
-            var bonus = storage is null ? BigInteger.Zero : CalculateBonus(engine.SnapshotCache, storage.GetInteroperable<NeoAccountState>(), end);
-            return bonus;
+            if (storage is null) return BigInteger.Zero;
+            NeoAccountState state = storage.GetInteroperable<NeoAccountState>();
+            return CalculateBonus(engine.SnapshotCache, state, end);
         }
 
         /// <summary>
