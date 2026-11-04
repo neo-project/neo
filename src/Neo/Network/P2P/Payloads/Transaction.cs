@@ -152,6 +152,8 @@ namespace Neo.Network.P2P.Payloads
             if (Witnesses.Length != Signers.Length)
                 throw new FormatException($"Witnesses.Length({Witnesses.Length}) != Signers.Length({Signers.Length})");
             _size = reader.Position - startPosition;
+            if (_size > MaxTransactionSize)
+                throw new FormatException($"Transaction size exceeds the maximum of {MaxTransactionSize} bytes.");
         }
 
         private static TransactionAttribute[] DeserializeAttributes(ref MemoryReader reader, int maxCount)
