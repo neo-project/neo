@@ -152,6 +152,8 @@ namespace Neo.Network.P2P.Payloads
             if (Witnesses.Length != Signers.Length)
                 throw new FormatException($"Witnesses.Length({Witnesses.Length}) != Signers.Length({Signers.Length})");
             _size = reader.Position - startPosition;
+            if (_size > MaxTransactionSize)
+                throw new FormatException($"Transaction size exceeds the maximum of {MaxTransactionSize} bytes.");
         }
 
         private static TransactionAttribute[] DeserializeAttributes(ref MemoryReader reader, int maxCount)
@@ -345,14 +347,14 @@ namespace Neo.Network.P2P.Payloads
             if (netFeeDatoshi < 0) return VerifyResult.InsufficientFunds;
 
             if (netFeeDatoshi > MaxVerificationGas) netFeeDatoshi = MaxVerificationGas;
-            var execFeeFactor = NativeContract.Policy.GetExecFeeFactor(settings, snapshot, height);
+            var execFeeFactor = NativeContract.Policy.GetExecFeeFactorWithDecimals(settings, snapshot, height);
             for (int i = 0; i < hashes.Length; i++)
             {
                 if (IsSignatureContract(Witnesses[i].VerificationScript.Span) && IsSingleSignatureInvocationScript(Witnesses[i].InvocationScript, out var _))
-                    netFeeDatoshi -= execFeeFactor * SignatureContractCost();
-                else if (IsMultiSigContract(Witnesses[i].VerificationScript.Span, out int m, out int n) && IsMultiSignatureInvocationScript(m, Witnesses[i].InvocationScript, out var _))
+                    netFeeDatoshi -= SignatureContractCost(settings, height + 1, execFeeFactor);
+                else if (IsMultiSigContract(Witnesses[i].VerificationScript.Span, out var parameters) && IsMultiSignatureInvocationScript(parameters.M, Witnesses[i].InvocationScript, out var _))
                 {
-                    netFeeDatoshi -= execFeeFactor * MultiSignatureContractCost(m, n);
+                    netFeeDatoshi -= MultiSignatureContractCost(settings, height + 1, execFeeFactor, parameters);
                 }
                 else
                 {

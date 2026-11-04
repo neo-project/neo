@@ -9,17 +9,15 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using System;
 using System.Collections.Generic;
 using System.Security.Cryptography;
 using ECPoint = Neo.Cryptography.ECC.ECPoint;
 
 namespace Neo.IO.Caching
 {
-    record ECDsaCacheItem(ECPoint Key, ECDsa Value) : IDisposable
-    {
-        public void Dispose() => Value.Dispose();
-    }
+    // Callers use the cached instance after releasing the cache lock. Eviction must not
+    // dispose it while it is still in use; native resources are reclaimed by finalization.
+    record ECDsaCacheItem(ECPoint Key, ECDsa Value);
 
     internal class ECDsaCache : FIFOCache<ECPoint, ECDsaCacheItem>
     {

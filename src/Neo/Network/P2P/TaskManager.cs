@@ -115,7 +115,7 @@ namespace Neo.Network.P2P
             hashes.Remove(_knownHashes);
             // Add to AvailableTasks the ones, of type InventoryType.Block, that are global (already under process by other sessions)
             if (payload.Type == InventoryType.Block)
-                session.AvailableTasks.UnionWith(hashes.Where(p => globalInvTasks.ContainsKey(p)));
+                session.AvailableTasks.UnionWith(hashes.Where(p => globalInvTasks.ContainsKey(p) && !session.InvTasks.ContainsKey(p)));
 
             // Remove those that are already in process by other sessions
             hashes.Remove(globalInvTasks);
@@ -214,6 +214,11 @@ namespace Neo.Network.P2P
             foreach (var hash in payload.Hashes)
             {
                 globalInvTasks.Remove(hash);
+                foreach (var session in sessions.Values)
+                {
+                    session.AvailableTasks.Remove(hash);
+                    session.InvTasks.Remove(hash);
+                }
             }
 
             if (source is not null && source != ActorRefs.NoSender && sessions.TryGetValue(source, out var session))
@@ -409,12 +414,13 @@ namespace Neo.Network.P2P
             if (session.AvailableTasks.Count > 0)
             {
                 session.AvailableTasks.Remove(_knownHashes);
+                session.AvailableTasks.Remove(session.InvTasks);
                 // Search any similar hash that is on Singleton's knowledge, which means, on the way or already processed
                 session.AvailableTasks.RemoveWhere(p => NativeContract.Ledger.ContainsBlock(snapshot, p));
                 HashSet<UInt256> hashes = [.. session.AvailableTasks];
+                hashes.RemoveWhere(p => !IncrementGlobalTask(p));
                 if (hashes.Count > 0)
                 {
-                    hashes.RemoveWhere(p => !IncrementGlobalTask(p));
                     session.AvailableTasks.Remove(hashes);
 
                     foreach (UInt256 hash in hashes)
@@ -431,7 +437,10 @@ namespace Neo.Network.P2P
             // When the number of AvailableTasks is no more than 0,
             // no pending tasks of InventoryType.Block, it should process pending the tasks of headers
             // If not HeaderTask pending to be processed it should ask for more Blocks
-            if ((!HasHeaderTask || globalInvTasks[HeaderTaskHash] < MaxConcurrentTasks) && headerHeight < session.LastBlockIndex && !system.HeaderCache.Full)
+            if (!session.InvTasks.ContainsKey(HeaderTaskHash) &&
+                (!HasHeaderTask || globalInvTasks[HeaderTaskHash] < MaxConcurrentTasks) &&
+                headerHeight < session.LastBlockIndex &&
+                !system.HeaderCache.Full)
             {
                 session.InvTasks[HeaderTaskHash] = DateTime.UtcNow;
                 IncrementGlobalTask(HeaderTaskHash);

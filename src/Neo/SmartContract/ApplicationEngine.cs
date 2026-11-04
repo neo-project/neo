@@ -21,7 +21,6 @@ using Neo.VM.Types;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Diagnostics;
 using System.Linq;
 using System.Numerics;
 using System.Reflection;
@@ -40,6 +39,7 @@ namespace Neo.SmartContract
         protected static readonly JumpTable DefaultJumpTable = ComposeDefaultJumpTable();
         protected static readonly JumpTable NotEchidnaJumpTable = ComposeNotEchidnaJumpTable();
         protected static readonly JumpTable NotGorgonJumpTable = ComposeNotGorgonJumpTable();
+        protected static readonly JumpTable NotHuyaoJumpTable = ComposeNotHuyaoJumpTable();
 
         /// <summary>
         /// The maximum cost that can be spent when a contract is executed in test mode.
@@ -343,7 +343,7 @@ namespace Neo.SmartContract
 
         public static JumpTable ComposeNotGorgonJumpTable()
         {
-            var table = ComposeDefaultJumpTable();
+            var table = ComposeNotHuyaoJumpTable();
 
             // Before https://github.com/neo-project/neo-vm/pull/543
             table[OpCode.HASKEY] = HasKey_Before543;
@@ -354,6 +354,16 @@ namespace Neo.SmartContract
             // Before https://github.com/neo-project/neo-vm/pull/567.
             table[OpCode.SHR] = VulnerableSHR;
             table[OpCode.SHL] = VulnerableSHL;
+
+            return table;
+        }
+
+        public static JumpTable ComposeNotHuyaoJumpTable()
+        {
+            var table = ComposeDefaultJumpTable();
+
+            // Before https://github.com/neo-project/neo-vm/pull/606
+            table[OpCode.SETITEM] = SetItem_Before606;
 
             return table;
         }
@@ -447,6 +457,88 @@ namespace Neo.SmartContract
                 default:
                     throw new InvalidOperationException($"Invalid type for {instruction.OpCode}: {x.Type}");
             }
+        }
+
+        private static void SetItem_Before606(ExecutionEngine engine, Instruction instruction, ref RunStats runStats)
+        {
+            var value = engine.PopNoRef();
+            var nClonedItems = 0;
+            var (r1, r2) = (engine.ReferenceCounter.Count, engine.ReferenceCounter.Count);
+            if (value is Struct s)
+            {
+                engine.ReferenceCounter.RemoveStackReference(value);
+                r2 = engine.ReferenceCounter.Count;
+                value = s.Clone(engine.Limits, out nClonedItems);
+                engine.ReferenceCounter.AddStackReference(value);
+            }
+            var r3 = engine.ReferenceCounter.Count;
+            var key = engine.Pop<PrimitiveType>();
+            var x = engine.Pop();
+            switch (x)
+            {
+                case VMArray array:
+                    {
+                        var index = key.GetInteger();
+                        if (index < 0 || index >= array.Count)
+                        {
+                            engine.ReferenceCounter.RemoveStackReference(value);
+                            var r4 = engine.ReferenceCounter.Count;
+                            engine.JumpTable.ExecuteThrow(engine, $"The index of {nameof(VMArray)} is out of range, {index}/[0, {array.Count}).", out int refsDelta);
+                            runStats.CollectRefDelta((r1 - r2) + (r3 - r2) + (r3 - r4) + refsDelta);
+                            runStats.CollectClonedItems(nClonedItems);
+                            return;
+                        }
+                        var i = (int)index;
+                        if (array.IsStackReferenced)
+                            engine.ReferenceCounter.RemoveStackReference(array[i]);
+                        else
+                            engine.ReferenceCounter.RemoveStackReference(value);
+                        array[i] = value;
+                        break;
+                    }
+                case Map map:
+                    {
+                        if (map.IsStackReferenced)
+                        {
+                            if (map.TryGetValue(key, out var value1))
+                            {
+                                engine.ReferenceCounter.RemoveStackReference(value1);
+                            }
+                            else
+                            {
+                                engine.ReferenceCounter.AddStackReference(key);
+                            }
+                        }
+                        else
+                            engine.ReferenceCounter.RemoveStackReference(value);
+                        map[key] = value;
+                        break;
+                    }
+                case Buffer buffer:
+                    {
+                        engine.ReferenceCounter.RemoveStackReference(value);
+                        var index = key.GetInteger();
+                        if (index < 0 || index >= buffer.Size)
+                        {
+                            var r4 = engine.ReferenceCounter.Count;
+                            engine.JumpTable.ExecuteThrow(engine, $"The index of {nameof(Buffer)} is out of range, {index}/[0, {buffer.Size}).", out int refsDelta);
+                            runStats.CollectRefDelta((r1 - r2) + (r3 - r2) + (r3 - r4) + refsDelta);
+                            runStats.CollectClonedItems(nClonedItems);
+                            return;
+                        }
+                        if (value is not PrimitiveType p)
+                            throw new InvalidOperationException($"Only primitive type values can be set in {nameof(Buffer)} in {instruction.OpCode}.");
+                        var b = p.GetInteger();
+                        if (b < sbyte.MinValue || b > byte.MaxValue)
+                            throw new InvalidOperationException($"Overflow in {instruction.OpCode}, {b} is not a byte type.");
+                        buffer.InnerBuffer.Span[(int)index] = (byte)b;
+                        break;
+                    }
+                default:
+                    throw new InvalidOperationException($"Invalid type for {instruction.OpCode}: {x.Type}");
+            }
+            runStats.CollectRefDelta((r1 - r2) + (r3 - r2) + (r3 - engine.ReferenceCounter.Count));
+            runStats.CollectClonedItems(nClonedItems);
         }
 
         private static void PickItem_Before543(ExecutionEngine engine, Instruction instruction, ref RunStats _)
@@ -612,13 +704,18 @@ namespace Neo.SmartContract
         /// <param name="applyFactor">Indicates whether to apply the fee factor to the gas argument.</param>
         protected internal void AddFemtoGas(BigInteger gas, bool applyFactor)
         {
+            AddFemtoGas(gas, applyFactor, respectWhitelist: true);
+        }
+
+        private void AddFemtoGas(BigInteger gas, bool applyFactor, bool respectWhitelist)
+        {
             if (gas < 0)
             {
                 throw new InvalidOperationException("AddFemtoGas can't be negative.");
             }
 
             // Check whitelist.
-            if (_whitelisted)
+            if (respectWhitelist && _whitelisted)
             {
                 // The execution is whitelisted.
                 return;
@@ -696,7 +793,9 @@ namespace Neo.SmartContract
             if (IsHardforkEnabled(Hardfork.HF_Faun) &&
                 NativeContract.Policy.IsWhitelistFeeContract(SnapshotCache, contract.Hash, method, out var fixedFee))
             {
-                AddFee(fixedFee.Value, true);
+                // The callee's fixed fee is payable even when the caller's execution is exempt.
+                // Keep the cached caller state intact for instruction pricing after this call.
+                AddFemtoGas((BigInteger)fixedFee.Value * OpcodePriceMultiplier, true, respectWhitelist: false);
                 state.WhiteListed = true;
             }
 
@@ -791,9 +890,13 @@ namespace Neo.SmartContract
 
             JumpTable jumpTable;
 
-            if (settings.IsHardforkEnabled(Hardfork.HF_Gorgon, index))
+            if (settings.IsHardforkEnabled(Hardfork.HF_Huyao, index))
             {
                 jumpTable = DefaultJumpTable;
+            }
+            else if (settings.IsHardforkEnabled(Hardfork.HF_Gorgon, index))
+            {
+                jumpTable = NotHuyaoJumpTable;
             }
             else
             {
@@ -836,7 +939,7 @@ namespace Neo.SmartContract
             if (index + count > x.Length)
                 throw new InvalidOperationException($"The index + count is out of range for {nameof(OpCode.SUBSTR)}, index: {index}, count: {count}, {index + count}/[0, {x.Length}].");
 
-            Buffer result = new(count, false);
+            Buffer result = new(count);
             x.Slice(index, count).CopyTo(result.InnerBuffer.Span);
             engine.Push(result);
         }
@@ -1083,14 +1186,7 @@ namespace Neo.SmartContract
         /// <returns>The price in the unit of femtoGAS.</returns>
         private BigInteger GetSysCallPrice(InteropDescriptor descriptor)
         {
-            var prices = descriptor.Prices;
-            for (int i = 0; i < prices.Count; i++)
-            {
-                var (hardfork, price) = prices[i];
-                if (hardfork is null || IsHardforkEnabled(hardfork.Value))
-                    return price * _execFeeFactor;
-            }
-            throw new UnreachableException($"Price of {descriptor.Name} isn't found.");
+            return descriptor.GetPrice(IsHardforkEnabled) * _execFeeFactor;
         }
 
         protected override void PreExecuteInstruction(Instruction instruction)
