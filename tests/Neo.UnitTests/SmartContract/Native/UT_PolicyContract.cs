@@ -968,6 +968,87 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.AreEqual(engine.OpcodeV1(NativeContract.Policy.GetExecFeeFactor(engine), OpCode.CALLT, new RunStats()), engine.FeeConsumed * ApplicationEngine.OpcodePriceMultiplier); // in the unit of femtoGas.
         }
 
+        [TestMethod]
+        [DataRow(false, false, 1)]
+        [DataRow(false, false, 2)]
+        [DataRow(false, true, 1)]
+        [DataRow(false, true, 2)]
+        [DataRow(true, false, 1)]
+        [DataRow(true, false, 2)]
+        [DataRow(true, true, 1)]
+        [DataRow(true, true, 2)]
+        public void TestWhitelistFee_NestedCalls(bool huyao, bool callToken, int calls)
+        {
+            var snapshot = _snapshotCache.CloneCache();
+            var callee = TestUtils.GetContract(new byte[] { (byte)OpCode.RET }, TestUtils.CreateManifest("foo", ContractParameterType.Void));
+            snapshot.DeleteContract(callee.Hash);
+            snapshot.AddContract(callee.Hash, callee);
+
+            using var script = new ScriptBuilder();
+            for (var i = 0; i < calls; i++)
+            {
+                if (callToken)
+                    script.Emit(OpCode.CALLT, new byte[] { 0, 0 });
+                else
+                {
+                    script.EmitDynamicCall(callee.Hash, "foo");
+                    script.Emit(OpCode.DROP); // System.Contract.Call returns null for void methods.
+                }
+            }
+            script.Emit(OpCode.RET);
+            var caller = TestUtils.GetContract(script.ToArray(), TestUtils.CreateManifest("main", ContractParameterType.Void));
+            caller.Nef.Tokens = callToken ? [new MethodToken
+            {
+                Hash = callee.Hash, Method = "foo", ParametersCount = 0,
+                HasReturnValue = false, CallFlags = CallFlags.All
+            }] : [];
+            caller.Nef.CheckSum = NefFile.ComputeChecksum(caller.Nef);
+            snapshot.DeleteContract(caller.Hash);
+            snapshot.AddContract(caller.Hash, caller);
+
+            void SetFees(long calleeFee)
+            {
+                using var setup = CreateEngineWithCommitteeSigner(snapshot);
+                NativeContract.Policy.SetWhitelistFeeContract(setup, caller.Hash, "main", 0, 100_000_000);
+                NativeContract.Policy.SetWhitelistFeeContract(setup, callee.Hash, "foo", 0, calleeFee);
+                setup.SnapshotCache.Commit();
+            }
+
+            using var entry = new ScriptBuilder();
+            entry.EmitDynamicCall(caller.Hash, "main");
+            ApplicationEngine Run(long budget)
+            {
+                var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot.CloneCache(), gas: budget,
+                    settings: TestProtocolSettings.Default with
+                    {
+                        Hardforks = TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_Huyao, huyao ? 0u : uint.MaxValue)
+                    });
+                engine.LoadScript(entry.ToArray());
+                engine.Execute();
+                return engine;
+            }
+
+            // Only the fixed fee changes: opcode exemptions must remain identical.
+            SetFees(0);
+            using var freeCallee = Run(1_000_000_000);
+            Assert.AreEqual(VMState.HALT, freeCallee.State);
+            SetFees(200_000_000);
+            using var paidCallee = Run(1_000_000_000);
+            Assert.AreEqual(VMState.HALT, paidCallee.State);
+            Assert.AreEqual(calls * 200_000_000L, paidCallee.FeeConsumed - freeCallee.FeeConsumed);
+
+            using var insufficient = Run(200_000_000);
+            Assert.AreEqual(VMState.FAULT, insufficient.State);
+            Assert.IsInstanceOfType<InvalidOperationException>(insufficient.FaultException.GetBaseException());
+            Assert.AreEqual("Insufficient GAS.", insufficient.FaultException.GetBaseException().Message);
+
+            // Conversion to femtoGAS must not overflow a long before charging the fee.
+            SetFees(long.MaxValue);
+            using var excessiveFee = Run(1_000_000_000);
+            Assert.AreEqual(VMState.FAULT, excessiveFee.State);
+            Assert.AreEqual("Insufficient GAS.", excessiveFee.FaultException.GetBaseException().Message);
+        }
+
         private static ApplicationEngine CreateEngineWithCommitteeSigner(DataCache snapshotCache, byte[] script = null)
         {
             // Get committe public keys and calculate m
