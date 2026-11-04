@@ -21,7 +21,6 @@ using Neo.VM.Types;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Diagnostics;
 using System.Linq;
 using System.Numerics;
 using System.Reflection;
@@ -705,13 +704,18 @@ namespace Neo.SmartContract
         /// <param name="applyFactor">Indicates whether to apply the fee factor to the gas argument.</param>
         protected internal void AddFemtoGas(BigInteger gas, bool applyFactor)
         {
+            AddFemtoGas(gas, applyFactor, respectWhitelist: true);
+        }
+
+        private void AddFemtoGas(BigInteger gas, bool applyFactor, bool respectWhitelist)
+        {
             if (gas < 0)
             {
                 throw new InvalidOperationException("AddFemtoGas can't be negative.");
             }
 
             // Check whitelist.
-            if (_whitelisted)
+            if (respectWhitelist && _whitelisted)
             {
                 // The execution is whitelisted.
                 return;
@@ -789,7 +793,9 @@ namespace Neo.SmartContract
             if (IsHardforkEnabled(Hardfork.HF_Faun) &&
                 NativeContract.Policy.IsWhitelistFeeContract(SnapshotCache, contract.Hash, method, out var fixedFee))
             {
-                AddFee(fixedFee.Value, true);
+                // The callee's fixed fee is payable even when the caller's execution is exempt.
+                // Keep the cached caller state intact for instruction pricing after this call.
+                AddFemtoGas((BigInteger)fixedFee.Value * OpcodePriceMultiplier, true, respectWhitelist: false);
                 state.WhiteListed = true;
             }
 
@@ -1180,14 +1186,7 @@ namespace Neo.SmartContract
         /// <returns>The price in the unit of femtoGAS.</returns>
         private BigInteger GetSysCallPrice(InteropDescriptor descriptor)
         {
-            var prices = descriptor.Prices;
-            for (int i = 0; i < prices.Count; i++)
-            {
-                var (hardfork, price) = prices[i];
-                if (hardfork is null || IsHardforkEnabled(hardfork.Value))
-                    return price * _execFeeFactor;
-            }
-            throw new UnreachableException($"Price of {descriptor.Name} isn't found.");
+            return descriptor.GetPrice(IsHardforkEnabled) * _execFeeFactor;
         }
 
         protected override void PreExecuteInstruction(Instruction instruction)
