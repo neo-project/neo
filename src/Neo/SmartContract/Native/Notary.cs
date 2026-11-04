@@ -84,7 +84,7 @@ namespace Neo.SmartContract.Native
                 }
             }
             if (nFees == 0) return;
-            if (notaries == null) return;
+            if (notaries is null || notaries.Length == 0) return;
             var singleReward = CalculateNotaryReward(engine.SnapshotCache, nFees, notaries.Length);
             foreach (var notary in notaries) await GAS.Mint(engine, Contract.CreateSignatureRedeemScript(notary).ToScriptHash(), singleReward, false);
         }
