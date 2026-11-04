@@ -10,7 +10,11 @@
 // modifications are permitted.
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.Cryptography.ECC;
 using Neo.SmartContract;
+using Neo.Wallets;
+using System.Linq;
+using System.Numerics;
 using static Neo.SmartContract.Helper;
 
 namespace Neo.UnitTests.SmartContract
@@ -21,6 +25,8 @@ namespace Neo.UnitTests.SmartContract
     [TestClass]
     public class UT_Helper_Costs
     {
+        private static readonly BigInteger ExecFeeFactor = 30 * ApplicationEngine.FeeFactor;
+
         [TestMethod]
         public void MaxVerificationGas_IsPositive()
         {
@@ -30,20 +36,37 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void SignatureContractCost_IsPositive()
         {
-            var cost = SignatureContractCost();
+            var cost = SignatureContractCost(TestProtocolSettings.Default, 1, ExecFeeFactor);
             Assert.IsTrue(cost > 0);
         }
 
         [TestMethod]
         public void MultiSignatureContractCost_ScalesWithMAndN()
         {
-            var cost11 = MultiSignatureContractCost(1, 1);
-            var cost12 = MultiSignatureContractCost(1, 2);
-            var cost22 = MultiSignatureContractCost(2, 2);
+            var cost11 = CalculateCost(CreateScript(1, 1));
+            var cost12 = CalculateCost(CreateScript(1, 2));
+            var cost22 = CalculateCost(CreateScript(2, 2));
 
             Assert.IsTrue(cost11 > 0);
             Assert.IsTrue(cost12 > cost11);
             Assert.IsTrue(cost22 > cost12);
+        }
+
+        private static byte[] CreateScript(int m, int n)
+        {
+            var keys = Enumerable.Range(1, n).Select(i =>
+            {
+                var privateKey = new byte[32];
+                privateKey[^1] = (byte)i;
+                return new KeyPair(privateKey).PublicKey;
+            }).ToArray();
+            return Contract.CreateMultiSigRedeemScript(m, keys);
+        }
+
+        private static long CalculateCost(byte[] script)
+        {
+            Assert.IsTrue(IsMultiSigContract(script, out var parameters));
+            return MultiSignatureContractCost(TestProtocolSettings.Default, 1, ExecFeeFactor, parameters);
         }
     }
 }
