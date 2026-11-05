@@ -23,10 +23,16 @@ using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Numerics;
 using System.Runtime.CompilerServices;
 
 namespace Neo.SmartContract
 {
+    /// <summary>
+    /// Stores the required signature count (M), public key count (N), and the opcodes that encode each count.
+    /// </summary>
+    public readonly record struct MultiSigContractParameters(int M, int N, OpCode MOpcode, OpCode NOpcode);
+
     /// <summary>
     /// A helper class related to smart contract.
     /// </summary>
@@ -39,33 +45,57 @@ namespace Neo.SmartContract
         public const long MaxVerificationGas = 1_50000000;
 
         /// <summary>
-        /// Calculates the verification fee for a signature address.
+        /// Calculates the verification fee for a signature address multiplied by the execution fee factor.
         /// In the unit of datoshi, 1 datoshi = 1e-8 GAS
         /// </summary>
+        /// <param name="settings">The <see cref="ProtocolSettings"/> used to check hardfork activation.</param>
+        /// <param name="index">The index of the block the verification is performed for.</param>
+        /// <param name="execFeeFactor">The execution fee factor with the decimals defined in <see cref="ApplicationEngine.FeeFactor"/>.</param>
         /// <returns>The calculated cost.</returns>
-        public static long SignatureContractCost() =>
-            ApplicationEngine.OpCodePriceTable[(byte)OpCode.PUSHDATA1] * 2 +
-            ApplicationEngine.OpCodePriceTable[(byte)OpCode.SYSCALL] +
-            ApplicationEngine.CheckSigPrice;
+        public static long SignatureContractCost(ProtocolSettings settings, uint index, BigInteger execFeeFactor)
+        {
+            var (prices, multiplier) = GetOpCodePrices(settings, index);
+            long fee = (prices[(byte)OpCode.PUSHDATA1] * 2 + prices[(byte)OpCode.SYSCALL]) * multiplier;
+            fee += GetCheckSigPrice(settings, index);
+            return ApplyExecFeeFactor(execFeeFactor, fee);
+        }
 
         /// <summary>
-        /// Calculates the verification fee for a multi-signature address.
+        /// Calculates the verification fee for a multi-signature address multiplied by the execution fee factor.
         /// In the unit of datoshi, 1 datoshi = 1e-8 GAS
         /// </summary>
-        /// <param name="m">The number of correct signatures that need to be provided in order for the verification to pass.</param>
-        /// <param name="n">The number of public keys in the account.</param>
+        /// <param name="settings">The <see cref="ProtocolSettings"/> used to check hardfork activation.</param>
+        /// <param name="index">The index of the block the verification is performed for.</param>
+        /// <param name="execFeeFactor">The execution fee factor with the decimals defined in <see cref="ApplicationEngine.FeeFactor"/>.</param>
+        /// <param name="parameters">The multisignature parameters parsed from its verification script.</param>
         /// <returns>The calculated cost.</returns>
-        public static long MultiSignatureContractCost(int m, int n)
+        public static long MultiSignatureContractCost(ProtocolSettings settings, uint index, BigInteger execFeeFactor, MultiSigContractParameters parameters)
         {
-            long fee = ApplicationEngine.OpCodePriceTable[(byte)OpCode.PUSHDATA1] * (m + n);
-            using (ScriptBuilder sb = new())
-                fee += ApplicationEngine.OpCodePriceTable[(byte)(OpCode)sb.EmitPush(m).ToArray()[0]];
-            using (ScriptBuilder sb = new())
-                fee += ApplicationEngine.OpCodePriceTable[(byte)(OpCode)sb.EmitPush(n).ToArray()[0]];
-            fee += ApplicationEngine.OpCodePriceTable[(byte)OpCode.SYSCALL];
-            fee += ApplicationEngine.CheckSigPrice * n;
-            return fee;
+            var (prices, multiplier) = GetOpCodePrices(settings, index);
+            long fee = prices[(byte)OpCode.PUSHDATA1] * (parameters.M + parameters.N);
+            fee += prices[(byte)parameters.MOpcode];
+            fee += prices[(byte)parameters.NOpcode];
+            fee += prices[(byte)OpCode.SYSCALL];
+            fee *= multiplier;
+            // CheckMultisig charges the price of a single signature check per public key.
+            fee += GetCheckSigPrice(settings, index) * parameters.N;
+            return ApplyExecFeeFactor(execFeeFactor, fee);
         }
+
+        // The multiplier scales the prices to 1e-11 GAS:
+        // OpCodePriceTable is in datoshi, StaticCoefficients is already in 1e-11 GAS.
+        private static (long[], long) GetOpCodePrices(ProtocolSettings settings, uint index) =>
+            settings.IsHardforkEnabled(Hardfork.HF_Huyao, index)
+                ? (ApplicationEngine.StaticCoefficients, 1)
+                : (ApplicationEngine.OpCodePriceTable, ApplicationEngine.OpcodePriceMultiplier);
+
+        // In the unit of 1e-11 GAS, selected by hardfork the same way as for the System.Crypto.CheckSig syscall.
+        private static long GetCheckSigPrice(ProtocolSettings settings, uint index) =>
+            ApplicationEngine.System_Crypto_CheckSig.GetPrice(hardfork => settings.IsHardforkEnabled(hardfork, index));
+
+        // The full factor is applied and the result is rounded up, the same way as ApplicationEngine.FeeConsumed does.
+        private static long ApplyExecFeeFactor(BigInteger execFeeFactor, long cost) =>
+            (long)(execFeeFactor * cost).DivideCeiling(ApplicationEngine.FeeFactor * ApplicationEngine.OpcodePriceMultiplier);
 
         /// <summary>
         /// Check the correctness of the script and ABI.
@@ -126,7 +156,7 @@ namespace Neo.SmartContract
         /// <returns><see langword="true"/> if the contract is a multi-signature contract; otherwise, <see langword="false"/>.</returns>
         public static bool IsMultiSigContract(ReadOnlySpan<byte> script)
         {
-            return IsMultiSigContract(script, out _, out _, null);
+            return IsMultiSigContract(script, out _, null);
         }
 
         /// <summary>
@@ -138,7 +168,22 @@ namespace Neo.SmartContract
         /// <returns><see langword="true"/> if the contract is a multi-signature contract; otherwise, <see langword="false"/>.</returns>
         public static bool IsMultiSigContract(ReadOnlySpan<byte> script, out int m, out int n)
         {
-            return IsMultiSigContract(script, out m, out n, null);
+            if (IsMultiSigContract(script, out var parameters, null))
+            {
+                m = parameters.M;
+                n = parameters.N;
+                return true;
+            }
+            m = n = 0;
+            return false;
+        }
+
+        /// <summary>
+        /// Determines whether the specified contract is a multi-signature contract and returns its <see cref="MultiSigContractParameters"/>.
+        /// </summary>
+        public static bool IsMultiSigContract(ReadOnlySpan<byte> script, out MultiSigContractParameters parameters)
+        {
+            return IsMultiSigContract(script, out parameters, null);
         }
 
         /// <summary>
@@ -151,23 +196,28 @@ namespace Neo.SmartContract
         public static bool IsMultiSigContract(ReadOnlySpan<byte> script, out int m, [NotNullWhen(true)] out ECPoint[]? points)
         {
             List<ECPoint> list = new();
-            if (IsMultiSigContract(script, out m, out _, list))
+            if (IsMultiSigContract(script, out var parameters, list))
             {
+                m = parameters.M;
                 points = list.ToArray();
                 return true;
             }
             else
             {
+                m = 0;
                 points = null;
                 return false;
             }
         }
 
-        private static bool IsMultiSigContract(ReadOnlySpan<byte> script, out int m, out int n, List<ECPoint>? points)
+        private static bool IsMultiSigContract(ReadOnlySpan<byte> script, out MultiSigContractParameters parameters, List<ECPoint>? points)
         {
-            m = 0; n = 0;
+            parameters = default;
+            int n = 0;
             int i = 0;
             if (script.Length < 42) return false;
+            var mOpcode = (OpCode)script[i];
+            int m;
             switch (script[i])
             {
                 case (byte)OpCode.PUSHINT8:
@@ -203,6 +253,7 @@ namespace Neo.SmartContract
                 ++n;
             }
             if (n < m || n > 1024) return false;
+            var nOpcode = (OpCode)script[i];
             switch (script[i])
             {
                 case (byte)OpCode.PUSHINT8:
@@ -224,6 +275,7 @@ namespace Neo.SmartContract
             if (script[i++] != (byte)OpCode.SYSCALL) return false;
             if (BinaryPrimitives.ReadUInt32LittleEndian(script[i..]) != ApplicationEngine.System_Crypto_CheckMultisig)
                 return false;
+            parameters = new MultiSigContractParameters(m, n, mOpcode, nOpcode);
             return true;
         }
 
