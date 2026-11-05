@@ -990,6 +990,49 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.Contains("Insufficient deposit for 0x9f8f056a53e39585c7bb52886418c7bed83d126b: need 150000000, overdraw is -100000000", engine.FaultException?.ToString());
         }
 
+        [TestMethod]
+        public void Check_Verify()
+        {
+            var snapshot = _snapshot.CloneCache();
+            var persistingBlock = new Block
+            {
+                Header = new Header
+                {
+                    PrevHash = UInt256.Zero,
+                    MerkleRoot = UInt256.Zero,
+                    Index = 1000,
+                    NextConsensus = UInt160.Zero,
+                    Witness = null!
+                },
+                Transactions = []
+            };
+            var tx = new Transaction
+            {
+                Script = new[] { (byte)OpCode.PUSH2 },
+                Attributes = [
+                    new NotaryAssisted { NKeys = 1 },
+                    new Conflicts { Hash = UInt256.Zero }
+                ],
+                Signers = [
+                    new Signer { Account = UInt160.Zero },
+                    new Signer { Account = NativeContract.Notary.Hash}
+                ],
+                Witnesses = [Witness.Empty],
+            };
+
+            var engine = ApplicationEngine.Create(
+                TriggerType.Verification, tx, snapshot, persistingBlock,
+                settings: TestProtocolSettings.Default);
+
+            // Main transaction of NotaryRequest that contains Conflicts attribute should fail verification.
+            var ret = NativeContract.Notary.Call(engine, "verify", new ContractParameter
+            {
+                Type = ContractParameterType.ByteArray,
+                Value = new byte[64]
+            });
+            Assert.IsFalse(ret.GetBoolean());
+        }
+
         internal static StorageKey CreateStorageKey(byte prefix, uint key)
         {
             return CreateStorageKey(prefix, BitConverter.GetBytes(key));
