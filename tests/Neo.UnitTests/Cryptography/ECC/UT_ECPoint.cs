@@ -499,6 +499,13 @@ namespace Neo.UnitTests.Cryptography.ECC
             Assert.IsFalse(ECPoint.TryParse("00", ECCurve.Secp256k1, out var result));
             Assert.IsNull(result);
 
+            Assert.ThrowsExactly<FormatException>(() => ECPoint.DecodePoint([], ECCurve.Secp256k1));
+            Assert.ThrowsExactly<FormatException>(() => ECPoint.Parse("", ECCurve.Secp256k1));
+            Assert.IsFalse(ECPoint.TryParse("", ECCurve.Secp256k1, out result));
+            Assert.IsNull(result);
+            Assert.IsFalse(ECPoint.TryParse(" ", ECCurve.Secp256k1, out result));
+            Assert.IsNull(result);
+
             Assert.IsTrue(ECPoint.TryParse(s_uncompressed, ECCurve.Secp256k1, out result));
             Assert.AreEqual(ECCurve.Secp256k1.G, result);
         }
