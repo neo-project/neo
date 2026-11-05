@@ -58,7 +58,7 @@ namespace Neo.SmartContract
         private static readonly long[] ValuesW = { 86, 312, 168, 4758 };
         private static readonly long[] XDropW = { 98, 6, 1791 };
 
-        private static readonly long[] StaticCoefficients;
+        internal static readonly long[] StaticCoefficients;
 
         /// <summary>
         /// The default per-opcode dynamic price calculators. Opcodes without an entry
