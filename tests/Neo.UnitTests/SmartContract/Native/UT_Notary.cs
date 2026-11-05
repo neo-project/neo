@@ -795,6 +795,38 @@ namespace Neo.UnitTests.SmartContract.Native
         }
 
         [TestMethod]
+        public void Check_OnPersist_NoDesignatedNotaries()
+        {
+            var snapshot = _snapshot.CloneCache();
+            var from = Contract.GetBFTAddress(TestProtocolSettings.Default.StandbyValidators);
+            var tx = TestUtils.GetTransaction(from);
+            tx.Attributes = [new NotaryAssisted { NKeys = 0 }];
+            tx.NetworkFee = 1_0000_0000;
+
+            var block = new Block
+            {
+                Header = new Header
+                {
+                    Index = (uint)TestProtocolSettings.Default.CommitteeMembersCount,
+                    MerkleRoot = UInt256.Zero,
+                    NextConsensus = UInt160.Zero,
+                    PrevHash = UInt256.Zero,
+                    Witness = Witness.Empty,
+                },
+                Transactions = [tx]
+            };
+
+            Assert.AreEqual(0, NativeContract.RoleManagement.GetDesignatedByRole(
+                snapshot, Role.P2PNotary, NativeContract.Ledger.CurrentIndex(snapshot) + 1).Length);
+
+            using var script = new ScriptBuilder();
+            script.EmitSysCall(ApplicationEngine.System_Contract_NativeOnPersist);
+            using var engine = ApplicationEngine.Create(TriggerType.OnPersist, null, snapshot, block, settings: TestProtocolSettings.Default);
+            engine.LoadScript(script.ToArray());
+            Assert.AreEqual(VMState.HALT, engine.Execute());
+        }
+
+        [TestMethod]
         public void Check_OnPersist_NotaryRewards()
         {
             // Hardcode test values.
