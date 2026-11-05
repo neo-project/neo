@@ -95,7 +95,7 @@ namespace Neo.UnitTests.Ledger
             if (cachedHeader) _system.HeaderCache.Add(block.Header);
             var actor = ActorOfAsTestActorRef<Blockchain>(Akka.Actor.Props.Create(() => new Blockchain(_system)));
             senderProbe.Send(actor.Ref, block);
-            senderProbe.ExpectMsg<Blockchain.RelayResult>(p => p.Result == expected, cancellationToken: CancellationToken.None);
+            senderProbe.ExpectMsg<Blockchain.RelayResult>(p => p.Result == VerifyResult.Invalid, cancellationToken: CancellationToken.None);
             foreach (var field in new[] { "_blockCache", "_blockCacheUnverified" })
             {
                 var cache = (IDictionary)typeof(Blockchain).GetField(field, BindingFlags.Instance | BindingFlags.NonPublic)!

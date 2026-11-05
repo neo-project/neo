@@ -231,7 +231,8 @@ namespace Neo.Ledger
             foreach (var transaction in block.Transactions)
             {
                 var result = transaction.VerifyStateIndependent(_system.Settings);
-                if (result != VerifyResult.Succeed) return result;
+                // TaskManager handles Invalid as a rejected block and retries the height.
+                if (result != VerifyResult.Succeed) return VerifyResult.Invalid;
             }
             if (block.Index - 1 > headerHeight)
             {
