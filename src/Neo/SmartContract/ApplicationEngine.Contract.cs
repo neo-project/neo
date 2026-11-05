@@ -95,20 +95,21 @@ namespace Neo.SmartContract
         [InteropPrice(Hardfork.HF_Huyao, 0)]
         protected internal void CallContract(UInt160 contractHash, string method, CallFlags callFlags, Array args)
         {
-            if (method.StartsWith('_')) throw new ArgumentException($"Method name '{method}' cannot start with underscore.", nameof(method));
             if ((callFlags & ~CallFlags.All) != 0)
                 throw new ArgumentOutOfRangeException(nameof(callFlags));
 
             ContractState? contract = NativeContract.ContractManagement.GetContract(SnapshotCache, contractHash);
-            if (contract is null) throw new InvalidOperationException($"Called Contract Does Not Exist: {contractHash}.{method}");
             if (IsHardforkEnabled(Hardfork.HF_Huyao))
             {
                 var price = ContractCallPrice;
-                // Non-native contracts may be read from disk.
-                if (contract.Id >= 0)
+                // A missing contract lookup or a non-native contract may require a disk read.
+                if (contract is null || contract.Id >= 0)
                     price += ReadFromDiskPrice;
                 AddFemtoGas(price * _execFeeFactor, false);
             }
+            if (contract is null) throw new InvalidOperationException($"Called Contract Does Not Exist: {contractHash}.{method}");
+            if (method.StartsWith('_')) throw new ArgumentException($"Method name '{method}' cannot start with underscore.", nameof(method));
+
             ContractMethodDescriptor? md = contract.Manifest.Abi.GetMethod(method, args.Count);
             if (md is null) throw new InvalidOperationException($"Method \"{method}\" with {args.Count} parameter(s) doesn't exist in the contract {contractHash}.");
             bool hasReturnValue = md.ReturnType != ContractParameterType.Void;
