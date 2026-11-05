@@ -13,7 +13,6 @@
 
 using Neo.Persistence;
 using Neo.SmartContract.Iterators;
-using Org.BouncyCastle.Asn1.Cms;
 using System;
 using System.Buffers.Binary;
 using System.Collections.Immutable;
