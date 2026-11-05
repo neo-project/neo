@@ -377,7 +377,7 @@ namespace Neo.Cryptography.ECC
                 point = Parse(value, curve);
                 return true;
             }
-            catch (FormatException)
+            catch (Exception)
             {
                 point = null;
                 return false;

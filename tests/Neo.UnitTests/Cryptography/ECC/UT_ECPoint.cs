@@ -506,6 +506,10 @@ namespace Neo.UnitTests.Cryptography.ECC
             Assert.IsFalse(ECPoint.TryParse(" ", ECCurve.Secp256k1, out result));
             Assert.IsNull(result);
 
+            // A compressed point with x = 0 has no square root on secp256k1.
+            Assert.IsFalse(ECPoint.TryParse("02" + new string('0', 64), ECCurve.Secp256k1, out result));
+            Assert.IsNull(result);
+
             Assert.IsTrue(ECPoint.TryParse(s_uncompressed, ECCurve.Secp256k1, out result));
             Assert.AreEqual(ECCurve.Secp256k1.G, result);
         }
