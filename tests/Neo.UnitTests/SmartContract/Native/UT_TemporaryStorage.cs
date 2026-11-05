@@ -83,6 +83,15 @@ namespace Neo.UnitTests.SmartContract.Native
                     new ContractParameter(ContractParameterType.Integer) { Value = now + maxTTL + 1 });
             });
 
+            // put: validTill already expired
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() =>
+            {
+                CallFromContract(snapshot, persistingBlock, caller, "put",
+                    new ContractParameter(ContractParameterType.ByteArray) { Value = key1 },
+                    new ContractParameter(ContractParameterType.ByteArray) { Value = value1 },
+                    new ContractParameter(ContractParameterType.Integer) { Value = persistingBlock.Timestamp - 1 });
+            });
+
             // put: key size exceeds MaxStorageKeySize.
             Assert.ThrowsExactly<InvalidOperationException>(() =>
             {
@@ -92,11 +101,20 @@ namespace Neo.UnitTests.SmartContract.Native
                     new ContractParameter(ContractParameterType.Integer) { Value = now + maxTTL });
             });
 
+            // put: good, validTill equals to the current timesamp
+            Assert.IsInstanceOfType<Null>(CallFromContract(snapshot, persistingBlock, caller, "put",
+                new ContractParameter(ContractParameterType.ByteArray) { Value = key1 },
+                new ContractParameter(ContractParameterType.ByteArray) { Value = value1 },
+                new ContractParameter(ContractParameterType.Integer) { Value = persistingBlock.Timestamp }));
+            var ret = CallFromContract(snapshot, persistingBlock, caller, "getExpiration",
+                new ContractParameter(ContractParameterType.ByteArray) { Value = key1 });
+            Assert.AreEqual(persistingBlock.Timestamp, ret?.GetInteger());
+
             // put: good.
             Assert.IsInstanceOfType<Null>(CallFromContract(snapshot, persistingBlock, caller, "put",
                 new ContractParameter(ContractParameterType.ByteArray) { Value = key1 },
                 new ContractParameter(ContractParameterType.ByteArray) { Value = value1 },
-                new ContractParameter(ContractParameterType.Integer) { Value = (BigInteger)validTill1 }));
+                new ContractParameter(ContractParameterType.Integer) { Value = (BigInteger)validTill1 })); // record already exists; and validTill value should be updated.
             Assert.IsInstanceOfType<Null>(CallFromContract(snapshot, persistingBlock, caller, "put",
                 new ContractParameter(ContractParameterType.ByteArray) { Value = key2 },
                 new ContractParameter(ContractParameterType.ByteArray) { Value = value2 },
@@ -121,7 +139,7 @@ namespace Neo.UnitTests.SmartContract.Native
                 new ContractParameter(ContractParameterType.Integer) { Value = (BigInteger)validTill1 }));
 
             // get AA: good.
-            var ret = CallFromContract(snapshot, persistingBlock, caller, "get",
+            ret = CallFromContract(snapshot, persistingBlock, caller, "get",
                 new ContractParameter(ContractParameterType.ByteArray) { Value = key1 });
             Assert.IsInstanceOfType<ByteString>(ret);
             Assert.AreSequenceEqual(value1, ret.GetSpan().ToArray());
@@ -193,7 +211,23 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.AreSequenceEqual(value2, ((Struct)iter.Value())[1].GetSpan().ToArray());
             Assert.IsFalse(iter.Next());
 
-            // renew: good.
+            // renew: validTill already expired
+            Assert.ThrowsExactly<ArgumentOutOfRangeException>(() =>
+            {
+                CallFromContract(snapshot, persistingBlock, caller, "renew",
+                    new ContractParameter(ContractParameterType.ByteArray) { Value = key1 },
+                    new ContractParameter(ContractParameterType.Integer) { Value = persistingBlock.Timestamp - 1 });
+            });
+
+            // renew: good, renew to the current timestamp (newTimestamp < oldTimestamp)
+            Assert.IsInstanceOfType<Null>(CallFromContract(snapshot, persistingBlock, caller, "renew",
+                new ContractParameter(ContractParameterType.ByteArray) { Value = key1 },
+                new ContractParameter(ContractParameterType.Integer) { Value = persistingBlock.Timestamp }));
+            ret = CallFromContract(snapshot, persistingBlock, caller, "getExpiration",
+                new ContractParameter(ContractParameterType.ByteArray) { Value = key1 });
+            Assert.AreEqual(new BigInteger(persistingBlock.Timestamp), ret?.GetInteger());
+
+            // renew: good, renew to the larger timestamp (newTimestamp > oldTimestamp)
             Assert.IsInstanceOfType<Null>(CallFromContract(snapshot, persistingBlock, caller, "renew",
                 new ContractParameter(ContractParameterType.ByteArray) { Value = key1 },
                 new ContractParameter(ContractParameterType.Integer) { Value = (BigInteger)validTillRenewed })!);

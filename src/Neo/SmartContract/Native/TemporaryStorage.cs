@@ -13,6 +13,7 @@
 
 using Neo.Persistence;
 using Neo.SmartContract.Iterators;
+using Org.BouncyCastle.Asn1.Cms;
 using System;
 using System.Buffers.Binary;
 using System.Collections.Immutable;
@@ -413,7 +414,7 @@ namespace Neo.SmartContract.Native
         private static ulong SaturatingSub(ulong a, ulong b) => a > b ? a - b : 0;
 
         /// <summary>
-        /// Ensures the provided validTill value fits the limit of [0, timestamp + MaxTTL].
+        /// Ensures the provided validTill value fits the limit of [timestamp, timestamp + MaxTTL].
         /// </summary>
         /// <param name="engine">The engine used to read data.</param>
         /// <param name="validTill">The expiration timestamp in milliseconds.</param>
@@ -421,6 +422,8 @@ namespace Neo.SmartContract.Native
         /// <exception cref="ArgumentOutOfRangeException"></exception>
         private static void ValidateValidTill(ApplicationEngine engine, ulong validTill, ulong timestamp)
         {
+            if (validTill < timestamp)
+                throw new ArgumentOutOfRangeException(nameof(validTill), $"validTill has already expired: {validTill} vs {timestamp}");
             ulong maxValidTill = checked(timestamp + Policy.GetTemporaryStorageMaxTTL(engine.SnapshotCache));
             if (validTill > maxValidTill)
                 throw new ArgumentOutOfRangeException(nameof(validTill), $"validTill exceeds max limit: {validTill} vs {maxValidTill}");
