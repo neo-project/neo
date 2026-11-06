@@ -167,13 +167,28 @@ namespace Neo.Json
             {
                 JsonTokenType.False => false,
                 JsonTokenType.Null => Null,
-                JsonTokenType.Number => reader.GetDouble(),
+                JsonTokenType.Number => ReadNumber(ref reader),
                 JsonTokenType.StartArray => ReadArray(ref reader),
                 JsonTokenType.StartObject => ReadObject(ref reader),
                 JsonTokenType.String => ReadString(ref reader),
                 JsonTokenType.True => true,
                 _ => throw new FormatException($"Unexpected token {reader.TokenType}"),
             };
+        }
+
+        private static JNumber ReadNumber(ref Utf8JsonReader reader)
+        {
+            double value = reader.GetDouble();
+            if (value == 0)
+            {
+                foreach (byte digit in reader.ValueSpan)
+                {
+                    if (digit == (byte)'e' || digit == (byte)'E') break;
+                    if (digit >= (byte)'1' && digit <= (byte)'9')
+                        throw new FormatException("JSON number underflows to zero");
+                }
+            }
+            return new JNumber(value);
         }
 
         private static JArray ReadArray(ref Utf8JsonReader reader)

@@ -430,6 +430,37 @@ namespace Neo.UnitTests.SmartContract.Native
         }
 
         [TestMethod]
+        [DataRow("1e-400")]
+        [DataRow("-1e-400")]
+        [DataRow("1e-100000")]
+        public void Json_Deserialize_RejectsNonzeroUnderflow(string json)
+        {
+            var snapshotCache = TestBlockchain.GetTestSnapshotCache();
+            using var script = new ScriptBuilder();
+            script.EmitDynamicCall(NativeContract.StdLib.Hash, "jsonDeserialize", json);
+
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestProtocolSettings.Default);
+            engine.LoadScript(script.ToArray());
+
+            Assert.AreEqual(VMState.FAULT, engine.Execute());
+            Assert.IsEmpty(engine.ResultStack);
+        }
+
+        [TestMethod]
+        public void Json_Deserialize_AcceptsZeroExponent()
+        {
+            var snapshotCache = TestBlockchain.GetTestSnapshotCache();
+            using var script = new ScriptBuilder();
+            script.EmitDynamicCall(NativeContract.StdLib.Hash, "jsonDeserialize", "0e-400");
+
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestProtocolSettings.Default);
+            engine.LoadScript(script.ToArray());
+
+            Assert.AreEqual(VMState.HALT, engine.Execute());
+            Assert.AreEqual(0, engine.ResultStack.Pop().GetInteger());
+        }
+
+        [TestMethod]
         public void Json_Serialize()
         {
             var snapshotCache = TestBlockchain.GetTestSnapshotCache();

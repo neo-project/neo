@@ -96,5 +96,25 @@ namespace Neo.Json.UnitTests
             Assert.IsTrue(jnum.Equals(x));
             Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => _ = jnum.Equals(new BigInteger(1)));
         }
+
+        [TestMethod]
+        [DataRow("1e-400")]
+        [DataRow("-1e-400")]
+        [DataRow("1e-100000")]
+        [DataRow("[1e-400]")]
+        [DataRow("{\"value\":1e-400}")]
+        public void TestParseRejectsNonzeroUnderflow(string json)
+        {
+            Assert.ThrowsExactly<FormatException>(() => JToken.Parse(json));
+        }
+
+        [TestMethod]
+        [DataRow("0e-400")]
+        [DataRow("-0e-400")]
+        [DataRow("0.000e-400")]
+        public void TestParseAcceptsZeroLiterals(string json)
+        {
+            Assert.AreEqual(0, JToken.Parse(json)!.GetNumber());
+        }
     }
 }
