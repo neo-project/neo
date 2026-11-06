@@ -408,8 +408,7 @@ namespace Neo.Ledger
                 foreach (var hash in conflicting)
                 {
                     var unsortedTx = _unsortedTransactions[hash];
-                    // Sharing the Notary contract alone must not make a fallback's fee count.
-                    if (HasCommonSigner(tx.Signers, unsortedTx.Tx.Signers, NativeContract.Notary.Hash))
+                    if (HasCommonSigner(tx.Signers, unsortedTx.Tx.Signers))
                         conflictsFeeSum += unsortedTx.Tx.NetworkFee;
                     conflictsList.Add(unsortedTx);
                 }
@@ -725,11 +724,11 @@ namespace Neo.Ledger
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static bool HasCommonSigner(Signer[] left, Signer[] right, UInt160? excluded = null)
+        internal static bool HasCommonSigner(Signer[] left, Signer[] right)
         {
             for (int i = 0; i < left.Length; i++)
             {
-                if (left[i].Account != excluded && ContainsAccount(right, left[i].Account))
+                if (ContainsAccount(right, left[i].Account))
                     return true;
             }
             return false;

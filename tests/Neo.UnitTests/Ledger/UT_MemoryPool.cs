@@ -1211,13 +1211,14 @@ namespace Neo.UnitTests.Ledger
         }
 
         [TestMethod]
-        [DataRow(false, VerifyResult.Succeed)]
-        [DataRow(true, VerifyResult.HasConflicts)]
-        public void TryAdd_ExistingNotaryConflict_RequiresSharedNonNotarySigner(bool samePayer, VerifyResult expected)
+        [DataRow(100000L, VerifyResult.HasConflicts)]
+        [DataRow(200000L, VerifyResult.HasConflicts)]
+        [DataRow(200001L, VerifyResult.Succeed)]
+        public void TryAdd_ExistingNotaryConflict_SharedNotarySignerCountsFee(long fee, VerifyResult expected)
         {
             var snapshot = GetSnapshot();
             var otherPayer = new UInt160(Crypto.Hash160([1, 2, 3]));
-            var original = CreateTransaction(100000);
+            var original = CreateTransaction(fee);
             original.Signers =
             [
                 new Signer { Account = NativeContract.Notary.Hash, Scopes = WitnessScope.None },
@@ -1227,7 +1228,7 @@ namespace Neo.UnitTests.Ledger
             fallback.Signers =
             [
                 new Signer { Account = NativeContract.Notary.Hash, Scopes = WitnessScope.None },
-                new Signer { Account = samePayer ? senderAccount : otherPayer, Scopes = WitnessScope.None }
+                new Signer { Account = otherPayer, Scopes = WitnessScope.None }
             ];
             fallback.Attributes = [new Conflicts { Hash = original.Hash }];
             Assert.AreEqual(VerifyResult.Succeed, _unit.TryAdd(fallback, snapshot));
