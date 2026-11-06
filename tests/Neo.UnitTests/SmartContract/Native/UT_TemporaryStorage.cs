@@ -519,7 +519,7 @@ namespace Neo.UnitTests.SmartContract.Native
             var persistingBlock = CreatePersistingBlock(snapshot, 0);
             using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, persistingBlock, TestProtocolSettings.Default, TestGas);
 
-            var actualPrice = NativeContract.TemporaryStorage.CalculateStoragePrice(engine, null, key, value, lifetime, 0);
+            var actualPrice = NativeContract.TemporaryStorage.CalculateStoragePrice(engine, null, key, value, 0, lifetime);
             Assert.AreEqual(expectedPrice, actualPrice);
         }
 
@@ -597,8 +597,10 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.AreEqual(17 * price / 10, Calc(record, key, value, 0, 1));
 
             // Both lifetimes are zero: the record is treated as newly-added and the minimal fee is charged.
-            Assert.AreEqual(17 * price / 10, Calc(record, key, value, 0, 0));
             Assert.AreEqual(17 * price / 10, Calc(null, key, value, 0, 0));
+
+            // Both lifetimes are zero: the record is treated as existing and the minimal fee is charged.
+            Assert.AreEqual(4 * price / 10, Calc(record, key, value, 0, 0));
 
             // Lifetimes exceeding the max TTL are capped for each part independently.
             Assert.AreEqual(4 * price, Calc(record, key, value, ttl * 2, 0));
@@ -624,7 +626,8 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.AreEqual(0L, Calc(record, key, emptyValue, ttl, 0));
             Assert.AreEqual(1 * price, Calc(record, key, emptyValue, 0, ttl));
             Assert.AreEqual(1 * price, Calc(record, key, emptyValue, ttl, ttl));
-            Assert.AreEqual(1 * price / 10, Calc(record, key, emptyValue, 0, 0));
+            Assert.AreEqual(0L, Calc(record, key, emptyValue, 0, 0)); // for the existing record.
+            Assert.AreEqual(1 * price / 10, Calc(null, key, emptyValue, 0, 0)); // for the new record.
 
             // Longer key is charged for the new part only.
             byte[] longKey = new byte[ApplicationEngine.MaxStorageKeySize];
@@ -649,6 +652,18 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.AreEqual(17 * price, Calc(null, key, value, ttl, 0));
             Assert.AreEqual(17 * price, Calc(null, key, value, 0, ttl));
             Assert.AreEqual(2 * 17 * price, Calc(null, key, value, ttl, ttl));
+
+            // Long oldLifetime with zero extension: full old price sohuld be charged.
+            Assert.AreEqual(4 * price, Calc(MakeRecord(timestamp + ttl, value.Length), key, value, ttl, 0));
+
+            // Long oldLifetime with short extension: full old price plus minimal new price sohuld be charged.
+            Assert.AreEqual(4 * price + 17 * price / 10, Calc(MakeRecord(timestamp + ttl, value.Length), key, value, ttl, 1));
+
+            // Put: zero old period with zero extension: minimal new price should be charged.
+            Assert.AreEqual(17 * price / 10, Calc(null, key, value, 0, 0));
+
+            // Renew: zero old period with zero extension.
+            Assert.AreEqual(4 * price / 10, Calc(MakeRecord(timestamp, value.Length), key, value, 0, 0));
         }
 
         private static StackItem CallFromContract(DataCache snapshot, Block persistingBlock, UInt160 caller, string method, params ContractParameter[] args)

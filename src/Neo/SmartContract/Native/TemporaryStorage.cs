@@ -381,7 +381,13 @@ namespace Neo.SmartContract.Native
             BigInteger minPriceOld = 0, minPriceNew = 0;
             BigInteger actualPriceOld = 0, actualPriceNew = 0;
             if (oldLifetime == 0 && newLifetime == 0)
-                newLifetime = 1; // pay at least minimal fee treating the record as newly-added in order not to DOS the contract.
+            {
+                // Pay at least minimal fee in order not to DOS the contract.
+                if (record is null)
+                    newLifetime = 1;
+                else
+                    oldLifetime = 1;
+            }
 
             // The "old" part is calculated based on the permanent storage rules for existing records.
             if (oldLifetime > 0)
@@ -391,6 +397,7 @@ namespace Neo.SmartContract.Native
                     chargableValueSize = item.Value.Length - 8; // 8-bytes TTL prefix is not charged.
                     return IsTraceable(engine, item, out var _);
                 })) * engine.StoragePrice;
+                // Require minimal fee for the "old" part to be paied to avoid DoS: DB access is still performed on update.
                 minPriceOld = permanentPriceOld / 10;
                 actualPriceOld = permanentPriceOld * new BigInteger(Math.Min(oldLifetime, PolicyContract.MaxTemporaryStorageMaxTTL)) / PolicyContract.MaxTemporaryStorageMaxTTL;
             }
@@ -407,7 +414,7 @@ namespace Neo.SmartContract.Native
                 actualPriceNew = permanentPriceNew * new BigInteger(Math.Min(newLifetime, PolicyContract.MaxTemporaryStorageMaxTTL)) / PolicyContract.MaxTemporaryStorageMaxTTL;
             }
 
-            return (long)BigInteger.Max(minPriceOld + minPriceNew, actualPriceOld + actualPriceNew);
+            return (long)(BigInteger.Max(minPriceOld, actualPriceOld) + BigInteger.Max(minPriceNew, actualPriceNew));
         }
 
         private static ulong SaturatingSub(ulong a, ulong b) => a > b ? a - b : 0;
