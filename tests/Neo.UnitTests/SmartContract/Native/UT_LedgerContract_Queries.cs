@@ -82,7 +82,7 @@ namespace Neo.UnitTests.SmartContract.Native
             }
         }
 
-        private static (NeoSystem System, Transaction Tx) PersistTransaction(bool fault, uint iaraHeight = 0)
+        private static (NeoSystem System, Transaction Tx) PersistTransaction(bool fault, uint huyaoHeight = 0)
         {
             var settings = TestProtocolSettings.Default with
             {
