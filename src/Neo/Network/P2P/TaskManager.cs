@@ -84,16 +84,16 @@ namespace Neo.Network.P2P
             RequestTasks(Sender, session);
         }
 
-        private void OnInvalidBlock(Block invalidBlock)
+        private void OnInvalidBlock(Block invalidBlock, IActorRef? sender = null)
         {
-            foreach (var (actor, session) in sessions)
+            if (invalidBlock.TryGetHash(out var hash)) _knownHashes.Remove(hash);
+            if (sender is not null && sessions.TryGetValue(sender, out var session))
             {
-                if (session.ReceivedBlockHashes.TryGetValue(invalidBlock.Index, out var blockHash))
-                {
-                    if (blockHash == invalidBlock.Hash)
-                        actor.Tell(Tcp.Abort.Instance);
-                }
+                session.ReceivedBlockHashes.Remove(invalidBlock.Index);
+                sender.Tell(Tcp.Abort.Instance);
             }
+            foreach (var (actor, otherSession) in sessions)
+                if (actor != sender) RequestTasks(actor, otherSession);
         }
 
         private void OnNewTasks(InvPayload payload)
@@ -181,8 +181,13 @@ namespace Neo.Network.P2P
                     OnPersistCompleted(pc.Block);
                     break;
                 case Blockchain.RelayResult rr:
-                    if (rr.Inventory is Block invalidBlock && rr.Result == VerifyResult.Invalid)
-                        OnInvalidBlock(invalidBlock);
+                    if (rr.Inventory is Block invalidBlock)
+                    {
+                        if (rr.Result is VerifyResult.InvalidHash or VerifyResult.InvalidBlockBody or VerifyResult.OverSize or VerifyResult.InvalidScript or VerifyResult.InvalidSignature)
+                            OnInvalidBlock(invalidBlock, rr.Source);
+                        else if (rr.Result == VerifyResult.Invalid)
+                            OnInvalidBlock(invalidBlock);
+                    }
                     break;
                 case Timer _:
                     OnTimer();

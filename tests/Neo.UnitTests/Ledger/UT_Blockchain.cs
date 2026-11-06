@@ -12,6 +12,7 @@
 using Akka.TestKit;
 using Akka.TestKit.MsTest;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Moq;
 using Neo.Extensions;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
@@ -95,7 +96,8 @@ namespace Neo.UnitTests.Ledger
             if (cachedHeader) _system.HeaderCache.Add(block.Header);
             var actor = ActorOfAsTestActorRef<Blockchain>(Akka.Actor.Props.Create(() => new Blockchain(_system)));
             senderProbe.Send(actor.Ref, block);
-            senderProbe.ExpectMsg<Blockchain.RelayResult>(p => p.Result == VerifyResult.Invalid, cancellationToken: CancellationToken.None);
+            senderProbe.ExpectMsg<Blockchain.RelayResult>(p => p.Result == expected && p.Source == senderProbe.Ref,
+                cancellationToken: CancellationToken.None);
             foreach (var field in new[] { "_blockCache", "_blockCacheUnverified" })
             {
                 var cache = (IDictionary)typeof(Blockchain).GetField(field, BindingFlags.Instance | BindingFlags.NonPublic)!
@@ -119,6 +121,57 @@ namespace Neo.UnitTests.Ledger
                 senderProbe.ExpectMsg<Blockchain.RelayResult>(p => p.Result == (cachedHeader ? VerifyResult.Succeed : VerifyResult.UnableToVerify),
                     cancellationToken: CancellationToken.None);
             }
+        }
+
+        [TestMethod]
+        public void InvalidTransactionBodyHasDistinctBlockResult()
+        {
+            var transaction = new Mock<Transaction>();
+            transaction.Setup(p => p.VerifyStateIndependent(_system.Settings)).Returns(VerifyResult.Invalid);
+            var block = new Block
+            {
+                Header = new Header
+                {
+                    Index = NativeContract.Ledger.CurrentIndex(_system.StoreView) + 2,
+                    PrevHash = UInt256.Zero,
+                    MerkleRoot = UInt256.Zero,
+                    NextConsensus = UInt160.Zero,
+                    Witness = Witness.Empty
+                },
+                Transactions = [transaction.Object]
+            };
+
+            var actor = ActorOfAsTestActorRef<Blockchain>(Akka.Actor.Props.Create(() => new Blockchain(_system)));
+            senderProbe.Send(actor.Ref, block);
+            senderProbe.ExpectMsg<Blockchain.RelayResult>(p => p.Result == VerifyResult.InvalidBlockBody && p.Source == senderProbe.Ref,
+                cancellationToken: CancellationToken.None);
+        }
+
+        [TestMethod]
+        public void CachedHeaderRejectsDifferentBlockHash()
+        {
+            var height = NativeContract.Ledger.CurrentIndex(_system.StoreView);
+            var knownBlock = new Block
+            {
+                Header = new Header
+                {
+                    Index = height + 2,
+                    PrevHash = UInt256.Zero,
+                    MerkleRoot = UInt256.Zero,
+                    Timestamp = 1,
+                    NextConsensus = UInt160.Zero,
+                    Witness = Witness.Empty
+                },
+                Transactions = []
+            };
+            _system.HeaderCache.Add(knownBlock.Header);
+            var otherBlock = knownBlock.ToArray().AsSerializable<Block>();
+            otherBlock.Header.Timestamp++;
+
+            var actor = ActorOfAsTestActorRef<Blockchain>(Akka.Actor.Props.Create(() => new Blockchain(_system)));
+            senderProbe.Send(actor.Ref, otherBlock);
+            senderProbe.ExpectMsg<Blockchain.RelayResult>(p => p.Result == VerifyResult.InvalidHash && p.Source == senderProbe.Ref,
+                cancellationToken: CancellationToken.None);
         }
 
         [TestMethod]
