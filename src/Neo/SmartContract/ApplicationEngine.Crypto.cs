@@ -66,9 +66,23 @@ namespace Neo.SmartContract
             if (m > n) throw new ArgumentException($"signatures count ({m}) cannot be greater than pubkeys count ({n}).");
             AddFee(CheckSigPrice * n * _execFeeFactor, false);
             var isGorgon = IsHardforkEnabled(Hardfork.HF_Gorgon);
+            ECPoint[]? decodedPubkeys = null;
+            if (IsHardforkEnabled(Hardfork.HF_Iara))
+            {
+                // Validate all keys before signature matching can exit early.
+                decodedPubkeys = new ECPoint[n];
+                for (int j = 0; j < n; j++)
+                {
+                    var point = ECPoint.DecodePoint(pubkeys[j], ECCurve.Secp256r1);
+                    _ = Crypto.CreateECDsa(point);
+                    decodedPubkeys[j] = point;
+                }
+            }
             for (int i = 0, j = 0; i < m && j < n;)
             {
-                var ok = isGorgon ? Crypto.VerifySignature(message, signatures[i], pubkeys[j], ECCurve.Secp256r1) : Crypto.VerifySignatureV0(message, signatures[i], pubkeys[j], ECCurve.Secp256r1);
+                var ok = decodedPubkeys is not null ? Crypto.VerifySignature(message, signatures[i], decodedPubkeys[j])
+                    : isGorgon ? Crypto.VerifySignature(message, signatures[i], pubkeys[j], ECCurve.Secp256r1)
+                    : Crypto.VerifySignatureV0(message, signatures[i], pubkeys[j], ECCurve.Secp256r1);
                 if (ok)
                     i++;
                 j++;
