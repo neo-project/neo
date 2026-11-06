@@ -480,17 +480,10 @@ namespace Neo.UnitTests.SmartContract.Native
         }
 
         [TestMethod]
-        [DataRow(2u, false)]
-        [DataRow(1u, true)]
-        [DataRow(0u, true)]
-        public void JsonSerializeSharedReferencesHuyao(uint activationHeight, bool enabled)
+        public void JsonSerializeSharedReferences()
         {
             using var system = TestBlockchain.GetSystem();
             using var snapshot = system.GetSnapshotCache();
-            var settings = TestProtocolSettings.Default with
-            {
-                Hardforks = TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_Huyao, activationHeight)
-            };
             using var script = new ScriptBuilder();
             // Construct [child, child] inside the VM, then pack it as the one native argument.
             script.Emit(OpCode.NEWARRAY0);
@@ -503,25 +496,17 @@ namespace Neo.UnitTests.SmartContract.Native
             script.EmitPush("jsonSerialize");
             script.EmitPush(NativeContract.StdLib.Hash);
             script.EmitSysCall(ApplicationEngine.System_Contract_Call);
-            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: settings);
-            Assert.AreEqual(enabled, engine.IsHardforkEnabled(Hardfork.HF_Huyao));
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
             engine.LoadScript(script.ToArray());
             Assert.AreEqual(VMState.HALT, engine.Execute());
             Assert.AreEqual("[[],[]]", engine.ResultStack.Pop().GetString());
         }
 
         [TestMethod]
-        [DataRow(2u, false)]
-        [DataRow(1u, true)]
-        [DataRow(0u, true)]
-        public void JsonSerializeCycleHuyao(uint activationHeight, bool enabled)
+        public void JsonSerializeCycle()
         {
             using var system = TestBlockchain.GetSystem();
             using var snapshot = system.GetSnapshotCache();
-            var settings = TestProtocolSettings.Default with
-            {
-                Hardforks = TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_Huyao, activationHeight)
-            };
             using var script = new ScriptBuilder();
             script.Emit(OpCode.NEWARRAY0);
             script.Emit(OpCode.DUP);
@@ -533,13 +518,10 @@ namespace Neo.UnitTests.SmartContract.Native
             script.EmitPush("jsonSerialize");
             script.EmitPush(NativeContract.StdLib.Hash);
             script.EmitSysCall(ApplicationEngine.System_Contract_Call);
-            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: settings);
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
             engine.LoadScript(script.ToArray());
             Assert.AreEqual(VMState.FAULT, engine.Execute());
-            if (enabled)
-                Assert.IsInstanceOfType<NotSupportedException>(engine.FaultException.GetBaseException());
-            else
-                Assert.IsNotInstanceOfType<NotSupportedException>(engine.FaultException.GetBaseException());
+            Assert.IsInstanceOfType<NotSupportedException>(engine.FaultException.GetBaseException());
         }
 
         [TestMethod]

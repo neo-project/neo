@@ -47,8 +47,9 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 12)]
         private static byte[] JsonSerialize(ApplicationEngine engine, StackItem item)
         {
-            return JsonSerializer.SerializeToByteArray(item, engine.Limits.MaxItemSize,
-                engine.IsHardforkEnabled(Hardfork.HF_Huyao));
+            // Always reject cycles: the previous serializer also faulted on them, but only after
+            // filling the output buffer up to MaxItemSize and consuming excessive memory.
+            return JsonSerializer.SerializeToByteArray(item, engine.Limits.MaxItemSize, true);
         }
 
         [ContractMethod(CpuFee = 1 << 14)]
