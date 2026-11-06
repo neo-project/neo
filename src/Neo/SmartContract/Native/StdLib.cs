@@ -53,7 +53,7 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 14)]
         private static StackItem JsonDeserialize(ApplicationEngine engine, byte[] json)
         {
-            JToken? token = JToken.Parse(json, 10);
+            JToken? token = JToken.Parse(json, 10, checkNumbers: engine.IsHardforkEnabled(Hardfork.HF_Iara));
             if (token is null) return StackItem.Null;
             return JsonSerializer.Deserialize(engine, token, engine.Limits);
         }
