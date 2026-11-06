@@ -431,7 +431,7 @@ namespace Neo.Ledger
                 }
 
                 var clonedSnapshot = snapshot.CloneCache();
-                var persistTransactionVMState = _system.Settings.IsHardforkEnabled(Hardfork.HF_Iara, block.Index);
+                var persistTransactionVMState = _system.Settings.IsHardforkEnabled(Hardfork.HF_Huyao, block.Index);
                 // Apply transaction execution changes through clonedSnapshot so they can be
                 // discarded on FAULT. Persist the final VM state directly in snapshot.
                 foreach (var transactionState in transactionStates)
