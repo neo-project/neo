@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using System.Diagnostics.CodeAnalysis;
+using System.Numerics;
 using System.Text.Json;
 using static Neo.Json.Utility;
 
@@ -128,8 +129,9 @@ namespace Neo.Json
         /// </summary>
         /// <param name="value">The byte array that contains the JSON token.</param>
         /// <param name="max_nest">The maximum nesting depth when parsing the JSON token.</param>
+        /// <param name="checkNumbers">Whether to reject numbers outside the safe integer range or underflowing to zero.</param>
         /// <returns>The parsed JSON token.</returns>
-        public static JToken? Parse(ReadOnlySpan<byte> value, int max_nest = 64)
+        public static JToken? Parse(ReadOnlySpan<byte> value, int max_nest = 64, bool checkNumbers = true)
         {
             var reader = new Utf8JsonReader(value, new JsonReaderOptions
             {
@@ -139,7 +141,7 @@ namespace Neo.Json
             });
             try
             {
-                var json = Read(ref reader);
+                var json = Read(ref reader, checkNumbers);
                 if (reader.Read()) throw new FormatException("Read json token failed");
                 return json;
             }
@@ -154,32 +156,33 @@ namespace Neo.Json
         /// </summary>
         /// <param name="value">The <see cref="string"/> that contains the JSON token.</param>
         /// <param name="max_nest">The maximum nesting depth when parsing the JSON token.</param>
+        /// <param name="checkNumbers">Whether to reject numbers outside the safe integer range or underflowing to zero.</param>
         /// <returns>The parsed JSON token.</returns>
-        public static JToken? Parse(string value, int max_nest = 64)
+        public static JToken? Parse(string value, int max_nest = 64, bool checkNumbers = true)
         {
-            return Parse(StrictUTF8.GetBytes(value), max_nest);
+            return Parse(StrictUTF8.GetBytes(value), max_nest, checkNumbers);
         }
 
-        private static JToken? Read(ref Utf8JsonReader reader, bool skipReading = false)
+        private static JToken? Read(ref Utf8JsonReader reader, bool checkNumbers, bool skipReading = false)
         {
             if (!skipReading && !reader.Read()) throw new FormatException("Read json token failed");
             return reader.TokenType switch
             {
                 JsonTokenType.False => false,
                 JsonTokenType.Null => Null,
-                JsonTokenType.Number => ReadNumber(ref reader),
-                JsonTokenType.StartArray => ReadArray(ref reader),
-                JsonTokenType.StartObject => ReadObject(ref reader),
+                JsonTokenType.Number => ReadNumber(ref reader, checkNumbers),
+                JsonTokenType.StartArray => ReadArray(ref reader, checkNumbers),
+                JsonTokenType.StartObject => ReadObject(ref reader, checkNumbers),
                 JsonTokenType.String => ReadString(ref reader),
                 JsonTokenType.True => true,
                 _ => throw new FormatException($"Unexpected token {reader.TokenType}"),
             };
         }
 
-        private static JNumber ReadNumber(ref Utf8JsonReader reader)
+        private static JNumber ReadNumber(ref Utf8JsonReader reader, bool checkNumbers)
         {
             double value = reader.GetDouble();
-            if (value == 0)
+            if (checkNumbers && value == 0)
             {
                 foreach (byte digit in reader.ValueSpan)
                 {
@@ -188,10 +191,10 @@ namespace Neo.Json
                         throw new FormatException("JSON number underflows to zero");
                 }
             }
-            return new JNumber(value);
+            return new JNumber(value, checkNumbers);
         }
 
-        private static JArray ReadArray(ref Utf8JsonReader reader)
+        private static JArray ReadArray(ref Utf8JsonReader reader, bool checkNumbers)
         {
             var array = new JArray();
             while (reader.Read())
@@ -201,14 +204,14 @@ namespace Neo.Json
                     case JsonTokenType.EndArray:
                         return array;
                     default:
-                        array.Add(Read(ref reader, skipReading: true));
+                        array.Add(Read(ref reader, checkNumbers, skipReading: true));
                         break;
                 }
             }
             throw new FormatException("Unterminated array");
         }
 
-        private static JObject ReadObject(ref Utf8JsonReader reader)
+        private static JObject ReadObject(ref Utf8JsonReader reader, bool checkNumbers)
         {
             JObject obj = new();
             while (reader.Read())
@@ -222,7 +225,7 @@ namespace Neo.Json
                         if (obj.Properties.ContainsKey(name))
                             throw new FormatException($"Duplicate property name: {name}");
 
-                        var value = Read(ref reader);
+                        var value = Read(ref reader, checkNumbers);
                         obj.Properties.Add(name, value);
                         break;
                     default:
@@ -315,6 +318,11 @@ namespace Neo.Json
         }
 
         public static implicit operator JToken(double value)
+        {
+            return (JNumber)value;
+        }
+
+        public static implicit operator JToken(BigInteger value)
         {
             return (JNumber)value;
         }

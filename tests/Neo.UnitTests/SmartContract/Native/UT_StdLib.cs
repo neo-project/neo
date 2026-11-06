@@ -371,7 +371,11 @@ namespace Neo.UnitTests.SmartContract.Native
                 script.EmitDynamicCall(NativeContract.StdLib.Hash, "jsonDeserialize", "123");
                 script.EmitDynamicCall(NativeContract.StdLib.Hash, "jsonDeserialize", "null");
 
-                using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestProtocolSettings.Default);
+                var beforeIara = TestProtocolSettings.Default with
+                {
+                    Hardforks = TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_Iara, uint.MaxValue)
+                };
+                using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: beforeIara);
                 engine.LoadScript(script.ToArray());
 
                 Assert.AreEqual(VMState.HALT, engine.Execute());
@@ -458,6 +462,32 @@ namespace Neo.UnitTests.SmartContract.Native
 
             Assert.AreEqual(VMState.HALT, engine.Execute());
             Assert.AreEqual(0, engine.ResultStack.Pop().GetInteger());
+        }
+
+        [TestMethod]
+        [DataRow("9007199254740992")]
+        [DataRow("-9007199254740992")]
+        [DataRow("[0,{\"value\":9007199254740992}]")]
+        [DataRow("1e-400")]
+        public void Json_Deserialize_NumberChecksAtIara(string json)
+        {
+            var snapshotCache = TestBlockchain.GetTestSnapshotCache();
+            using var script = new ScriptBuilder();
+            script.EmitDynamicCall(NativeContract.StdLib.Hash, "jsonDeserialize", json);
+
+            var beforeIara = TestProtocolSettings.Default with
+            {
+                Hardforks = TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_Iara, uint.MaxValue)
+            };
+            using var oldEngine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: beforeIara);
+            Assert.IsFalse(oldEngine.IsHardforkEnabled(Hardfork.HF_Iara));
+            oldEngine.LoadScript(script.ToArray());
+            Assert.AreEqual(VMState.HALT, oldEngine.Execute());
+
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache, settings: TestProtocolSettings.Default);
+            Assert.IsTrue(engine.IsHardforkEnabled(Hardfork.HF_Iara));
+            engine.LoadScript(script.ToArray());
+            Assert.AreEqual(VMState.FAULT, engine.Execute());
         }
 
         [TestMethod]
