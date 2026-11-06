@@ -10,8 +10,10 @@
 // modifications are permitted.
 
 using Neo.Cryptography;
+using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -68,6 +70,19 @@ namespace Neo.SmartContract
         /// The required <see cref="CallFlags"/> for the interoperable service.
         /// </summary>
         public CallFlags RequiredCallFlags { get; init; }
+
+        /// <summary>
+        /// Gets the fixed price of the interoperable service. It's taken from the latest enabled <see cref="Prices"/> entry.
+        /// </summary>
+        /// <param name="isHardforkEnabled">Checks whether the specified hardfork is enabled.</param>
+        /// <returns>The price in the unit of 1e-11 GAS.</returns>
+        public long GetPrice(Func<Hardfork, bool> isHardforkEnabled)
+        {
+            foreach (var (hardfork, price) in Prices)
+                if (hardfork is null || isHardforkEnabled(hardfork.Value))
+                    return price;
+            throw new UnreachableException($"Price of {Name} isn't found.");
+        }
 
         public static implicit operator uint(InteropDescriptor descriptor)
         {
