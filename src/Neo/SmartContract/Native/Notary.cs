@@ -130,7 +130,7 @@ namespace Neo.SmartContract.Native
             }
             else
             {
-                // Main transaction of NotaryRequest is not allowed to have Conflicts attribute to prohibit malicoius
+                // Main transaction of NotaryRequest is not allowed to have Conflicts attribute to prohibit malicious
                 // attempt to use Conflicts attribute against other mempooled transaction signed by Notary contract.
                 if (tx.GetAttributes<Conflicts>().Count() != 0)
                     return false;
