@@ -100,8 +100,8 @@ namespace Neo.UnitTests.Network.P2P
         {
             var peer = CreateTestProbe();
 
-            peer.Send(
-                taskManager,
+            // Registration must finish before tests inspect the peer's session.
+            taskManager.Receive(
                 new TaskManager.Register(new VersionPayload
                 {
                     UserAgent = "local-test",
@@ -109,7 +109,7 @@ namespace Neo.UnitTests.Network.P2P
                     [
                         new FullNodeCapability(startHeight)
                     ]
-                }));
+                }), peer);
 
             return peer;
         }
@@ -938,7 +938,8 @@ namespace Neo.UnitTests.Network.P2P
             // The block for this height was already persisted, so delivering it again
             // (e.g. unsolicited from another peer) must not be tracked by hash: nothing
             // consults an already-persisted height afterwards.
-            peer.Send(taskManager, historicalBlock);
+            // Process it before asserting that no hash was recorded.
+            taskManager.Receive(historicalBlock, peer);
 
             Assert.IsFalse(session.ReceivedBlockHashes.ContainsKey(historicalBlock.Index), "An already-persisted height must not be recorded in ReceivedBlockHashes.");
 
