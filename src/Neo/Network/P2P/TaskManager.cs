@@ -84,16 +84,22 @@ namespace Neo.Network.P2P
             RequestTasks(Sender, session);
         }
 
-        private void OnInvalidBlock(Block invalidBlock, IActorRef? sender = null)
+        /// <summary>
+        /// Removes a rejected block hash from known inventory and retries available tasks.
+        /// Disconnects <paramref name="peerToDisconnect"/> only when it is provided.
+        /// </summary>
+        /// <param name="invalidBlock">The rejected block.</param>
+        /// <param name="peerToDisconnect">The peer to disconnect, or null to retry without disconnecting a peer.</param>
+        private void OnInvalidBlock(Block invalidBlock, IActorRef? peerToDisconnect = null)
         {
             if (invalidBlock.TryGetHash(out var hash)) _knownHashes.Remove(hash);
-            if (sender is not null && sessions.TryGetValue(sender, out var session))
+            if (peerToDisconnect is not null && sessions.TryGetValue(peerToDisconnect, out var session))
             {
                 session.ReceivedBlockHashes.Remove(invalidBlock.Index);
-                sender.Tell(Tcp.Abort.Instance);
+                peerToDisconnect.Tell(Tcp.Abort.Instance);
             }
             foreach (var (actor, otherSession) in sessions)
-                if (actor != sender) RequestTasks(actor, otherSession);
+                if (actor != peerToDisconnect) RequestTasks(actor, otherSession);
         }
 
         private void OnNewTasks(InvPayload payload)
