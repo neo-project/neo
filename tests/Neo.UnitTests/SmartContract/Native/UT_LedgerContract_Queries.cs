@@ -87,8 +87,9 @@ namespace Neo.UnitTests.SmartContract.Native
             var settings = TestProtocolSettings.Default with
             {
                 Hardforks = TestProtocolSettings.Default.Hardforks
-                    .SetItem(Hardfork.HF_Iara, iaraHeight)
-                    .SetItem(Hardfork.HF_Jackalope, iaraHeight)
+                    .SetItem(Hardfork.HF_Huyao, huyaoHeight)
+                    .SetItem(Hardfork.HF_Iara, huyaoHeight)
+                    .SetItem(Hardfork.HF_Jackalope, huyaoHeight)
             };
             var system = new TestBlockchain.TestNeoSystem(settings);
             var snapshot = system.GetSnapshotCache();
