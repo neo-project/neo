@@ -163,7 +163,7 @@ namespace Neo.UnitTests.SmartContract.Native
         }
 
         [TestMethod]
-        public void GetTransactionVMState_AtIaraActivation_Halt_ReturnsHalt()
+        public void GetTransactionVMState_AtHuyaoActivation_Halt_ReturnsHalt()
         {
             var (system, tx) = PersistTransaction(false, 1);
             AssertVMState(system, tx.Hash, VMState.HALT);
