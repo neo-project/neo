@@ -155,7 +155,7 @@ namespace Neo.UnitTests.SmartContract.Native
         }
 
         [TestMethod]
-        public void GetTransactionVMState_BeforeIara_Fault_ReturnsNone()
+        public void GetTransactionVMState_BeforeHuyao_Fault_ReturnsNone()
         {
             var (system, tx) = PersistTransaction(true, 2);
             Assert.IsNotNull(NativeContract.Ledger.GetTransactionState(system.StoreView, tx.Hash));
