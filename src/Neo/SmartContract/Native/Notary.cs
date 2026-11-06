@@ -18,7 +18,6 @@ using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract.Manifest;
-using Neo.VM;
 using Neo.VM.Types;
 using System;
 using System.Collections.Immutable;
@@ -84,7 +83,7 @@ namespace Neo.SmartContract.Native
                 }
             }
             if (nFees == 0) return;
-            if (notaries == null) return;
+            if (notaries is null || notaries.Length == 0) return;
             var singleReward = CalculateNotaryReward(engine.SnapshotCache, nFees, notaries.Length);
             foreach (var notary in notaries) await GAS.Mint(engine, Contract.CreateSignatureRedeemScript(notary).ToScriptHash(), singleReward, false);
         }
