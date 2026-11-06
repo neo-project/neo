@@ -359,7 +359,7 @@ namespace Neo.SmartContract.Native
         [ContractMethod(CpuFee = 1 << 17, RequiredCallFlags = CallFlags.ReadStates)]
         public BigInteger UnclaimedGas(ApplicationEngine engine, UInt160 account, uint end)
         {
-            var expectEnd = engine.PersistingBlock?.Index ?? Ledger.CurrentIndex(engine.SnapshotCache) + 1;
+            var expectEnd = engine.GetPersistingIndex();
             ArgumentOutOfRangeException.ThrowIfNotEqual(end, expectEnd);
             StorageItem? storage = engine.SnapshotCache.TryGet(CreateStorageKey(Prefix_Account, account));
             if (storage is null) return BigInteger.Zero;
