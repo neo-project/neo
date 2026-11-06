@@ -96,9 +96,13 @@ namespace Neo.Ledger
 
         private static readonly Script s_onPersistScript, s_postPersistScript;
         private const int MaxTxToReverifyPerIdle = 10;
+        private const int MaxUnverifiedBlockCount = InvPayload.MaxHashesCount;
+        private const long MaxUnverifiedBlockCacheSize = 64 * 1024 * 1024;
         private readonly NeoSystem _system;
         private readonly Dictionary<UInt256, Block> _blockCache = [];
         private readonly Dictionary<uint, UnverifiedBlocksList> _blockCacheUnverified = [];
+        private int _unverifiedBlockCount;
+        private long _unverifiedBlockCacheSize;
         private ImmutableHashSet<UInt160>? _extensibleWitnessWhiteList;
 
         static Blockchain()
@@ -142,20 +146,16 @@ namespace Neo.Ledger
 
         private void AddUnverifiedBlockToCache(Block block)
         {
-            // Check if any block proposal for height `block.Index` exists
-            if (!_blockCacheUnverified.TryGetValue(block.Index, out var list))
-            {
-                // There are no blocks, a new UnverifiedBlocksList is created and, consequently, the current block is added to the list
-                list = new UnverifiedBlocksList();
-                _blockCacheUnverified.Add(block.Index, list);
-            }
-            else
+            if (_blockCacheUnverified.TryGetValue(block.Index, out var list))
             {
                 // Check if any block with the hash being added already exists on possible candidates to be processed
                 foreach (var unverifiedBlock in list.Blocks)
                 {
                     if (block.Hash == unverifiedBlock.Hash)
+                    {
+                        list.Nodes.Add(Sender);
                         return;
+                    }
                 }
 
                 if (!list.Nodes.Add(Sender))
@@ -166,7 +166,66 @@ namespace Neo.Ledger
                 }
             }
 
+            if (!TryMakeRoomForUnverifiedBlock(block))
+            {
+                RestartUnverifiedBlock(block);
+                return;
+            }
+
+            if (!_blockCacheUnverified.TryGetValue(block.Index, out list))
+            {
+                list = new UnverifiedBlocksList();
+                _blockCacheUnverified.Add(block.Index, list);
+            }
+            list.Nodes.Add(Sender);
             list.Blocks.Add(block);
+            _unverifiedBlockCount++;
+            _unverifiedBlockCacheSize += block.Size;
+        }
+
+        private void RestartUnverifiedBlock(Block block)
+        {
+            if (Sender == ActorRefs.NoSender) return;
+            _system.TaskManager.Tell(new TaskManager.RestartTasks(
+                InvPayload.Create(InventoryType.Block, block.Hash), Sender));
+        }
+
+        private void RestartUnverifiedBlocks(UnverifiedBlocksList list)
+        {
+            var hashes = list.Blocks.Select(p => p.Hash).ToArray();
+            if (hashes.Length == 0) return;
+
+            var payload = InvPayload.Create(InventoryType.Block, hashes);
+            foreach (var node in list.Nodes)
+                _system.TaskManager.Tell(new TaskManager.RestartTasks(payload, node));
+        }
+
+        private bool TryMakeRoomForUnverifiedBlock(Block block)
+        {
+            long blockSize = block.Size;
+            if (blockSize > MaxUnverifiedBlockCacheSize) return false;
+
+            while (_unverifiedBlockCount >= MaxUnverifiedBlockCount ||
+                _unverifiedBlockCacheSize + blockSize > MaxUnverifiedBlockCacheSize)
+            {
+                if (_blockCacheUnverified.Count == 0) return false;
+
+                // Keep blocks closer to the current height. Farthest blocks can be
+                // requested again after the missing headers have been processed.
+                uint farthestIndex = _blockCacheUnverified.Keys.Max();
+                if (block.Index >= farthestIndex) return false;
+                RemoveUnverifiedBlocksFromCache(farthestIndex, restartTasks: true);
+            }
+            return true;
+        }
+
+        private void RemoveUnverifiedBlocksFromCache(uint index, bool restartTasks = false)
+        {
+            if (!_blockCacheUnverified.Remove(index, out var list)) return;
+            if (restartTasks)
+                RestartUnverifiedBlocks(list);
+            _unverifiedBlockCount -= list.Blocks.Count;
+            _unverifiedBlockCacheSize -= list.Blocks.Sum(p => (long)p.Size);
         }
 
         private void OnFillMemoryPool(IEnumerable<Transaction> transactions)
@@ -263,7 +322,7 @@ namespace Neo.Ledger
                     : 0;
                 foreach (var blockToPersist in blocksToPersistList)
                 {
-                    _blockCacheUnverified.Remove(blockToPersist.Index);
+                    RemoveUnverifiedBlocksFromCache(blockToPersist.Index);
                     Persist(blockToPersist);
 
                     if (blocksPersisted++ < blocksToPersistList.Count - (2 + extraRelayingBlocks)) continue;
@@ -277,7 +336,7 @@ namespace Neo.Ledger
                 {
                     foreach (var unverifiedBlock in unverifiedBlocks.Blocks)
                         Self.Tell(unverifiedBlock, ActorRefs.NoSender);
-                    _blockCacheUnverified.Remove(block.Index + 1);
+                    RemoveUnverifiedBlocksFromCache(block.Index + 1);
                 }
             }
             else

@@ -13,10 +13,13 @@ using Akka.IO;
 using Akka.TestKit.MsTest;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
+using Neo.IO.Caching;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Capabilities;
 using Neo.Network.P2P.Payloads;
+using System;
 using System.Net;
+using System.Reflection;
 using System.Threading;
 
 namespace Neo.UnitTests.Network.P2P
@@ -92,6 +95,40 @@ namespace Neo.UnitTests.Network.P2P
 
             //Verack
             Assert.HasCount(3, verackMessage.Data);
+        }
+
+        [TestMethod]
+        public void RestartInventory_ClearsKnownAndPendingHashes()
+        {
+            var connectionTestProbe = CreateTestProbe();
+            var remoteNodeActor = ActorOfAsTestActorRef(() =>
+                new RemoteNode(_system,
+                    new LocalNode(_system),
+                    connectionTestProbe,
+                    new IPEndPoint(IPAddress.Parse("192.168.1.2"), 8080),
+                    new IPEndPoint(IPAddress.Parse("192.168.1.1"), 8080),
+                    new ChannelsConfig()));
+
+            var hash = UInt256.Parse("0x1111111111111111111111111111111111111111111111111111111111111111");
+            var pending = (HashSetCache<UInt256>)typeof(RemoteNode)
+                .GetField("_pendingKnownHashes", BindingFlags.Instance | BindingFlags.NonPublic)!
+                .GetValue(remoteNodeActor.UnderlyingActor)!;
+            var known = (HashSetCache<UInt256>)typeof(RemoteNode)
+                .GetField("_knownHashes", BindingFlags.Instance | BindingFlags.NonPublic)!
+                .GetValue(remoteNodeActor.UnderlyingActor)!;
+            pending.TryAdd(hash);
+            known.TryAdd(hash);
+
+            remoteNodeActor.Tell(new RemoteNode.RestartInventory(hash));
+
+            AwaitAssert(
+                () =>
+                {
+                    Assert.IsFalse(pending.Contains(hash));
+                    Assert.IsFalse(known.Contains(hash));
+                },
+                TimeSpan.FromSeconds(3),
+                cancellationToken: CancellationToken.None);
         }
     }
 }

@@ -39,7 +39,8 @@ namespace Neo.Network.P2P
         /// Sent to <see cref="TaskManager"/> to restart tasks for inventories.
         /// </summary>
         /// <param name="Payload">The inventories that need to restart.</param>
-        public record RestartTasks(InvPayload Payload);
+        /// <param name="Source">The peer whose received inventory state must be reset.</param>
+        public record RestartTasks(InvPayload Payload, IActorRef? Source = null);
 
         private record Timer;
 
@@ -169,7 +170,7 @@ namespace Neo.Network.P2P
                     OnNewTasks(tasks.Payload);
                     break;
                 case RestartTasks restart:
-                    OnRestartTasks(restart.Payload);
+                    OnRestartTasks(restart.Payload, restart.Source);
                     break;
                 case Header[] headers:
                     OnHeaders(headers);
@@ -207,7 +208,7 @@ namespace Neo.Network.P2P
             session.LastBlockIndex = update.LastBlockIndex;
         }
 
-        private void OnRestartTasks(InvPayload payload)
+        private void OnRestartTasks(InvPayload payload, IActorRef? source)
         {
             _knownHashes.ExceptWith(payload.Hashes);
             foreach (var hash in payload.Hashes)
@@ -218,6 +219,21 @@ namespace Neo.Network.P2P
                     session.AvailableTasks.Remove(hash);
                     session.InvTasks.Remove(hash);
                 }
+            }
+
+            if (source is not null && source != ActorRefs.NoSender && sessions.TryGetValue(source, out var session))
+            {
+                foreach (var index in session.ReceivedBlockHashes
+                    .Where(p => payload.Hashes.Contains(p.Value))
+                    .Select(p => p.Key)
+                    .ToArray())
+                {
+                    session.ReceivedBlockHashes.Remove(index);
+                }
+
+                foreach (var hash in payload.Hashes)
+                    source.Tell(new RemoteNode.RestartInventory(hash));
+                return;
             }
 
             foreach (var group in InvPayload.CreateGroup(payload.Type, payload.Hashes))

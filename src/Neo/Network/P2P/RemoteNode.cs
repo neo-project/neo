@@ -32,6 +32,7 @@ namespace Neo.Network.P2P
     {
         internal record StartProtocol;
         internal record Relay(IInventory Inventory);
+        internal record RestartInventory(UInt256 Hash);
 
         private readonly NeoSystem _system;
         private readonly LocalNode _localNode;
@@ -172,6 +173,9 @@ namespace Neo.Network.P2P
                     break;
                 case Relay relay:
                     OnRelay(relay.Inventory);
+                    break;
+                case RestartInventory restart:
+                    OnRestartInventory(restart.Hash);
                     break;
                 case StartProtocol _:
                     OnStartProtocol();
