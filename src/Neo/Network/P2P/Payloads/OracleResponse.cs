@@ -98,7 +98,7 @@ namespace Neo.Network.P2P.Payloads
         public override bool Verify(DataCache snapshot, Transaction tx)
         {
             if (tx.Signers.Any(p => p.Scopes != WitnessScope.None)) return false;
-            if (!tx.Script.Span.SequenceEqual(FixedScript)) return false;
+            if (!tx.Script.SequenceEqual(FixedScript)) return false;
             OracleRequest? request = NativeContract.Oracle.GetRequest(snapshot, Id);
             if (request is null) return false;
             if (tx.NetworkFee + tx.SystemFee != request.GasForResponse) return false;

@@ -11,6 +11,7 @@
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
+using Neo.VM;
 using System;
 using System.IO;
 
@@ -58,6 +59,20 @@ namespace Neo.UnitTests.Extensions
             using var reader = new BinaryReader(ms);
             var bytes = reader.ReadVarBytes();
             Assert.AreEqual("neo-test", System.Text.Encoding.UTF8.GetString(bytes));
+        }
+
+        [TestMethod]
+        public void WriteVarBytes_Script_RoundTrip()
+        {
+            byte[] bytes = [0xAA, 0xBB, 0xCC];
+            var script = new Script(bytes);
+            using var ms = new MemoryStream();
+            using (var writer = new BinaryWriter(ms, System.Text.Encoding.UTF8, true))
+                writer.WriteVarBytes(script);
+
+            ms.Position = 0;
+            using var reader = new BinaryReader(ms);
+            Assert.AreSequenceEqual(bytes, reader.ReadVarBytes());
         }
 
         [TestMethod]
