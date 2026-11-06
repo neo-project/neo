@@ -1184,7 +1184,7 @@ namespace Neo.SmartContract
         /// </summary>
         /// <param name="descriptor">The descriptor of the interoperable service.</param>
         /// <returns>The price in the unit of femtoGAS.</returns>
-        private BigInteger GetSysCallPrice(InteropDescriptor descriptor)
+        internal BigInteger GetSysCallPrice(InteropDescriptor descriptor)
         {
             return descriptor.GetPrice(IsHardforkEnabled) * _execFeeFactor;
         }
