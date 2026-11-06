@@ -127,6 +127,86 @@ namespace Neo.UnitTests.SmartContract.Native
         }
 
         [TestMethod]
+        [DataRow(-1, 1001u)]
+        [DataRow(0, 1001u)]
+        [DataRow(19, 1001u)]
+        [DataRow(20, 1001u)]
+        [DataRow(21, 1001u)]
+        [DataRow(32, 1001u)]
+        [DataRow(-1, 1000u)]
+        [DataRow(0, 1000u)]
+        [DataRow(19, 1000u)]
+        [DataRow(20, 1000u)]
+        [DataRow(21, 1000u)]
+        [DataRow(32, 1000u)]
+        [DataRow(-1, 999u)]
+        [DataRow(0, 999u)]
+        [DataRow(19, 999u)]
+        [DataRow(20, 999u)]
+        [DataRow(21, 999u)]
+        [DataRow(32, 999u)]
+        public void Check_OnNEP17Payment_RecipientLength(int length, uint activationHeight)
+        {
+            var snapshot = _snapshot.CloneCache();
+            var persistingBlock = new Block
+            {
+                Header = new Header
+                {
+                    PrevHash = UInt256.Zero,
+                    MerkleRoot = UInt256.Zero,
+                    Index = 1000,
+                    NextConsensus = UInt160.Zero,
+                    Witness = null!
+                },
+                Transactions = []
+            };
+            var from = Contract.GetBFTAddress(TestProtocolSettings.Default.StandbyValidators).ToArray();
+            var recipient = UInt160.Parse("01ff00ff00ff00ff00ff00ff00ff00ff00ff00a4").ToArray();
+            var recipientBytes = length < 0 ? null : new byte[length];
+            if (recipientBytes != null)
+                recipient.AsSpan(0, Math.Min(length, recipient.Length)).CopyTo(recipientBytes);
+            var storageKey = new KeyBuilder(NativeContract.Ledger.Id, 12);
+            snapshot.Add(storageKey, new(new HashIndexState { Hash = UInt256.Zero, Index = persistingBlock.Index - 1 }));
+            var data = new ContractParameter
+            {
+                Type = ContractParameterType.Array,
+                Value = new List<ContractParameter>()
+                {
+                    length < 0
+                        ? new() { Type = ContractParameterType.Any }
+                        : new() { Type = ContractParameterType.ByteArray, Value = recipientBytes },
+                    new() { Type = ContractParameterType.Integer, Value = persistingBlock.Index + 100 }
+                }
+            };
+            BigInteger amount = 2 * 1000_0000 + 1;
+            var settings = TestProtocolSettings.Default with
+            {
+                Hardforks = TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_Huyao, activationHeight)
+            };
+            using var engine = ApplicationEngine.Create(TriggerType.Application,
+                new Transaction { Signers = [new() { Account = new UInt160(from), Scopes = WitnessScope.Global }], Attributes = [], Witnesses = [] },
+                snapshot, persistingBlock, settings: settings);
+            using var script = new ScriptBuilder();
+            script.EmitDynamicCall(NativeContract.GAS.Hash, "transfer", from, NativeContract.Notary.Hash.ToArray(), amount, data);
+            engine.LoadScript(script.ToArray());
+            bool valid = length == -1 || length == UInt160.Length
+                || (activationHeight > persistingBlock.Index && length > UInt160.Length);
+            Assert.AreEqual(valid ? VMState.HALT : VMState.FAULT, engine.Execute(), engine.FaultException?.ToString());
+            if (valid)
+            {
+                Assert.IsTrue(engine.ResultStack.Pop().GetBoolean());
+                Assert.AreEqual(amount, Call_BalanceOf(snapshot, length == -1 ? from : recipient, persistingBlock));
+                Assert.AreEqual(BigInteger.Zero, Call_BalanceOf(snapshot, length == -1 ? recipient : from, persistingBlock));
+            }
+            else
+            {
+                Assert.IsNotNull(engine.FaultException);
+                Assert.AreEqual(BigInteger.Zero, Call_BalanceOf(snapshot, recipient, persistingBlock));
+                Assert.AreEqual(BigInteger.Zero, Call_BalanceOf(snapshot, from, persistingBlock));
+            }
+        }
+
+        [TestMethod]
         public void Check_ExpirationOf()
         {
             var snapshot = _snapshot.CloneCache();
@@ -712,6 +792,38 @@ namespace Neo.UnitTests.SmartContract.Native
 
             var scriptHash = Contract.CreateSignatureRedeemScript(key1.PublicKey).ToScriptHash();
             Assert.AreEqual(expectedNotaryReward, NativeContract.GAS.BalanceOf(engine.SnapshotCache, scriptHash));
+        }
+
+        [TestMethod]
+        public void Check_OnPersist_NoDesignatedNotaries()
+        {
+            var snapshot = _snapshot.CloneCache();
+            var from = Contract.GetBFTAddress(TestProtocolSettings.Default.StandbyValidators);
+            var tx = TestUtils.GetTransaction(from);
+            tx.Attributes = [new NotaryAssisted { NKeys = 0 }];
+            tx.NetworkFee = 1_0000_0000;
+
+            var block = new Block
+            {
+                Header = new Header
+                {
+                    Index = (uint)TestProtocolSettings.Default.CommitteeMembersCount,
+                    MerkleRoot = UInt256.Zero,
+                    NextConsensus = UInt160.Zero,
+                    PrevHash = UInt256.Zero,
+                    Witness = Witness.Empty,
+                },
+                Transactions = [tx]
+            };
+
+            Assert.AreEqual(0, NativeContract.RoleManagement.GetDesignatedByRole(
+                snapshot, Role.P2PNotary, NativeContract.Ledger.CurrentIndex(snapshot) + 1).Length);
+
+            using var script = new ScriptBuilder();
+            script.EmitSysCall(ApplicationEngine.System_Contract_NativeOnPersist);
+            using var engine = ApplicationEngine.Create(TriggerType.OnPersist, null, snapshot, block, settings: TestProtocolSettings.Default);
+            engine.LoadScript(script.ToArray());
+            Assert.AreEqual(VMState.HALT, engine.Execute());
         }
 
         [TestMethod]
