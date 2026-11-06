@@ -456,7 +456,7 @@ namespace Neo.Network.P2P.Payloads
                 SystemFee,
                 NetworkFee,
                 ValidUntilBlock,
-                (ReadOnlyMemory<byte>)Script,
+                Script,
             });
         }
 
