@@ -115,7 +115,8 @@ namespace Neo.SmartContract.Manifest
         {
             if (other is null) return false;
             if (this == other) return true;
-            if (IsWildcard == other.IsWildcard) return true;
+            // Equal wildcard status does not make two concrete hashes or groups equal.
+            if (IsWildcard || other.IsWildcard) return IsWildcard && other.IsWildcard;
             if (IsHash) return Hash.Equals(other.Hash);
             if (IsGroup) return Group.Equals(other.Group);
             return false;
