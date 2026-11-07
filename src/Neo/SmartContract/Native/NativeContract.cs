@@ -213,7 +213,7 @@ namespace Neo.SmartContract.Native
                     sb.EmitSysCall(ApplicationEngine.System_Contract_CallNative);
                     sb.Emit(OpCode.RET);
                 }
-                script = new Script(sb.ToArray());
+                script = new Script(sb.ToArray(), true);
             }
 
             return new NativeContractsCache.CacheEntry(methods, script);
