@@ -22,7 +22,7 @@ namespace Neo.Extensions
         /// <returns>The size of the length prefix and script bytes.</returns>
         public static int GetVarSize(this Script script)
         {
-            int length = script.Length;
+            var length = script.Length;
             return length.GetVarSize() + length;
         }
     }
