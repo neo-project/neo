@@ -167,7 +167,7 @@ namespace Neo.UnitTests.SmartContract
             Assert.AreEqual(1, ret.UpdateCounter);
             Assert.AreEqual(state.Id, ret.Id);
             Assert.AreEqual(manifest.ToJson().ToString(), ret.Manifest.ToJson().ToString());
-            Assert.AreEqual(nef.Script.Span.ToHexString().ToString(), ret.Script.Span.ToHexString());
+            Assert.AreEqual(((ReadOnlyMemory<byte>)nef.Script).Span.ToHexString().ToString(), ((ReadOnlyMemory<byte>)ret.Script).Span.ToHexString());
         }
 
         [TestMethod]
