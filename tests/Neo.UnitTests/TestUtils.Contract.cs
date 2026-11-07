@@ -11,6 +11,7 @@
 
 using Neo.SmartContract;
 using Neo.SmartContract.Manifest;
+using System;
 using System.Linq;
 
 namespace Neo.UnitTests
@@ -78,7 +79,7 @@ namespace Neo.UnitTests
             {
                 Id = 0x43000000,
                 Nef = nef,
-                Hash = nef.Script.Span.ToScriptHash(),
+                Hash = ((ReadOnlyMemory<byte>)nef.Script).Span.ToScriptHash(),
                 Manifest = CreateManifest(method, ContractParameterType.Any, Enumerable.Repeat(ContractParameterType.Any, parametersCount).ToArray())
             };
         }
