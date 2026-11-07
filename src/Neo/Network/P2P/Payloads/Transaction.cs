@@ -386,17 +386,17 @@ namespace Neo.Network.P2P.Payloads
         public virtual VerifyResult VerifyStateIndependent(ProtocolSettings settings)
         {
             if (Size > MaxTransactionSize) return VerifyResult.OverSize;
-            try
+            if (!Script.IsStrictMode)
             {
-                if (!Script.IsStrictMode)
+                try
                 {
                     // Strict validation does not change the bytes, so preserve the cached hash and size.
                     _script = new Script(Script, true);
                 }
-            }
-            catch (Exception)
-            {
-                return VerifyResult.InvalidScript;
+                catch (Exception)
+                {
+                    return VerifyResult.InvalidScript;
+                }
             }
             UInt160[] hashes = GetScriptHashesForVerifying(null!);
             for (int i = 0; i < hashes.Length; i++)
