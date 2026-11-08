@@ -64,19 +64,6 @@
       src=".github/images/youtube-logo.png"
       width="32px">
   </a>
-  &nbsp;
-  <!--How to get a link? -->
-  <a href="https://neo.org/">
-      <img
-      src=".github/images/we-chat-logo.png"
-      width="25px">
-  </a>
-  &nbsp;
-  <a href="https://weibo.com/neosmarteconomy">
-      <img
-      src=".github/images/weibo-logo.png"
-      width="28px">
-  </a>
 </p>
 <p align="center">
   <a href="https://github.com/neo-project/neo/releases">
@@ -159,17 +146,17 @@ An overview of the project folders can be seen below.
 
 |Folder|Content|
 |---|---|
-|[/src/neo/Cryptography/](https://github.com/neo-project/neo/tree/master/src/Neo/Cryptography)|General cryptography implementation, including ECC.|
-|[/src/neo/IO/](https://github.com/neo-project/neo/tree/master/src/Neo/IO)|Data structures used for caching and collection interaction.|
-|[/src/neo/Ledger/](https://github.com/neo-project/neo/tree/master/src/Neo/Ledger)|Classes responsible for the state control, including the `MemoryPool` and `Blockchain`.|
-|[/src/neo/Network/](https://github.com/neo-project/neo/tree/master/src/Neo/Network)|Peer-to-peer protocol implementation.|
-|[/src/neo/Persistence/](https://github.com/neo-project/neo/tree/master/src/Neo/Persistence)|Classes used to allow other classes to access application state.|
-|[/src/neo/Plugins/](https://github.com/neo-project/neo/tree/master/src/Neo/Plugins)|Interfaces used to extend Neo, including the storage interface.|
-|[/src/neo/SmartContract/](https://github.com/neo-project/neo/tree/master/src/Neo/SmartContract)|Native contracts, `ApplicationEngine`, `InteropService` and other smart-contract related classes.|
-|[/src/neo/Wallets/](https://github.com/neo-project/neo/tree/master/src/Neo/Wallets)|Wallet and account implementation.|
-|[/src/Neo.Extensions/](https://github.com/neo-project/neo/tree/master/src/Neo.Extensions)| Extensions to expand the existing functionality.|
-|[/src/Neo.Json/](https://github.com/neo-project/neo/tree/master/src/Neo.Json)| Neo's JSON specification.|
-|[/tests/](https://github.com/neo-project/neo/tree/master/tests)|All unit tests.|
+|[/src/neo/Cryptography/](https://github.com/neo-project/neo/tree/master-n3/src/Neo/Cryptography)|General cryptography implementation, including ECC.|
+|[/src/neo/IO/](https://github.com/neo-project/neo/tree/master-n3/src/Neo/IO)|Data structures used for caching and collection interaction.|
+|[/src/neo/Ledger/](https://github.com/neo-project/neo/tree/master-n3/src/Neo/Ledger)|Classes responsible for the state control, including the `MemoryPool` and `Blockchain`.|
+|[/src/neo/Network/](https://github.com/neo-project/neo/tree/master-n3/src/Neo/Network)|Peer-to-peer protocol implementation.|
+|[/src/neo/Persistence/](https://github.com/neo-project/neo/tree/master-n3/src/Neo/Persistence)|Classes used to allow other classes to access application state.|
+|[/src/neo/Plugins/](https://github.com/neo-project/neo/tree/master-n3/src/Neo/Plugins)|Interfaces used to extend Neo, including the storage interface.|
+|[/src/neo/SmartContract/](https://github.com/neo-project/neo/tree/master-n3/src/Neo/SmartContract)|Native contracts, `ApplicationEngine`, `InteropService` and other smart-contract related classes.|
+|[/src/neo/Wallets/](https://github.com/neo-project/neo/tree/master-n3/src/Neo/Wallets)|Wallet and account implementation.|
+|[/src/Neo.Extensions/](https://github.com/neo-project/neo/tree/master-n3/src/Neo.Extensions)| Extensions to expand the existing functionality.|
+|[/src/Neo.Json/](https://github.com/neo-project/neo/tree/master-n3/src/Neo.Json)| Neo's JSON specification.|
+|[/tests/](https://github.com/neo-project/neo/tree/master-n3/tests)|All unit tests.|
 
 ## Related projects
 Code references are provided for all platform building blocks. That includes the base library, the VM, a command line application and the compiler.
