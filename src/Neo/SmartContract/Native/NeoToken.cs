@@ -104,10 +104,14 @@ namespace Neo.SmartContract.Native
         {
             await base.PostTransferAsync(engine, from, to, amount, data, callOnPayment);
             var list = engine.CurrentContext!.GetState<List<GasDistribution>>();
+            if (list.Count == 0) return;
+
+            var huyao = engine.IsHardforkEnabled(Hardfork.HF_Huyao);
+
             foreach (var distribution in list)
             {
                 // Payment callbacks may block or destroy an account after its reward was calculated.
-                var recipient = engine.IsHardforkEnabled(Hardfork.HF_Huyao) && Policy.IsBlocked(engine.SnapshotCache, distribution.Account)
+                var recipient = huyao && Policy.IsBlocked(engine.SnapshotCache, distribution.Account)
                     ? Treasury.Hash : distribution.Account;
                 await GAS.Mint(engine, recipient, distribution.Amount, callOnPayment);
             }
@@ -142,7 +146,7 @@ namespace Neo.SmartContract.Native
             if (datoshi == 0) return null;
             return new GasDistribution
             {
-                Account = gasRecipient ?? (engine.IsHardforkEnabled(Hardfork.HF_Huyao) && Policy.IsBlocked(engine.SnapshotCache, account) ? Treasury.Hash : account),
+                Account = gasRecipient ?? account,
                 Amount = datoshi
             };
         }
