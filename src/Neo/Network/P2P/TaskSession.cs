@@ -27,6 +27,7 @@ namespace Neo.Network.P2P
         public bool IsFullNode { get; }
         public uint LastBlockIndex { get; set; }
         public bool MempoolSent { get; set; }
+        public uint BlockTaskTimeouts { get; set; }
 
         public TaskSession(VersionPayload version)
         {
