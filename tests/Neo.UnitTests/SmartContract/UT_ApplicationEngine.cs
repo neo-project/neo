@@ -31,6 +31,95 @@ namespace Neo.UnitTests.SmartContract
         private string eventName = null;
 
         [TestMethod]
+        [DataRow(Hardfork.HF_Echidna, true)]
+        [DataRow(Hardfork.HF_Echidna, false)]
+        [DataRow(Hardfork.HF_Faun, true)]
+        [DataRow(Hardfork.HF_Faun, false)]
+        [DataRow(Hardfork.HF_Huyao, true)]
+        [DataRow(Hardfork.HF_Huyao, false)]
+        public void TestCallNativeContractAtActivationBlock(Hardfork activation, bool usePersistingBlock)
+        {
+            var settings = TestProtocolSettings.Default with
+            {
+                Hardforks = Enum.GetValues<Hardfork>().ToImmutableDictionary(hf => hf, hf => hf < activation ? 0u : 1u)
+            };
+            using var system = new TestBlockchain.TestNeoSystem(settings);
+            using var snapshot = system.GetSnapshotCache();
+            NativeContract contract = activation switch
+            {
+                Hardfork.HF_Echidna => NativeContract.Notary,
+                Hardfork.HF_Faun => NativeContract.Treasury,
+                _ => NativeContract.TemporaryStorage
+            };
+            using var script = new ScriptBuilder();
+            switch (activation)
+            {
+                case Hardfork.HF_Echidna:
+                    script.EmitDynamicCall(contract.Hash, "balanceOf", UInt160.Zero);
+                    break;
+                case Hardfork.HF_Faun:
+                    script.EmitDynamicCall(contract.Hash, "onNEP17Payment", UInt160.Zero, 0, null);
+                    break;
+                default:
+                    script.EmitDynamicCall(contract.Hash, "get", NativeContract.GAS.Hash, new byte[] { 1 });
+                    break;
+            }
+
+            Assert.AreEqual(0u, NativeContract.Ledger.CurrentIndex(snapshot));
+            Assert.IsFalse(NativeContract.ContractManagement.IsContract(snapshot, contract.Hash));
+            using (var beforeActivation = ApplicationEngine.Create(TriggerType.Application, null, snapshot, system.GenesisBlock, settings))
+            {
+                beforeActivation.LoadScript(script.ToArray());
+                Assert.AreEqual(VMState.FAULT, beforeActivation.Execute());
+            }
+
+            // Exercise both the activation block and the following block with the ledger still at H - 1.
+            for (uint height = 1; height <= 2; height++)
+            {
+                var block = new Block
+                {
+                    Header = new Header
+                    {
+                        PrevHash = NativeContract.Ledger.CurrentHash(snapshot),
+                        MerkleRoot = UInt256.Zero,
+                        Timestamp = system.GenesisBlock.Timestamp + height * settings.MillisecondsPerBlock,
+                        Index = height,
+                        NextConsensus = system.GenesisBlock.NextConsensus,
+                        Witness = Witness.Empty
+                    },
+                    Transactions = []
+                };
+                using (var onPersist = ApplicationEngine.Create(TriggerType.OnPersist, null, snapshot, block, settings, 0))
+                {
+                    using var persistScript = new ScriptBuilder();
+                    persistScript.EmitSysCall(ApplicationEngine.System_Contract_NativeOnPersist);
+                    onPersist.LoadScript(persistScript.ToArray());
+                    Assert.AreEqual(VMState.HALT, onPersist.Execute(), onPersist.FaultException?.ToString());
+                }
+
+                Assert.AreEqual(height - 1, NativeContract.Ledger.CurrentIndex(snapshot));
+                Assert.IsTrue(NativeContract.ContractManagement.IsContract(snapshot, contract.Hash));
+                using (var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, usePersistingBlock ? block : null, settings))
+                {
+                    Assert.AreEqual(height, engine.GetPersistingIndex());
+                    engine.LoadScript(script.ToArray());
+                    Assert.AreEqual(VMState.HALT, engine.Execute(), engine.FaultException?.ToString());
+                    if (activation == Hardfork.HF_Echidna)
+                        Assert.AreEqual(System.Numerics.BigInteger.Zero, engine.ResultStack.Pop().GetInteger());
+                    else if (activation == Hardfork.HF_Huyao)
+                        Assert.IsTrue(engine.ResultStack.Pop().IsNull);
+                }
+
+                using var postPersist = ApplicationEngine.Create(TriggerType.PostPersist, null, snapshot, block, settings, 0);
+                using var postPersistScript = new ScriptBuilder();
+                postPersistScript.EmitSysCall(ApplicationEngine.System_Contract_NativePostPersist);
+                postPersist.LoadScript(postPersistScript.ToArray());
+                Assert.AreEqual(VMState.HALT, postPersist.Execute(), postPersist.FaultException?.ToString());
+                Assert.AreEqual(height, NativeContract.Ledger.CurrentIndex(snapshot));
+            }
+        }
+
+        [TestMethod]
         public void TestNotify()
         {
             var snapshotCache = TestBlockchain.GetTestSnapshotCache();
