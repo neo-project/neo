@@ -1070,6 +1070,150 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.Contains("Insufficient deposit for 0x9f8f056a53e39585c7bb52886418c7bed83d126b: need 150000000, overdraw is -100000000", engine.FaultException?.ToString());
         }
 
+        [TestMethod]
+        public void Check_Verify_MainTxWithConflicts_ReturnsFalse()
+        {
+            var snapshot = _snapshot.CloneCache();
+            var notaryKey = DesignateSingleNotary(snapshot);
+            var payer = Contract.GetBFTAddress(TestProtocolSettings.Default.StandbyValidators);
+            var tx = CreateNotaryTransaction(payer, NativeContract.Notary.Hash,
+            [
+                new NotaryAssisted { NKeys = 1 },
+                new Conflicts { Hash = UInt256.Zero }
+            ]);
+
+            // A valid notary signature must not make a main transaction with Conflicts pass.
+            Assert.IsFalse(CallNotaryVerify(snapshot, tx, notaryKey));
+        }
+
+        [TestMethod]
+        public void Check_Verify_MainTxWithoutConflicts_ReturnsTrue()
+        {
+            var snapshot = _snapshot.CloneCache();
+            var notaryKey = DesignateSingleNotary(snapshot);
+            var payer = Contract.GetBFTAddress(TestProtocolSettings.Default.StandbyValidators);
+            var tx = CreateNotaryTransaction(payer, NativeContract.Notary.Hash,
+            [
+                new NotaryAssisted { NKeys = 1 }
+            ]);
+
+            Assert.IsTrue(CallNotaryVerify(snapshot, tx, notaryKey));
+        }
+
+        [TestMethod]
+        public void Check_Verify_FallbackWithConflicts_ReturnsTrue()
+        {
+            var snapshot = _snapshot.CloneCache();
+            var notaryKey = DesignateSingleNotary(snapshot);
+            var payer = Contract.GetBFTAddress(TestProtocolSettings.Default.StandbyValidators);
+            // First deposit must be at least twice the NotaryAssisted attribute fee.
+            const long deposit = 2 * 1000_0000 + 1;
+            DepositFor(snapshot, payer, deposit);
+
+            var tx = CreateNotaryTransaction(NativeContract.Notary.Hash, payer,
+            [
+                new NotaryAssisted { NKeys = 0 },
+                new Conflicts { Hash = UInt256.Parse("0x0101010101010101010101010101010101010101010101010101010101010101") }
+            ]);
+            tx.NetworkFee = deposit;
+
+            // Fallback transactions are required to conflict with their main transaction.
+            Assert.IsTrue(CallNotaryVerify(snapshot, tx, notaryKey));
+        }
+
+        private static KeyPair DesignateSingleNotary(DataCache snapshot)
+        {
+            // Stored at CurrentIndex + 1, which is the height Notary.Verify queries.
+            var height = NativeContract.Ledger.CurrentIndex(snapshot);
+            var privateKey = new byte[32];
+            System.Security.Cryptography.RandomNumberGenerator.Create().GetBytes(privateKey);
+            var notaryKey = new KeyPair(privateKey);
+            var committeeAddr = NativeContract.NEO.GetCommitteeAddress(snapshot);
+            NativeContract.RoleManagement.Call(
+                snapshot,
+                new Nep17NativeContractExtensions.ManualWitness(committeeAddr),
+                new Block
+                {
+                    Header = new Header
+                    {
+                        Index = height,
+                        MerkleRoot = UInt256.Zero,
+                        NextConsensus = UInt160.Zero,
+                        PrevHash = UInt256.Zero,
+                        Witness = Witness.Empty,
+                    },
+                    Transactions = []
+                },
+                "designateAsRole",
+                new ContractParameter(ContractParameterType.Integer) { Value = new BigInteger((int)Role.P2PNotary) },
+                new ContractParameter(ContractParameterType.Array)
+                {
+                    Value = new List<ContractParameter>
+                    {
+                        new(ContractParameterType.ByteArray) { Value = notaryKey.PublicKey.ToArray() },
+                    },
+                });
+            snapshot.Commit();
+            return notaryKey;
+        }
+
+        private static void DepositFor(DataCache snapshot, UInt160 payer, long amount)
+        {
+            var height = NativeContract.Ledger.CurrentIndex(snapshot);
+            var block = new Block
+            {
+                Header = new Header
+                {
+                    Index = height,
+                    MerkleRoot = UInt256.Zero,
+                    NextConsensus = UInt160.Zero,
+                    PrevHash = UInt256.Zero,
+                    Witness = Witness.Empty,
+                },
+                Transactions = []
+            };
+            var data = new ContractParameter
+            {
+                Type = ContractParameterType.Array,
+                Value = new List<ContractParameter>
+                {
+                    new() { Type = ContractParameterType.Any },
+                    new() { Type = ContractParameterType.Integer, Value = height + 100 },
+                }
+            };
+            Assert.IsTrue(NativeContract.GAS.TransferWithTransaction(
+                snapshot, payer.ToArray(), NativeContract.Notary.Hash.ToArray(), amount, true, block, data));
+        }
+
+        private static Transaction CreateNotaryTransaction(UInt160 sender, UInt160 cosigner, TransactionAttribute[] attributes)
+        {
+            return new Transaction
+            {
+                Script = new[] { (byte)OpCode.PUSH2 },
+                Attributes = attributes,
+                Signers =
+                [
+                    new Signer { Account = sender, Scopes = sender == NativeContract.Notary.Hash ? WitnessScope.None : WitnessScope.CalledByEntry },
+                    new Signer { Account = cosigner, Scopes = WitnessScope.None }
+                ],
+                Witnesses = [Witness.Empty, Witness.Empty],
+            };
+        }
+
+        private static bool CallNotaryVerify(DataCache snapshot, Transaction tx, KeyPair notaryKey)
+        {
+            var signature = tx.Sign(notaryKey, TestProtocolSettings.Default.Network);
+            var engine = ApplicationEngine.Create(
+                TriggerType.Verification, tx, snapshot,
+                settings: TestProtocolSettings.Default);
+            var ret = NativeContract.Notary.Call(engine, "verify", new ContractParameter
+            {
+                Type = ContractParameterType.ByteArray,
+                Value = signature
+            });
+            return ret.GetBoolean();
+        }
+
         internal static StorageKey CreateStorageKey(byte prefix, uint key)
         {
             return CreateStorageKey(prefix, BitConverter.GetBytes(key));

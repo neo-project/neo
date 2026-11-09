@@ -57,6 +57,11 @@ namespace Neo.Network.P2P
 
         public int Size => sizeof(MessageFlags) + sizeof(MessageCommand) + _payloadCompressed.GetVarSize();
 
+        // Budget both serialized buffers and the serialized size of the object graph.
+        // This is an accounting bound, not an estimate of exact CLR heap usage.
+        internal long QueueSize => (long)(Payload?.Size ?? 0) + _payloadRaw.Length +
+            (_payloadRaw.Equals(_payloadCompressed) ? 0 : _payloadCompressed.Length) + 3;
+
         /// <summary>
         /// True if the message should be compressed
         /// </summary>
