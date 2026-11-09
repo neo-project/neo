@@ -155,6 +155,15 @@ namespace Neo.UnitTests.SmartContract.Manifest
             ContractManifest manifest = ContractManifest.Parse(json);
             Assert.AreEqual(2, manifest.Permissions.Length);
             Assert.AreEqual(2, manifest.Trusts.Count);
+
+            Assert.ThrowsExactly<ArgumentException>(() => ContractManifest.Parse(json.ToStrictUtf8Bytes(),
+                LegacyContractPermissionDescriptorComparer.Instance));
+
+            // Check trusts independently; the permissions above fail first in the legacy path.
+            JObject trustsOnly = (JObject)JToken.Parse(json)!;
+            trustsOnly["permissions"] = new JArray();
+            Assert.ThrowsExactly<ArgumentException>(() => ContractManifest.Parse(trustsOnly.ToByteArray(false),
+                LegacyContractPermissionDescriptorComparer.Instance));
         }
 
         [TestMethod]

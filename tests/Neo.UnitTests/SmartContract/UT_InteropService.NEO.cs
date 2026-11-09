@@ -13,6 +13,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography;
 using Neo.Extensions;
 using Neo.Network.P2P;
+using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using Neo.SmartContract.Manifest;
 using Neo.SmartContract.Native;
@@ -20,6 +21,7 @@ using Neo.UnitTests.Extensions;
 using Neo.VM;
 using Neo.Wallets;
 using System;
+using System.Buffers.Binary;
 using System.Linq;
 
 namespace Neo.UnitTests.SmartContract
@@ -123,6 +125,40 @@ namespace Neo.UnitTests.SmartContract
             snapshotCache.AddContract(state.Hash, state);
 
             Assert.ThrowsExactly<InvalidOperationException>(() => _ = snapshotCache.DeployContract(UInt160.Zero, nefFile, manifest.ToJson().ToByteArray(false)));
+        }
+
+        [TestMethod]
+        [DataRow(1u, VMState.HALT)]
+        [DataRow(2u, VMState.FAULT)]
+        public void TestContract_Create_CollidingPermissionsAtHuyao(uint huyaoHeight, VMState expectedState)
+        {
+            byte[] firstBytes = new byte[UInt160.Length];
+            BinaryPrimitives.WriteUInt64LittleEndian(firstBytes, 0x00000000_00000001UL);
+            byte[] secondBytes = new byte[UInt160.Length];
+            BinaryPrimitives.WriteUInt64LittleEndian(secondBytes, 0x00000001_00000000UL);
+
+            var manifest = TestUtils.CreateDefaultManifest();
+            manifest.Permissions =
+            [
+                new() { Contract = ContractPermissionDescriptor.Create(new UInt160(firstBytes)), Methods = WildcardContainer<string>.CreateWildcard() },
+                new() { Contract = ContractPermissionDescriptor.Create(new UInt160(secondBytes)), Methods = WildcardContainer<string>.CreateWildcard() }
+            ];
+
+            var nef = new NefFile { Script = new byte[] { (byte)OpCode.RET }, Source = string.Empty, Compiler = "", Tokens = [] };
+            nef.CheckSum = NefFile.ComputeChecksum(nef);
+
+            using var script = new ScriptBuilder();
+            script.EmitDynamicCall(NativeContract.ContractManagement.Hash, "deploy", nef.ToArray(), manifest.ToJson().ToByteArray(false), null);
+            var tx = new Transaction { Signers = [new() { Account = UInt160.Zero }], Attributes = [], Witnesses = null! };
+            var settings = TestProtocolSettings.Default with
+            {
+                Hardforks = TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_Huyao, huyaoHeight)
+            };
+            using var snapshot = TestBlockchain.GetTestSnapshotCache();
+            using var engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshot, settings: settings, gas: 200_00000000);
+            engine.LoadScript(script.ToArray());
+
+            Assert.AreEqual(expectedState, engine.Execute(), engine.FaultException?.ToString());
         }
 
         [TestMethod]
