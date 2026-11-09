@@ -77,6 +77,9 @@ namespace Neo.Cryptography.ECC
         /// <returns>The decoded point.</returns>
         public static ECPoint DecodePoint(ReadOnlySpan<byte> encoded, ECCurve curve)
         {
+            if (encoded.IsEmpty)
+                throw new FormatException("Invalid ECPoint encoding: empty input.");
+
             switch (encoded[0])
             {
                 case 0x02: // compressed
@@ -374,7 +377,7 @@ namespace Neo.Cryptography.ECC
                 point = Parse(value, curve);
                 return true;
             }
-            catch (FormatException)
+            catch
             {
                 point = null;
                 return false;
