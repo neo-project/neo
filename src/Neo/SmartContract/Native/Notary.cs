@@ -18,7 +18,6 @@ using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract.Manifest;
-using Neo.VM;
 using Neo.VM.Types;
 using System;
 using System.Collections.Immutable;
@@ -84,7 +83,7 @@ namespace Neo.SmartContract.Native
                 }
             }
             if (nFees == 0) return;
-            if (notaries == null) return;
+            if (notaries is null || notaries.Length == 0) return;
             var singleReward = CalculateNotaryReward(engine.SnapshotCache, nFees, notaries.Length);
             foreach (var notary in notaries) await GAS.Mint(engine, Contract.CreateSignatureRedeemScript(notary).ToScriptHash(), singleReward, false);
         }
@@ -129,6 +128,13 @@ namespace Neo.SmartContract.Native
                 var balance = GetDepositFor(engine.SnapshotCache, payer);
                 if (balance is null || balance.Amount.CompareTo(tx.NetworkFee + tx.SystemFee) < 0) return false;
             }
+            else
+            {
+                // Main transaction of NotaryRequest is not allowed to have Conflicts attribute to prohibit malicious
+                // attempt to use Conflicts attribute against other mempooled transaction signed by Notary contract.
+                if (tx.GetAttributes<Conflicts>().Count() != 0)
+                    return false;
+            }
             var notaries = GetNotaryNodes(engine.SnapshotCache);
             var hash = tx.GetSignData(engine.GetNetwork());
             return notaries.Any(n => Crypto.VerifySignature(hash, signature, n));
@@ -149,7 +155,10 @@ namespace Neo.SmartContract.Native
             if (data is not Array additionalParams || additionalParams.Count != 2) throw new FormatException("`data` parameter should be an array of 2 elements");
 
             var to = from;
-            if (!additionalParams[0].Equals(StackItem.Null)) to = additionalParams[0].GetSpan().ToArray().AsSerializable<UInt160>();
+            if (!additionalParams[0].IsNull)
+                to = engine.IsHardforkEnabled(Hardfork.HF_Huyao)
+                    ? new UInt160(additionalParams[0].GetSpan())
+                    : additionalParams[0].GetSpan().ToArray().AsSerializable<UInt160>();
 
             var till = (uint)additionalParams[1].GetInteger();
             var tx = (Transaction)engine.ScriptContainer!;
