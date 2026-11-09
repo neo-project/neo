@@ -331,8 +331,23 @@ namespace Neo.SmartContract
         /// <returns>The number of bytes the user should pay for.</returns>
         public int CalculateChargableSize(StorageKey skey, ReadOnlyMemory<byte> value, IsRecordTraceable? isTraceable, out StorageItem? item)
         {
-            int newDataSize;
             item = SnapshotCache.TryGet(skey);
+            return CalculateChargableSize(skey, value, item, isTraceable);
+        }
+
+        /// <summary>
+        /// Calculates the size of the storage item (in bytes) that should be payed for by the user if stored
+        /// in the contract storage. Unlike the overload above, it doesn't read the old item from the storage and
+        /// expects the caller to provide it.
+        /// </summary>
+        /// <param name="skey">The stored item key.</param>
+        /// <param name="value">The stored item value.</param>
+        /// <param name="item">The old item stored by the given key (if exists).</param>
+        /// <param name="isTraceable">An optional delegate defining whether the already-exists path should be applied to the calculations in case if item is already present in the storage.</param>
+        /// <returns>The number of bytes the user should pay for.</returns>
+        public static int CalculateChargableSize(StorageKey skey, ReadOnlyMemory<byte> value, StorageItem? item, IsRecordTraceable? isTraceable)
+        {
+            int newDataSize;
             int chargableValueSize = item is null ? 0 : item.Value.Length;
             if (item is null || (isTraceable is not null && !isTraceable(item, out chargableValueSize)))
             {
