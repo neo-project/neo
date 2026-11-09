@@ -227,16 +227,12 @@ namespace Neo.Ledger
             var headerHeight = _system.HeaderCache.Last?.Index ?? currentHeight;
             if (block.Index <= currentHeight)
                 return VerifyResult.AlreadyExists;
-            // Transaction witnesses are not committed by the block hash. Validate
-            // each received body before caching it, even when its header is known.
+            // Check the received body here because blocks with cached or unavailable
+            // headers bypass Block.Verify before they can be added to a block cache.
+            // Witnesses can change the transaction size without changing the block hash.
             foreach (var transaction in block.Transactions)
-            {
-                var result = transaction.VerifyStateIndependent(_system.Settings);
-                // TaskManager handles transaction verification failures as a rejected block and retries the height.
-                // The relay result identifies the source so only that peer is disconnected.
-                if (result != VerifyResult.Succeed)
-                    return result == VerifyResult.Invalid ? VerifyResult.InvalidBlockBody : result;
-            }
+                if (transaction.Size > Transaction.MaxTransactionSize)
+                    return VerifyResult.OverSize;
             if (block.Index - 1 > headerHeight)
             {
                 AddUnverifiedBlockToCache(block);

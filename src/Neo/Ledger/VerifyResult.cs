@@ -101,11 +101,6 @@ namespace Neo.Ledger
         /// <summary>
         /// Indicates that the <see cref="IInventory"/> hash differs from an expected hash.
         /// </summary>
-        InvalidHash,
-
-        /// <summary>
-        /// Indicates that a transaction within a block failed state-independent verification with an invalid result.
-        /// </summary>
-        InvalidBlockBody
+        InvalidHash
     }
 }

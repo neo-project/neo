@@ -189,7 +189,7 @@ namespace Neo.Network.P2P
                 case Blockchain.RelayResult rr:
                     if (rr.Inventory is Block invalidBlock)
                     {
-                        if (rr.Result is VerifyResult.InvalidHash or VerifyResult.InvalidBlockBody or VerifyResult.OverSize or VerifyResult.InvalidScript or VerifyResult.InvalidSignature)
+                        if (rr.Result is VerifyResult.InvalidHash or VerifyResult.OverSize)
                             OnInvalidBlock(invalidBlock, rr.Source);
                         else if (rr.Result == VerifyResult.Invalid)
                             OnInvalidBlock(invalidBlock);

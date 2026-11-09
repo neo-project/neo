@@ -591,11 +591,8 @@ namespace Neo.UnitTests.Network.P2P
         }
 
         [TestMethod]
-        [DataRow(VerifyResult.InvalidBlockBody)]
         [DataRow(VerifyResult.InvalidHash)]
         [DataRow(VerifyResult.OverSize)]
-        [DataRow(VerifyResult.InvalidScript)]
-        [DataRow(VerifyResult.InvalidSignature)]
         public void RejectedBlock_AbortsOnlyThePeerThatSuppliedIt(VerifyResult result)
         {
             using var neoSystem = TestBlockchain.GetSystem();

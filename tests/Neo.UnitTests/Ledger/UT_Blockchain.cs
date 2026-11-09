@@ -12,7 +12,6 @@
 using Akka.TestKit;
 using Akka.TestKit.MsTest;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Moq;
 using Neo.Extensions;
 using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
@@ -50,11 +49,10 @@ namespace Neo.UnitTests.Ledger
         }
 
         [TestMethod]
-        [DataRow(false, true)]
-        [DataRow(true, true)]
         [DataRow(false, false)]
         [DataRow(true, false)]
-        public void ReceivedBlockChecksTransactionsBeforeCaching(bool cachedHeader, bool oversized)
+        [DataRow(false, true)]
+        public void ReceivedBlockChecksTransactionSizesBeforeCaching(bool cachedHeader, bool nextHeader)
         {
             var accounts = Enumerable.Range(1, 16)
                 .Select(i => new UInt160(new byte[] { (byte)i }.Concat(new byte[19]).ToArray())).ToArray();
@@ -74,16 +72,13 @@ namespace Neo.UnitTests.Ledger
                     VerificationScript = new byte[Witness.MaxVerificationScript]
                 }).ToArray()
             };
-            tx.Script = oversized
-                ? Enumerable.Repeat((byte)OpCode.NOP, tx.Script.Length + Transaction.MaxTransactionSize + 1 - tx.Size).ToArray()
-                : new byte[] { (byte)OpCode.PUSHDATA1 };
-            var expected = oversized ? VerifyResult.OverSize : VerifyResult.InvalidScript;
+            tx.Script = Enumerable.Repeat((byte)OpCode.NOP, tx.Script.Length + Transaction.MaxTransactionSize + 1 - tx.Size).ToArray();
             var height = NativeContract.Ledger.CurrentIndex(_system.StoreView);
             var block = new Block
             {
                 Header = new Header
                 {
-                    Index = height + 2,
+                    Index = height + (nextHeader ? 1u : 2u),
                     PrevHash = UInt256.Zero,
                     MerkleRoot = tx.Hash,
                     NextConsensus = UInt160.Zero,
@@ -91,12 +86,12 @@ namespace Neo.UnitTests.Ledger
                 },
                 Transactions = [tx]
             }.ToArray().AsSerializable<Block>();
-            Assert.AreEqual(expected, block.Transactions[0].VerifyStateIndependent(_system.Settings));
+            Assert.AreEqual(VerifyResult.OverSize, block.Transactions[0].VerifyStateIndependent(_system.Settings));
             // Model the header-sync path, which bypasses Block.Verify for a known hash.
             if (cachedHeader) _system.HeaderCache.Add(block.Header);
             var actor = ActorOfAsTestActorRef<Blockchain>(Akka.Actor.Props.Create(() => new Blockchain(_system)));
             senderProbe.Send(actor.Ref, block);
-            senderProbe.ExpectMsg<Blockchain.RelayResult>(p => p.Result == expected && p.Source == senderProbe.Ref,
+            senderProbe.ExpectMsg<Blockchain.RelayResult>(p => p.Result == VerifyResult.OverSize && p.Source == senderProbe.Ref,
                 cancellationToken: CancellationToken.None);
             foreach (var field in new[] { "_blockCache", "_blockCacheUnverified" })
             {
@@ -106,45 +101,21 @@ namespace Neo.UnitTests.Ledger
             }
             Assert.AreEqual(height, NativeContract.Ledger.CurrentIndex(_system.StoreView));
 
-            if (oversized)
+            // A standalone oversized transaction still reports OverSize, not a parse error.
+            senderProbe.Send(_system.Blockchain, block.Transactions[0]);
+            senderProbe.ExpectMsg<Blockchain.RelayResult>(p => p.Result == VerifyResult.OverSize, cancellationToken: CancellationToken.None);
+            // Removing the inflated witnesses leaves the signed body and block hash unchanged.
+            var cleanTx = block.Transactions[0].ToArray().AsSerializable<Transaction>();
+            cleanTx.Witnesses = accounts.Select(_ => Witness.Empty).ToArray();
+            var cleanBlock = new Block { Header = block.Header, Transactions = [cleanTx] }.ToArray().AsSerializable<Block>();
+            Assert.AreEqual(block.Hash, cleanBlock.Hash);
+            Assert.AreEqual(VerifyResult.Succeed, cleanTx.VerifyStateIndependent(_system.Settings));
+            if (!nextHeader)
             {
-                // A standalone oversized transaction still reports OverSize, not a parse error.
-                senderProbe.Send(_system.Blockchain, block.Transactions[0]);
-                senderProbe.ExpectMsg<Blockchain.RelayResult>(p => p.Result == VerifyResult.OverSize, cancellationToken: CancellationToken.None);
-                // Removing the inflated witnesses leaves the signed body and block hash unchanged.
-                var cleanTx = block.Transactions[0].ToArray().AsSerializable<Transaction>();
-                cleanTx.Witnesses = accounts.Select(_ => Witness.Empty).ToArray();
-                var cleanBlock = new Block { Header = block.Header, Transactions = [cleanTx] }.ToArray().AsSerializable<Block>();
-                Assert.AreEqual(block.Hash, cleanBlock.Hash);
-                Assert.AreEqual(VerifyResult.Succeed, cleanTx.VerifyStateIndependent(_system.Settings));
                 senderProbe.Send(actor.Ref, cleanBlock);
                 senderProbe.ExpectMsg<Blockchain.RelayResult>(p => p.Result == (cachedHeader ? VerifyResult.Succeed : VerifyResult.UnableToVerify),
                     cancellationToken: CancellationToken.None);
             }
-        }
-
-        [TestMethod]
-        public void InvalidTransactionBodyHasDistinctBlockResult()
-        {
-            var transaction = new Mock<Transaction>();
-            transaction.Setup(p => p.VerifyStateIndependent(_system.Settings)).Returns(VerifyResult.Invalid);
-            var block = new Block
-            {
-                Header = new Header
-                {
-                    Index = NativeContract.Ledger.CurrentIndex(_system.StoreView) + 2,
-                    PrevHash = UInt256.Zero,
-                    MerkleRoot = UInt256.Zero,
-                    NextConsensus = UInt160.Zero,
-                    Witness = Witness.Empty
-                },
-                Transactions = [transaction.Object]
-            };
-
-            var actor = ActorOfAsTestActorRef<Blockchain>(Akka.Actor.Props.Create(() => new Blockchain(_system)));
-            senderProbe.Send(actor.Ref, block);
-            senderProbe.ExpectMsg<Blockchain.RelayResult>(p => p.Result == VerifyResult.InvalidBlockBody && p.Source == senderProbe.Ref,
-                cancellationToken: CancellationToken.None);
         }
 
         [TestMethod]
