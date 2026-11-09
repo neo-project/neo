@@ -85,7 +85,7 @@ namespace Neo.SmartContract.Native
 
         internal override void OnBalanceChanging(ApplicationEngine engine, UInt160 account, NeoAccountState state, BigInteger amount)
         {
-            GasDistribution? distribution = DistributeGas(engine, account, state);
+            GasDistribution? distribution = DistributeGas(engine, state, account);
             if (distribution is not null)
             {
                 var list = engine.CurrentContext!.GetState<List<GasDistribution>>();
@@ -129,7 +129,7 @@ namespace Neo.SmartContract.Native
             }
         }
 
-        private GasDistribution? DistributeGas(ApplicationEngine engine, UInt160 account, NeoAccountState state, UInt160? gasRecipient = null)
+        private GasDistribution? DistributeGas(ApplicationEngine engine, NeoAccountState state, UInt160 gasRecipient)
         {
             // PersistingBlock is null when running under the debugger
             if (engine.PersistingBlock is null) return null;
@@ -146,7 +146,7 @@ namespace Neo.SmartContract.Native
             if (datoshi == 0) return null;
             return new GasDistribution
             {
-                Account = gasRecipient ?? account,
+                Account = gasRecipient,
                 Amount = datoshi
             };
         }
@@ -494,7 +494,7 @@ namespace Neo.SmartContract.Native
                 else
                     item.Add(-stateAccount.Balance);
             }
-            GasDistribution? gasDistribution = DistributeGas(engine, account, stateAccount, gasRecipient);
+            GasDistribution? gasDistribution = DistributeGas(engine, stateAccount, gasRecipient ?? account);
             if (stateAccount.VoteTo != null)
             {
                 StorageKey key = CreateStorageKey(Prefix_Candidate, stateAccount.VoteTo);
