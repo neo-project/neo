@@ -97,6 +97,8 @@ namespace Neo.SmartContract
         {
             if ((callFlags & ~CallFlags.All) != 0)
                 throw new ArgumentOutOfRangeException(nameof(callFlags));
+            if (method.StartsWith('_'))
+                throw new ArgumentException($"Method name '{method}' cannot start with underscore.", nameof(method));
 
             ContractState? contract = NativeContract.ContractManagement.GetContract(SnapshotCache, contractHash);
             if (IsHardforkEnabled(Hardfork.HF_Huyao))
@@ -108,7 +110,6 @@ namespace Neo.SmartContract
                 AddFemtoGas(price * _execFeeFactor, false);
             }
             if (contract is null) throw new InvalidOperationException($"Called Contract Does Not Exist: {contractHash}.{method}");
-            if (method.StartsWith('_')) throw new ArgumentException($"Method name '{method}' cannot start with underscore.", nameof(method));
 
             ContractMethodDescriptor? md = contract.Manifest.Abi.GetMethod(method, args.Count);
             if (md is null) throw new InvalidOperationException($"Method \"{method}\" with {args.Count} parameter(s) doesn't exist in the contract {contractHash}.");
@@ -173,22 +174,32 @@ namespace Neo.SmartContract
         /// <param name="m">The number of correct signatures that need to be provided in order for the verification to pass.</param>
         /// <param name="pubKeys">The public keys of the account.</param>
         /// <returns>The hash of the account.</returns>
-        internal protected UInt160 CreateMultisigAccount(int m, ECPoint[] pubKeys)
+        internal protected UInt160 CreateMultisigAccount(int m, byte[][] pubKeys)
         {
-            if (IsHardforkEnabled(Hardfork.HF_Huyao))
+            if (!IsHardforkEnabled(Hardfork.HF_Huyao))
             {
-                var price = CreateMultisigAccountPricePerKey * pubKeys.Length + CreateMultisigAccountBasePrice;
-                AddFemtoGas(price * _execFeeFactor, false);
-            }
-            else
-            {
+                ECPoint[] points = DecodePublicKeys(pubKeys);
                 // In the unit of datoshi, 1 datoshi = 1e-8 GAS
                 BigInteger fee = IsHardforkEnabled(Hardfork.HF_Aspidochelone)
                     ? CheckSigPrice * pubKeys.Length
                     : 1 << 8;
                 AddFee(fee * _execFeeFactor, false);
+                return Contract.CreateMultiSigRedeemScript(m, points).ToScriptHash();
             }
-            return Contract.CreateMultiSigRedeemScript(m, pubKeys).ToScriptHash();
+
+            if (m < 1)
+                throw new ArgumentOutOfRangeException(nameof(m));
+            var price = CreateMultisigAccountPricePerKey * pubKeys.Length + CreateMultisigAccountBasePrice;
+            AddFemtoGas(price * _execFeeFactor, false);
+            return Contract.CreateMultiSigRedeemScript(m, DecodePublicKeys(pubKeys)).ToScriptHash();
+        }
+
+        private static ECPoint[] DecodePublicKeys(byte[][] pubKeys)
+        {
+            ECPoint[] points = new ECPoint[pubKeys.Length];
+            for (int i = 0; i < points.Length; i++)
+                points[i] = ECPoint.DecodePoint(pubKeys[i], ECCurve.Secp256r1);
+            return points;
         }
 
         /// <summary>
