@@ -294,6 +294,10 @@ namespace Neo.SmartContract
         [InteropPrice(Hardfork.HF_Huyao, 0)]
         protected internal bool CheckWitness(byte[] hashOrPubkey)
         {
+            bool huyao = IsHardforkEnabled(Hardfork.HF_Huyao);
+            if (huyao)
+                AddFemtoGas(CheckWitnessBasePrice * _execFeeFactor, false);
+
             UInt160 hash = hashOrPubkey.Length switch
             {
                 20 => new UInt160(hashOrPubkey),
@@ -301,8 +305,8 @@ namespace Neo.SmartContract
                 _ => throw new ArgumentException("Invalid hashOrPubkey length", nameof(hashOrPubkey))
             };
             var result = CheckWitnessInternal(hash, out var rulesCount);
-            if (IsHardforkEnabled(Hardfork.HF_Huyao))
-                AddFemtoGas((CheckWitnessPricePerRule * rulesCount + CheckWitnessBasePrice) * _execFeeFactor, false);
+            if (huyao)
+                AddFemtoGas(CheckWitnessPricePerRule * rulesCount * _execFeeFactor, false);
             return result;
         }
 
