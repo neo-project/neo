@@ -1117,11 +1117,10 @@ namespace Neo.UnitTests.SmartContract.Native
 
             var sign = Crypto.Sign(message, key, HashAlgorithm.SHA256);
 
-            // IndexOutOfRangeException, but should be FormatException
-            Assert.ThrowsExactly<IndexOutOfRangeException>(() => Neo.SmartContract.Native.CryptoLib.VerifyWithECDsaV2(message, null!, sign, NamedCurveHash.secp256r1SHA256));
+            // Empty public keys are invalid EC point encodings.
+            Assert.ThrowsExactly<FormatException>(() => Neo.SmartContract.Native.CryptoLib.VerifyWithECDsaV2(message, null!, sign, NamedCurveHash.secp256r1SHA256));
 
-            // IndexOutOfRangeException, but should be FormatException
-            Assert.ThrowsExactly<IndexOutOfRangeException>(() => Neo.SmartContract.Native.CryptoLib.VerifyWithECDsaV2(message, [], sign, NamedCurveHash.secp256r1SHA256));
+            Assert.ThrowsExactly<FormatException>(() => Neo.SmartContract.Native.CryptoLib.VerifyWithECDsaV2(message, [], sign, NamedCurveHash.secp256r1SHA256));
 
             // KeyNotFoundException, but should be ArgumentException
             Assert.ThrowsExactly<NotSupportedException>(() => Neo.SmartContract.Native.CryptoLib.VerifyWithECDsaV2(message, [], sign, (NamedCurveHash)99));
