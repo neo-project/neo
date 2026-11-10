@@ -86,12 +86,13 @@ namespace Neo.SmartContract
         }
 
         /// <summary>
-        /// Serializes a <see cref="StackItem"/> to JSON.
+        /// Serializes a <see cref="StackItem"/> to JSON, optionally rejecting cyclic compound references.
         /// </summary>
-        /// <param name="item">The <see cref="StackItem"/> to convert.</param>
+        /// <param name="item">The item to convert.</param>
         /// <param name="maxSize">The maximum size of the JSON output.</param>
+        /// <param name="rejectCycles">Whether to reject cycles in arrays, structs and maps. Shared references are allowed.</param>
         /// <returns>A byte array containing the JSON output.</returns>
-        public static byte[] SerializeToByteArray(StackItem item, uint maxSize)
+        public static byte[] SerializeToByteArray(StackItem item, uint maxSize, bool rejectCycles = true)
         {
             using MemoryStream ms = new();
             using Utf8JsonWriter writer = new(ms, new JsonWriterOptions
@@ -100,19 +101,25 @@ namespace Neo.SmartContract
                 SkipValidation = false
             });
             Stack stack = new();
+            HashSet<CompoundType>? activePath = rejectCycles
+                ? new(ReferenceEqualityComparer.Instance) : null;
             stack.Push(item);
             while (stack.Count > 0)
             {
                 switch (stack.Pop())
                 {
                     case Array array:
+                        if (activePath is not null && !activePath.Add(array))
+                            throw new NotSupportedException("Cyclic compound references cannot be serialized to JSON.");
                         writer.WriteStartArray();
+                        if (activePath is not null) stack.Push(array);
                         stack.Push(JsonTokenType.EndArray);
                         for (int i = array.Count - 1; i >= 0; i--)
                             stack.Push(array[i]);
                         break;
                     case JsonTokenType.EndArray:
                         writer.WriteEndArray();
+                        if (activePath is not null) activePath.Remove((CompoundType)stack.Pop()!);
                         break;
                     case StackItem buffer when buffer is ByteString || buffer is Buffer:
                         writer.WriteStringValue(buffer.GetString());
@@ -129,7 +136,10 @@ namespace Neo.SmartContract
                         writer.WriteBooleanValue(boolean.GetBoolean());
                         break;
                     case Map map:
+                        if (activePath is not null && !activePath.Add(map))
+                            throw new NotSupportedException("Cyclic compound references cannot be serialized to JSON.");
                         writer.WriteStartObject();
+                        if (activePath is not null) stack.Push(map);
                         stack.Push(JsonTokenType.EndObject);
                         foreach (var pair in map.Reverse())
                         {
@@ -141,6 +151,7 @@ namespace Neo.SmartContract
                         break;
                     case JsonTokenType.EndObject:
                         writer.WriteEndObject();
+                        if (activePath is not null) activePath.Remove((CompoundType)stack.Pop()!);
                         break;
                     case JsonTokenType.PropertyName:
                         writer.WritePropertyName(((StackItem)stack.Pop()!).GetString()!);

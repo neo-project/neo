@@ -90,8 +90,14 @@ namespace Neo.SmartContract.Native
 
             int callingContractId = GetContractId(engine.SnapshotCache, engine.CallingScriptHash!);
             StorageKey recordKey = MakeRecordStorageKey(callingContractId, key);
-            ulong lifetime = (ulong)Math.Max(1, (long)(validTill - currTimestamp));
-            engine.AddFee(CalculateStoragePrice(engine, recordKey.Key, value, lifetime, out var old), true);
+            var old = engine.SnapshotCache.TryGet(recordKey);
+
+            ulong oldLifetime = 0;
+            ulong oldValidTill = 0;
+            if (old is not null && IsTraceable(engine, old, out oldValidTill))
+                oldLifetime = SaturatingSub(Math.Min(validTill, oldValidTill), currTimestamp);
+            ulong newLifetime = SaturatingSub(validTill, Math.Max(currTimestamp, oldValidTill));
+            engine.AddFee(CalculateStoragePrice(engine, old, recordKey.Key, value, oldLifetime, newLifetime), true);
             if (old is not null)
             {
                 engine.SnapshotCache.Delete(MakeValidTillStorageKey(old.Value[..8].Span, recordKey.Key.Span));
@@ -260,12 +266,11 @@ namespace Neo.SmartContract.Native
 
             if (!IsTraceable(engine, oldRecord, out var oldValidTill))
                 throw new InvalidOperationException("old record is expired");
-            if (validTill <= oldValidTill)
-                throw new ArgumentOutOfRangeException(nameof(validTill), $"new expiration point should be newer than the old one: {validTill} vs {oldValidTill}");
 
             byte[] value = oldRecord.Value[8..].ToArray();
-            ulong lifetime = checked(validTill - oldValidTill);
-            engine.AddFee(CalculateStoragePrice(engine, recordKey.Key, value, lifetime, out var _), true);
+            ulong oldLifetime = SaturatingSub(Math.Min(validTill, oldValidTill), currTimestamp);
+            ulong newLifetime = SaturatingSub(validTill, oldValidTill);
+            engine.AddFee(CalculateStoragePrice(engine, oldRecord, recordKey.Key, value, oldLifetime, newLifetime), true);
 
             engine.SnapshotCache.Delete(MakeValidTillStorageKey(oldRecord.Value[..8].Span, recordKey.Key.Span));
             PutRecord(engine.SnapshotCache, recordKey, value, validTill);
@@ -354,34 +359,68 @@ namespace Neo.SmartContract.Native
 
         /// <summary>
         /// Calculates the price of storing the specified key-value pair for the desired amount of time.
+        /// The final price consists of two parts: the "old" part that is already paid by the user (from now till
+        /// the previous validTill value if the record exists and is not expired) and the "new" part that is not
+        /// paid yet (from the previous validTill value till the new one if the TTL is increased). Any of these
+        /// parts may be missing.
         /// </summary>
         /// <param name="engine">The execution engine.</param>
+        /// <param name="record">The existing storage record stored by the given key (if present in the storage).</param>
         /// <param name="key">The key used to store data.</param>
         /// <param name="value">The stored user-defined value (without any prefix). </param>
-        /// <param name="lifetime">The lifetime of the key-value pair in milliseconds.</param>
-        /// <param name="item">The retrieved storage item (if already exists in the storage).</param>
-        /// <returns>The storage price in the units of Datoshi (need to apply FeeFactor to the return value).</returns>
-        public long CalculateStoragePrice(ApplicationEngine engine, ReadOnlyMemory<byte> key, byte[] value, ulong lifetime, out StorageItem? item)
+        /// <param name="oldLifetime">The lifetime (in milliseconds) of the existing pre-paid record since now till its previous validTill value; may be 0 in case of a new or expired record.</param>
+        /// <param name="newLifetime">The lifetime (in milliseconds) of the same record that was not paid yet; may be 0 in case of validTill reduction for an existing record.</param>
+        /// <returns>The storage price (need to apply FeeFactor to the return value).</returns>
+        public long CalculateStoragePrice(ApplicationEngine engine, StorageItem? record, ReadOnlyMemory<byte> key, byte[] value, ulong oldLifetime, ulong newLifetime)
         {
             StorageKey skey = new()
             {
                 Id = Id,
                 Key = key
             };
-            var permanentPrice = new BigInteger(engine.CalculateChargableSize(skey, value, (StorageItem item, out int chargableValueSize) =>
+            BigInteger minPriceOld = 0, minPriceNew = 0;
+            BigInteger actualPriceOld = 0, actualPriceNew = 0;
+            if (oldLifetime == 0 && newLifetime == 0)
             {
-                chargableValueSize = item.Value.Length - 8; // 8-bytes TTL prefix is not charged.
-                return IsTraceable(engine, item, out var _);
-            }, out item)) * engine.StoragePrice;
-            var min = permanentPrice / 10;
-            var actual = permanentPrice * new BigInteger(Math.Min(lifetime, PolicyContract.MaxTemporaryStorageMaxTTL)) / PolicyContract.MaxTemporaryStorageMaxTTL;
-            if (actual < min)
-                actual = min;
-            return (long)actual;
+                // Pay at least minimal fee in order not to DOS the contract.
+                if (record is null)
+                    newLifetime = 1;
+                else
+                    oldLifetime = 1;
+            }
+
+            // The "old" part is calculated based on the permanent storage rules for existing records.
+            if (oldLifetime > 0)
+            {
+                var permanentPriceOld = new BigInteger(ApplicationEngine.CalculateChargableSize(skey, value, record, (StorageItem item, out int chargableValueSize) =>
+                {
+                    chargableValueSize = item.Value.Length - 8; // 8-bytes TTL prefix is not charged.
+                    return IsTraceable(engine, item, out var _);
+                })) * engine.StoragePrice;
+                // Require minimal fee for the "old" part to be paied to avoid DoS: DB access is still performed on update.
+                minPriceOld = permanentPriceOld / 10;
+                actualPriceOld = permanentPriceOld * new BigInteger(Math.Min(oldLifetime, PolicyContract.MaxTemporaryStorageMaxTTL)) / PolicyContract.MaxTemporaryStorageMaxTTL;
+            }
+
+            // The "new" part is calculated based on the permanent storage rules for new records.
+            if (newLifetime > 0)
+            {
+                var permanentPriceNew = new BigInteger(ApplicationEngine.CalculateChargableSize(skey, value, record, (StorageItem item, out int chargableValueSize) =>
+                {
+                    chargableValueSize = 0;
+                    return false; // always treat the "new" part as non-traceable since the user hasn't paid for it yet.
+                })) * engine.StoragePrice;
+                minPriceNew = permanentPriceNew / 10;
+                actualPriceNew = permanentPriceNew * new BigInteger(Math.Min(newLifetime, PolicyContract.MaxTemporaryStorageMaxTTL)) / PolicyContract.MaxTemporaryStorageMaxTTL;
+            }
+
+            return (long)(BigInteger.Max(minPriceOld, actualPriceOld) + BigInteger.Max(minPriceNew, actualPriceNew));
         }
 
+        private static ulong SaturatingSub(ulong a, ulong b) => a > b ? a - b : 0;
+
         /// <summary>
-        /// Ensures the provided validTill value fits the limit of [0, timestamp + MaxTTL].
+        /// Ensures the provided validTill value fits the limit of [timestamp, timestamp + MaxTTL].
         /// </summary>
         /// <param name="engine">The engine used to read data.</param>
         /// <param name="validTill">The expiration timestamp in milliseconds.</param>
@@ -389,6 +428,8 @@ namespace Neo.SmartContract.Native
         /// <exception cref="ArgumentOutOfRangeException"></exception>
         private static void ValidateValidTill(ApplicationEngine engine, ulong validTill, ulong timestamp)
         {
+            if (validTill < timestamp)
+                throw new ArgumentOutOfRangeException(nameof(validTill), $"validTill has already expired: {validTill} vs {timestamp}");
             ulong maxValidTill = checked(timestamp + Policy.GetTemporaryStorageMaxTTL(engine.SnapshotCache));
             if (validTill > maxValidTill)
                 throw new ArgumentOutOfRangeException(nameof(validTill), $"validTill exceeds max limit: {validTill} vs {maxValidTill}");
