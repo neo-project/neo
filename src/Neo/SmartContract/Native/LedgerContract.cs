@@ -84,6 +84,12 @@ namespace Neo.SmartContract.Native
             return ContractTask.CompletedTask;
         }
 
+        internal void UpdateTransactionVMState(DataCache snapshot, UInt256 hash, VMState state)
+        {
+            var key = CreateStorageKey(Prefix_Transaction, hash);
+            snapshot.GetAndChange(key)!.GetInteroperable<TransactionState>().State = state;
+        }
+
         internal bool Initialized(DataCache snapshot)
         {
             ArgumentNullException.ThrowIfNull(snapshot);

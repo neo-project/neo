@@ -541,6 +541,51 @@ namespace Neo.UnitTests.SmartContract.Native
         }
 
         [TestMethod]
+        public void JsonSerializeSharedReferences()
+        {
+            using var system = TestBlockchain.GetSystem();
+            using var snapshot = system.GetSnapshotCache();
+            using var script = new ScriptBuilder();
+            // Construct [child, child] inside the VM, then pack it as the one native argument.
+            script.Emit(OpCode.NEWARRAY0);
+            script.Emit(OpCode.DUP);
+            script.EmitPush(2);
+            script.Emit(OpCode.PACK);
+            script.EmitPush(1);
+            script.Emit(OpCode.PACK);
+            script.EmitPush(CallFlags.All);
+            script.EmitPush("jsonSerialize");
+            script.EmitPush(NativeContract.StdLib.Hash);
+            script.EmitSysCall(ApplicationEngine.System_Contract_Call);
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
+            engine.LoadScript(script.ToArray());
+            Assert.AreEqual(VMState.HALT, engine.Execute());
+            Assert.AreEqual("[[],[]]", engine.ResultStack.Pop().GetString());
+        }
+
+        [TestMethod]
+        public void JsonSerializeCycle()
+        {
+            using var system = TestBlockchain.GetSystem();
+            using var snapshot = system.GetSnapshotCache();
+            using var script = new ScriptBuilder();
+            script.Emit(OpCode.NEWARRAY0);
+            script.Emit(OpCode.DUP);
+            script.Emit(OpCode.DUP);
+            script.Emit(OpCode.APPEND);
+            script.EmitPush(1);
+            script.Emit(OpCode.PACK);
+            script.EmitPush(CallFlags.All);
+            script.EmitPush("jsonSerialize");
+            script.EmitPush(NativeContract.StdLib.Hash);
+            script.EmitSysCall(ApplicationEngine.System_Contract_Call);
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
+            engine.LoadScript(script.ToArray());
+            Assert.AreEqual(VMState.FAULT, engine.Execute());
+            Assert.IsInstanceOfType<NotSupportedException>(engine.FaultException.GetBaseException());
+        }
+
+        [TestMethod]
         public void TestRuntime_Serialize()
         {
             var snapshotCache = TestBlockchain.GetTestSnapshotCache();
