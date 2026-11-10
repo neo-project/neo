@@ -50,7 +50,7 @@ namespace Neo.UnitTests.SmartContract
             if (backwards) options |= FindOptions.Backwards;
             using var iterator = engine.FindWithStart(new StorageContext { Id = 123, IsReadOnly = true }, "A_"u8.ToArray(), Encoding.UTF8.GetBytes(start), options);
             var actual = new List<string>();
-            while (iterator.Next()) actual.Add(Encoding.UTF8.GetString(iterator.Value().GetSpan()));
+            while (iterator.Next()) actual.Add(Encoding.UTF8.GetString(iterator.Value(out _).GetSpan()));
             Assert.AreSequenceEqual(expected == null ? [] : expected.Split(','), [.. actual]);
         }
 
@@ -66,14 +66,14 @@ namespace Neo.UnitTests.SmartContract
             using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot);
             using var iterator = engine.FindWithStart(new StorageContext { Id = 123 }, [], [0xff], FindOptions.KeysOnly | (backwards ? FindOptions.Backwards : FindOptions.None));
             var actual = new List<string>();
-            while (iterator.Next()) actual.Add(Convert.ToHexString(iterator.Value().GetSpan()));
+            while (iterator.Next()) actual.Add(Convert.ToHexString(iterator.Value(out _).GetSpan()));
             Assert.AreSequenceEqual(backwards ? new[] { "FF", "00", "" } : ["FF", "FFFF"], [.. actual]);
 
             using var binaryPrefix = engine.FindWithStart(new StorageContext { Id = 123 }, [0xff], [0xff], FindOptions.KeysOnly | FindOptions.RemovePrefix | (backwards ? FindOptions.Backwards : FindOptions.None));
             Assert.IsTrue(binaryPrefix.Next());
-            Assert.AreSequenceEqual(new byte[] { 0xff }, binaryPrefix.Value().GetSpan().ToArray());
+            Assert.AreSequenceEqual(new byte[] { 0xff }, binaryPrefix.Value(out _).GetSpan().ToArray());
             Assert.AreEqual(backwards, binaryPrefix.Next());
-            if (backwards) Assert.HasCount(0, binaryPrefix.Value().GetSpan());
+            if (backwards) Assert.HasCount(0, binaryPrefix.Value(out _).GetSpan());
             Assert.IsFalse(binaryPrefix.Next());
         }
 
@@ -105,7 +105,7 @@ namespace Neo.UnitTests.SmartContract
             using var engine = ApplicationEngine.Create(TriggerType.Application, null, child);
             using var iterator = engine.FindWithStart(new StorageContext { Id = 123 }, "A_"u8.ToArray(), "23"u8.ToArray(), FindOptions.ValuesOnly | (backwards ? FindOptions.Backwards : FindOptions.None));
             var actual = new List<byte>();
-            while (iterator.Next()) actual.Add(iterator.Value().GetSpan()[0]);
+            while (iterator.Next()) actual.Add(iterator.Value(out _).GetSpan()[0]);
             Assert.AreSequenceEqual(backwards ? new byte[] { 1 } : [27, 28, 1], [.. actual]);
         }
 
@@ -143,7 +143,7 @@ namespace Neo.UnitTests.SmartContract
                 {
                     Assert.IsTrue(existing.Next());
                     Assert.IsTrue(iterator.Next());
-                    Assert.AreSequenceEqual(BinarySerializer.Serialize(existing.Value(), ExecutionEngineLimits.Default), BinarySerializer.Serialize(iterator.Value(), ExecutionEngineLimits.Default));
+                    Assert.AreSequenceEqual(BinarySerializer.Serialize(existing.Value(out _), ExecutionEngineLimits.Default), BinarySerializer.Serialize(iterator.Value(out _), ExecutionEngineLimits.Default));
                     Assert.IsFalse(iterator.Next());
                 }
             }
@@ -177,7 +177,7 @@ namespace Neo.UnitTests.SmartContract
             {
                 using var iterator = engine.ResultStack.Pop().GetInterface<IIterator>();
                 Assert.IsTrue(iterator.Next());
-                Assert.AreEqual(backwards ? "23" : "28", Encoding.UTF8.GetString(iterator.Value().GetSpan()));
+                Assert.AreEqual(backwards ? "23" : "28", Encoding.UTF8.GetString(iterator.Value(out _).GetSpan()));
                 Assert.IsFalse(iterator.Next());
             }
         }
@@ -205,7 +205,7 @@ namespace Neo.UnitTests.SmartContract
             {
                 using var iterator = engine.ResultStack.Pop().GetInterface<IIterator>();
                 Assert.IsTrue(iterator.Next());
-                Assert.AreSequenceEqual("*"u8.ToArray(), iterator.Value().GetSpan().ToArray());
+                Assert.AreSequenceEqual("*"u8.ToArray(), iterator.Value(out _).GetSpan().ToArray());
                 Assert.IsFalse(iterator.Next());
             }
         }
