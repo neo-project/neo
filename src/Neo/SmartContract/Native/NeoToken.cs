@@ -85,7 +85,7 @@ namespace Neo.SmartContract.Native
 
         internal override void OnBalanceChanging(ApplicationEngine engine, UInt160 account, NeoAccountState state, BigInteger amount)
         {
-            GasDistribution? distribution = DistributeGas(engine, account, state);
+            GasDistribution? distribution = DistributeGas(engine, state, account);
             if (distribution is not null)
             {
                 var list = engine.CurrentContext!.GetState<List<GasDistribution>>();
@@ -104,8 +104,17 @@ namespace Neo.SmartContract.Native
         {
             await base.PostTransferAsync(engine, from, to, amount, data, callOnPayment);
             var list = engine.CurrentContext!.GetState<List<GasDistribution>>();
+            if (list.Count == 0) return;
+
+            var huyao = engine.IsHardforkEnabled(Hardfork.HF_Huyao);
+
             foreach (var distribution in list)
-                await GAS.Mint(engine, distribution.Account, distribution.Amount, callOnPayment);
+            {
+                // Payment callbacks may block or destroy an account after its reward was calculated.
+                var recipient = huyao && Policy.IsBlocked(engine.SnapshotCache, distribution.Account)
+                    ? Treasury.Hash : distribution.Account;
+                await GAS.Mint(engine, recipient, distribution.Amount, callOnPayment);
+            }
         }
 
         protected override void OnManifestCompose(IsHardforkEnabledDelegate hfChecker, ProtocolSettings settings, IReadOnlyStore snapshot, uint blockHeight, ContractManifest manifest)
@@ -120,7 +129,7 @@ namespace Neo.SmartContract.Native
             }
         }
 
-        private GasDistribution? DistributeGas(ApplicationEngine engine, UInt160 account, NeoAccountState state)
+        private GasDistribution? DistributeGas(ApplicationEngine engine, NeoAccountState state, UInt160 gasRecipient)
         {
             // PersistingBlock is null when running under the debugger
             if (engine.PersistingBlock is null) return null;
@@ -137,7 +146,7 @@ namespace Neo.SmartContract.Native
             if (datoshi == 0) return null;
             return new GasDistribution
             {
-                Account = account,
+                Account = gasRecipient,
                 Amount = datoshi
             };
         }
@@ -464,7 +473,7 @@ namespace Neo.SmartContract.Native
             return await VoteInternal(engine, account, voteTo);
         }
 
-        internal async ContractTask<bool> VoteInternal(ApplicationEngine engine, UInt160 account, ECPoint? voteTo)
+        internal async ContractTask<bool> VoteInternal(ApplicationEngine engine, UInt160 account, ECPoint? voteTo, UInt160? gasRecipient = null)
         {
             NeoAccountState? stateAccount = engine.SnapshotCache.GetAndChange(CreateStorageKey(Prefix_Account, account))?.GetInteroperable<NeoAccountState>();
             if (stateAccount is null) return false;
@@ -485,7 +494,7 @@ namespace Neo.SmartContract.Native
                 else
                     item.Add(-stateAccount.Balance);
             }
-            GasDistribution? gasDistribution = DistributeGas(engine, account, stateAccount);
+            GasDistribution? gasDistribution = DistributeGas(engine, stateAccount, gasRecipient ?? account);
             if (stateAccount.VoteTo != null)
             {
                 StorageKey key = CreateStorageKey(Prefix_Candidate, stateAccount.VoteTo);
