@@ -90,7 +90,12 @@ namespace Neo.UnitTests.SmartContract
                 TestProtocolSettings.Default.StandbyCommittee[1],
                 TestProtocolSettings.Default.StandbyCommittee[2]
             ];
-            var hash = engine.CreateMultisigAccount(2, keys);
+            var hash = engine.CreateMultisigAccount(2,
+            [
+                keys[0].EncodePoint(true),
+                keys[1].EncodePoint(true),
+                keys[2].EncodePoint(true)
+            ]);
             Assert.AreEqual(Contract.CreateMultiSigRedeemScript(2, keys).ToScriptHash(), hash);
         }
 
