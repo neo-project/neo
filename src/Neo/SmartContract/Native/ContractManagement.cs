@@ -442,8 +442,8 @@ namespace Neo.SmartContract.Native
 
             if (blockBeforeErase)
             {
-                // Lock contract (and allow to receive an unclaimed GAS after votes revoke, if so,
-                // because the contract is not yet removed from the snapshot).
+                // From Huyao, mint accrued rewards to Treasury when blocking the contract.
+                // Earlier hardforks still claim GAS before removing the contract.
                 await Policy.BlockAccountInternal(engine, hash);
                 // Clean whitelist (emit event if exists with the old manifest information).
                 Policy.CleanWhitelist(engine, contract);
