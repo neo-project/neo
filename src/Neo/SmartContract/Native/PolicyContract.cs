@@ -890,11 +890,13 @@ namespace Neo.SmartContract.Native
                 return false;
             }
 
-            if (settings.IsHardforkEnabled(ProtocolSettings.LastConfigManagedHardfork, currentIndex)
-                && Policy.TryGetActivationHeightFromStorage(snapshot, hardfork, out height))
-            {
-                return true;
-            }
+            // At LastConfigManagedHardfork height we still can't fully rely on Policy storage because Policy has ID -7 and hence,
+            // Policy storage initialization is performed after previous 6 natives initialisation. If any of them need to use
+            // TryGetActivationHeight then they'll get an outdated info if we rely on Policy storage here. Hence, require
+            // LastConfigManagedHardfork to be enabled at the previous block (currentIndex-1) to be sure that Policy storage
+            // initialisation is completed.
+            if (currentIndex > 0 && settings.IsHardforkEnabled(ProtocolSettings.LastConfigManagedHardfork, currentIndex - 1))
+                return Policy.TryGetActivationHeightFromStorage(snapshot, hardfork, out height);
 
             // If hardfork is not set in the configuration (with EnsureOmmitedHardforks applied over it), it is treated as disabled.
             return settings.Hardforks.TryGetValue(hardfork, out height);

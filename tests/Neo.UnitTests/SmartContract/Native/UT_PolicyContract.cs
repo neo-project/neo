@@ -120,7 +120,12 @@ namespace Neo.UnitTests.SmartContract.Native
         [DataRow(true, true)]
         public void Transfer_SettlesBothRewardsOnceWhenOneAccountIsBlocked(bool blockSender, bool huyao)
         {
-            using var snapshot = TestBlockchain.GetTestSnapshotCache();
+            var settings = TestProtocolSettings.Default with
+            {
+                Hardforks = TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_Huyao, huyao ? 0u : 1001u).Remove(Hardfork.HF_Iara).Remove(Hardfork.HF_Jackalope)
+            };
+            var system = new TestBlockchain.TestNeoSystem(settings);
+            var snapshot = system.GetSnapshotCache().CloneCache();
             var sender = UInt160.Parse("0x0000000000000000000000000000000000001234");
             using var callback = new ScriptBuilder();
             callback.Emit(OpCode.CLEAR);
@@ -158,10 +163,6 @@ namespace Neo.UnitTests.SmartContract.Native
                     Witness = Witness.Empty
                 },
                 Transactions = []
-            };
-            var settings = TestProtocolSettings.Default with
-            {
-                Hardforks = TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_Huyao, huyao ? 1000u : 1001u)
             };
             using var engine = ApplicationEngine.Create(TriggerType.Application,
                 new Nep17NativeContractExtensions.ManualWitness(sender, NativeContract.NEO.GetCommitteeAddress(snapshot)),
@@ -209,7 +210,12 @@ namespace Neo.UnitTests.SmartContract.Native
         [DataRow(true)]
         public void BlockAccount_GasClaimDependsOnHuyao(bool activated)
         {
-            var snapshot = _snapshotCache.CloneCache();
+            var settings = TestProtocolSettings.Default with
+            {
+                Hardforks = TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_Huyao, activated ? 0u : 1001u).Remove(Hardfork.HF_Iara).Remove(Hardfork.HF_Jackalope)
+            };
+            var system = new TestBlockchain.TestNeoSystem(settings);
+            var snapshot = system.GetSnapshotCache().CloneCache();
             var account = UInt160.Parse("0x0000000000000000000000000000000000001234");
             var key = NativeContract.NEO.CreateStorageKey(20, account);
             snapshot.Add(key, new StorageItem(new NeoToken.NeoAccountState { Balance = 100, BalanceHeight = 0 }));
@@ -225,10 +231,6 @@ namespace Neo.UnitTests.SmartContract.Native
                     NextConsensus = UInt160.Zero
                 },
                 Transactions = []
-            };
-            var settings = TestProtocolSettings.Default with
-            {
-                Hardforks = TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_Huyao, activated ? 1000u : 1001u)
             };
             using var engine = ApplicationEngine.Create(TriggerType.Application,
                 new Nep17NativeContractExtensions.ManualWitness(NativeContract.NEO.GetCommitteeAddress(snapshot)),
@@ -417,7 +419,7 @@ namespace Neo.UnitTests.SmartContract.Native
             foreach (var native in NativeContract.Contracts)
             {
                 snapshot.DeleteContract(native.Hash);
-                snapshot.AddContract(native.Hash, native.GetContractState(settings, blockFinish.Index));
+                snapshot.AddContract(native.Hash, native.GetContractState(settings, snapshot, blockFinish.Index));
             }
             using var engine = ApplicationEngine.Create(TriggerType.Application,
                 new Nep17NativeContractExtensions.ManualWitness(committeeFullMultiSigAddr), snapshot, blockFinish, settings);
@@ -1863,28 +1865,98 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void Check_AfterHuyao_ConfigManagedHeightsComeFromPolicy()
         {
+            const int huyaoHeight = 7;
             var snapshot = _snapshotCache.CloneCache();
-            Assert.IsTrue(NativeContract.Policy.TryGetActivationHeightFromStorage(snapshot, Hardfork.HF_Faun, out var policyHeight));
-
             var settings = TestProtocolSettings.Default with
             {
                 Hardforks = new Dictionary<Hardfork, uint>
                 {
                     { Hardfork.HF_Aspidochelone, 0 },
-                    { Hardfork.HF_Basilisk, 0 },
-                    { Hardfork.HF_Cockatrice, 0 },
-                    { Hardfork.HF_Domovoi, 0 },
-                    { Hardfork.HF_Echidna, 0 },
-                    { Hardfork.HF_Faun, 999_999 },
-                    { Hardfork.HF_Gorgon, 999_999 },
-                    { Hardfork.HF_Huyao, 0 },
+                    { Hardfork.HF_Basilisk, 1 },
+                    { Hardfork.HF_Cockatrice, 2 },
+                    { Hardfork.HF_Domovoi, 3 },
+                    { Hardfork.HF_Echidna, 4 },
+                    { Hardfork.HF_Faun, 5 },
+                    { Hardfork.HF_Gorgon, 6 },
+                    { Hardfork.HF_Huyao, huyaoHeight },
                 }.ToImmutableDictionary()
             };
 
-            Assert.IsTrue(PolicyContract.TryGetActivationHeight(settings, snapshot, Hardfork.HF_Faun, policyHeight, out var height));
-            Assert.AreEqual(policyHeight, height);
-            Assert.IsTrue(PolicyContract.IsHardforkEnabled(settings, snapshot, Hardfork.HF_Faun, policyHeight));
-            Assert.IsFalse(settings.IsHardforkEnabled(Hardfork.HF_Faun, policyHeight));
+            var committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot);
+            var committee = NativeContract.NEO.GetCommitteeAddress(snapshot);
+            var witness = new Nep17NativeContractExtensions.ManualWitness(committee);
+            var persistingBlock = new Block
+            {
+                Header = new Header
+                {
+                    Index = huyaoHeight,
+                    MerkleRoot = UInt256.Zero,
+                    NextConsensus = UInt160.Zero,
+                    PrevHash = UInt256.Zero,
+                    Witness = Witness.Empty,
+                },
+                Transactions = []
+            };
+
+            // Execute OnPersist firstly to initialize Policy storage at Huyao.
+            var script = new ScriptBuilder();
+            script.EmitSysCall(ApplicationEngine.System_Contract_NativeOnPersist);
+            var engine = ApplicationEngine.Create(TriggerType.OnPersist,
+                new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr),
+                snapshot, persistingBlock, settings: settings);
+            engine.LoadScript(script.ToArray());
+            Assert.AreEqual(VMState.HALT, engine.Execute(), engine.FaultException?.ToString());
+            snapshot.Commit();
+
+            // Intentionally change the node's settings to distinguish from Policy's ones.
+            var malformedSettings = TestProtocolSettings.Default with
+            {
+                Hardforks = new Dictionary<Hardfork, uint>
+                {
+                    { Hardfork.HF_Aspidochelone, 10 },
+                    { Hardfork.HF_Basilisk, 11 },
+                    { Hardfork.HF_Cockatrice, 12 },
+                    { Hardfork.HF_Domovoi, 13 },
+                    { Hardfork.HF_Echidna, 14 },
+                    { Hardfork.HF_Faun, 15 },
+                    { Hardfork.HF_Gorgon, 16 },
+                    { Hardfork.HF_Huyao, huyaoHeight }, // huyao height should still be preserved since TryGetActivationHeight uses Settings to define if LastConfigManagedHardfork is enabled.
+                }.ToImmutableDictionary()
+            };
+
+            // Ensure every height is properly stored in the Policy storage.
+            for (int hf = (int)Hardfork.HF_Aspidochelone; hf <= (int)Hardfork.HF_Huyao; hf++)
+            {
+                Assert.IsTrue(NativeContract.Policy.TryGetActivationHeightFromStorage(snapshot, (Hardfork)hf, out var actualHeight));
+                Assert.AreEqual((uint)hf, actualHeight);
+            }
+
+            // Pre-Huyao: height should be taken from settings.
+            for (int hf = (int)Hardfork.HF_Aspidochelone; hf <= (int)Hardfork.HF_Huyao; hf++)
+            {
+                Assert.IsTrue(PolicyContract.TryGetActivationHeight(malformedSettings, snapshot, (Hardfork)hf, huyaoHeight - 1, out var actualHeight));
+                var expected = (uint)(hf + 10);
+                if (hf == (int)Hardfork.HF_Huyao)
+                    expected = huyaoHeight;
+                Assert.AreEqual(expected, actualHeight);
+            }
+
+            // Huyao: height should still be taken from settings.
+            for (int hf = (int)Hardfork.HF_Aspidochelone; hf <= (int)Hardfork.HF_Huyao; hf++)
+            {
+                Assert.IsTrue(PolicyContract.TryGetActivationHeight(malformedSettings, snapshot, (Hardfork)hf, huyaoHeight, out var actualHeight));
+                var expected = (uint)(hf + 10);
+                if (hf == (int)Hardfork.HF_Huyao)
+                    expected = huyaoHeight;
+                Assert.AreEqual(expected, actualHeight);
+            }
+
+            // Post-Huyao: height should be taken from settings.
+            for (int hf = (int)Hardfork.HF_Aspidochelone; hf < (int)Hardfork.HF_Huyao; hf++)
+            {
+                Assert.IsTrue(PolicyContract.TryGetActivationHeight(malformedSettings, snapshot, (Hardfork)hf, huyaoHeight + 1, out var actualHeight));
+                Assert.AreEqual((uint)hf, actualHeight);
+            }
         }
 
         [TestMethod]
