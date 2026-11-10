@@ -33,9 +33,7 @@ namespace Neo.UnitTests.Wallets
             Assert.AreSequenceEqual(privateKey, keyPair.PrivateKey);
             Assert.AreEqual(publicKey, keyPair.PublicKey);
 
-            byte[] privateKey96 = new byte[96];
-            for (int i = 0; i < privateKey96.Length; i++)
-                privateKey96[i] = RandomNumberFactory.NextByte();
+            byte[] privateKey96 = [.. publicKey.EncodePoint(false).Skip(1), .. privateKey];
             keyPair = new KeyPair(privateKey96);
             publicKey = ECPoint.DecodePoint(new byte[] { 0x04 }.Concat(privateKey96.Skip(privateKey96.Length - 96).Take(64)).ToArray(), ECCurve.Secp256r1);
             Assert.AreSequenceEqual(privateKey96.Skip(64).Take(32).ToArray(), keyPair.PrivateKey);

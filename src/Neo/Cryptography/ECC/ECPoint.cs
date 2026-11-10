@@ -77,6 +77,9 @@ namespace Neo.Cryptography.ECC
         /// <returns>The decoded point.</returns>
         public static ECPoint DecodePoint(ReadOnlySpan<byte> encoded, ECCurve curve)
         {
+            if (encoded.IsEmpty)
+                throw new FormatException("Invalid ECPoint encoding: empty input.");
+
             switch (encoded[0])
             {
                 case 0x02: // compressed
@@ -92,6 +95,8 @@ namespace Neo.Cryptography.ECC
                             throw new FormatException($"Invalid uncompressed ECPoint encoding length: expected {2 * curve.ExpectedECPointLength + 1} bytes, but got {encoded.Length} bytes. Uncompressed points must be exactly {2 * curve.ExpectedECPointLength + 1} bytes long.");
                         var x1 = new BigInteger(encoded[1..(1 + curve.ExpectedECPointLength)], isUnsigned: true, isBigEndian: true);
                         var y1 = new BigInteger(encoded[(1 + curve.ExpectedECPointLength)..], isUnsigned: true, isBigEndian: true);
+                        if (!curve.IsOnCurve(x1, y1))
+                            throw new FormatException("Invalid uncompressed ECPoint: the point is not on the curve.");
                         return new ECPoint(new ECFieldElement(x1, curve), new ECFieldElement(y1, curve), curve)
                         {
                             _uncompressedPoint = encoded.ToArray()
@@ -372,7 +377,7 @@ namespace Neo.Cryptography.ECC
                 point = Parse(value, curve);
                 return true;
             }
-            catch (FormatException)
+            catch
             {
                 point = null;
                 return false;

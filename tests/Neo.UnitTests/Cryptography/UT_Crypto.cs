@@ -12,7 +12,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography;
 using Neo.Extensions;
-using Neo.SmartContract;
+using Neo.IO.Caching;
 using Neo.SmartContract.Native;
 using Neo.Wallets;
 using System;
@@ -29,6 +29,28 @@ namespace Neo.UnitTests.Cryptography
     public class UT_Crypto
     {
         private KeyPair _key = null;
+
+        [TestMethod]
+        public void ECDsaCacheEvictionPreservesBorrowedInstance()
+        {
+            var message = Encoding.UTF8.GetBytes("ecdsa-cache-eviction");
+            var secondKey = GenerateCertainKey(32);
+            using var first = CreateSigningEcdsa(Secp256r1Key);
+            using var second = CreateSigningEcdsa(secondKey);
+            var signature = first.SignData(message, HashAlgorithmName.SHA256);
+            using var cache = new ECDsaCache(1);
+            cache.Add(new ECDsaCacheItem(Secp256r1Key.PublicKey, first));
+            Assert.IsTrue(cache.TryGet(Secp256r1Key.PublicKey, out var borrowed));
+            Assert.IsTrue(borrowed.Value.VerifyData(message, signature, HashAlgorithmName.SHA256));
+
+            // Reproduce an eviction between a caller's cache lookup and signature verification.
+            cache.Add(new ECDsaCacheItem(secondKey.PublicKey, second));
+            Assert.IsFalse(cache.TryGet(Secp256r1Key.PublicKey, out _));
+            Assert.AreEqual(1, cache.Count);
+            Assert.IsTrue(borrowed.Value.VerifyData(message, signature, HashAlgorithmName.SHA256));
+            Assert.IsTrue(borrowed.Value.VerifyHash(SHA256.HashData(message), signature));
+            Assert.IsFalse(borrowed.Value.VerifyData(Encoding.UTF8.GetBytes("different-message"), signature, HashAlgorithmName.SHA256));
+        }
         private static readonly byte[] s_secp256r1Priv =
             "aabbccdd11223344556677889900112233445566778899001122334455667788".HexToBytes();
         private static readonly byte[] s_secp256k1Priv =
@@ -43,19 +65,6 @@ namespace Neo.UnitTests.Cryptography
                 "0000000000000000000000000000000000000000000000000000000000000001" +
                 "0000000000000000000000000000000000000000000000000000000000000001")
                 .HexToBytes();
-        }
-
-        private static string GetExpectedInnerExceptionTypeForInvalidSecp256r1PubKey()
-        {
-            if (OperatingSystem.IsWindows())
-                return "System.PlatformNotSupportedException";
-            if (OperatingSystem.IsLinux())
-                return "Interop+Crypto+OpenSslCryptographicException";
-            if (OperatingSystem.IsMacOS())
-                return "Interop+AppleCrypto+AppleCFErrorCryptographicException";
-
-            Assert.Fail("Unsupported platform.");
-            return string.Empty;
         }
 
         public static KeyPair GenerateKey(int privateKeyLength)
@@ -406,12 +415,8 @@ namespace Neo.UnitTests.Cryptography
             var signature = Crypto.Sign(message, Secp256r1Key, HashAlgorithm.SHA256);
             var invalidPubKey = GetFormatValidButInvalidSecp256r1PubKey();
 
-            var ex = Assert.ThrowsExactly<ArgumentException>(() =>
+            Assert.ThrowsExactly<FormatException>(() =>
                 Crypto.VerifySignature(message, signature, invalidPubKey, ECCurve.Secp256r1, HashAlgorithm.SHA256));
-
-            Assert.AreEqual("System.ArgumentException", ex.GetType().FullName);
-            Assert.IsNotNull(ex.InnerException);
-            Assert.AreEqual(GetExpectedInnerExceptionTypeForInvalidSecp256r1PubKey(), ex.InnerException!.GetType().FullName);
         }
 
         [TestMethod]
@@ -421,12 +426,8 @@ namespace Neo.UnitTests.Cryptography
             var signature = Crypto.Sign(message, Secp256r1Key, HashAlgorithm.SHA256);
             var invalidPubKey = GetFormatValidButInvalidSecp256r1PubKey();
 
-            var ex = Assert.ThrowsExactly<ArgumentException>(() =>
+            Assert.ThrowsExactly<FormatException>(() =>
                 CryptoLib.VerifyWithECDsaV2(message, invalidPubKey, signature, NamedCurveHash.secp256r1SHA256));
-
-            Assert.AreEqual("System.ArgumentException", ex.GetType().FullName);
-            Assert.IsNotNull(ex.InnerException);
-            Assert.AreEqual(GetExpectedInnerExceptionTypeForInvalidSecp256r1PubKey(), ex.InnerException!.GetType().FullName);
         }
 
         private static System.Security.Cryptography.ECDsa CreateSigningEcdsa(KeyPair key)

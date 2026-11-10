@@ -1181,6 +1181,61 @@ namespace Neo.UnitTests.Ledger
             Assert.AreEqual(VerifyResult.Succeed, _unit.TryAdd(replacement, snapshot));
             Assert.IsTrue(_unit.ContainsKey(replacement.Hash));
             Assert.IsFalse(_unit.ContainsKey(poolTx.Hash));
+            Assert.AreEqual(VerifyResult.HasConflicts, _unit.TryAdd(poolTx, snapshot));
+            Assert.IsTrue(_unit.ContainsKey(replacement.Hash));
+            Assert.IsFalse(_unit.ContainsKey(poolTx.Hash));
+        }
+
+        [TestMethod]
+        [DataRow(100000L, VerifyResult.HasConflicts)]
+        [DataRow(200000L, VerifyResult.HasConflicts)]
+        [DataRow(200001L, VerifyResult.Succeed)]
+        public void TryAdd_ExistingConflictSharesSecondarySigner_ChecksFee(long fee, VerifyResult expected)
+        {
+            var snapshot = GetSnapshot();
+            var secondary = new UInt160(Crypto.Hash160([1, 2, 3]));
+            var original = CreateTransaction(fee);
+            original.Signers =
+            [
+                new Signer { Account = senderAccount, Scopes = WitnessScope.None },
+                new Signer { Account = secondary, Scopes = WitnessScope.None }
+            ];
+            var replacement = CreateTransaction(200000);
+            replacement.Signers = [new Signer { Account = secondary, Scopes = WitnessScope.None }];
+            replacement.Attributes = [new Conflicts { Hash = original.Hash }];
+            Assert.AreEqual(VerifyResult.Succeed, _unit.TryAdd(replacement, snapshot));
+
+            Assert.AreEqual(expected, _unit.TryAdd(original, snapshot));
+            Assert.AreEqual(expected == VerifyResult.Succeed, _unit.ContainsKey(original.Hash));
+            Assert.AreEqual(expected != VerifyResult.Succeed, _unit.ContainsKey(replacement.Hash));
+        }
+
+        [TestMethod]
+        [DataRow(100000L, VerifyResult.HasConflicts)]
+        [DataRow(200000L, VerifyResult.HasConflicts)]
+        [DataRow(200001L, VerifyResult.Succeed)]
+        public void TryAdd_ExistingNotaryConflict_SharedNotarySignerCountsFee(long fee, VerifyResult expected)
+        {
+            var snapshot = GetSnapshot();
+            var otherPayer = new UInt160(Crypto.Hash160([1, 2, 3]));
+            var original = CreateTransaction(fee);
+            original.Signers =
+            [
+                new Signer { Account = NativeContract.Notary.Hash, Scopes = WitnessScope.None },
+                new Signer { Account = senderAccount, Scopes = WitnessScope.None }
+            ];
+            var fallback = CreateTransaction(200000);
+            fallback.Signers =
+            [
+                new Signer { Account = NativeContract.Notary.Hash, Scopes = WitnessScope.None },
+                new Signer { Account = otherPayer, Scopes = WitnessScope.None }
+            ];
+            fallback.Attributes = [new Conflicts { Hash = original.Hash }];
+            Assert.AreEqual(VerifyResult.Succeed, _unit.TryAdd(fallback, snapshot));
+
+            Assert.AreEqual(expected, _unit.TryAdd(original, snapshot));
+            Assert.AreEqual(expected == VerifyResult.Succeed, _unit.ContainsKey(original.Hash));
+            Assert.AreEqual(expected != VerifyResult.Succeed, _unit.ContainsKey(fallback.Hash));
         }
 
         [TestMethod]
@@ -1278,6 +1333,39 @@ namespace Neo.UnitTests.Ledger
             }, snapshot);
 
             Assert.IsFalse(_unit.ContainsKey(mempooled.Hash));
+        }
+
+        [TestMethod]
+        public void UpdatePoolForBlockPersisted_UnverifiedConflictDoesNotSurviveBlockPersist()
+        {
+            var snapshot = GetSnapshot();
+
+            var unverifiedConflicted = CreateTransaction(5000);
+            Assert.AreEqual(VerifyResult.Succeed, _unit.TryAdd(unverifiedConflicted, snapshot));
+            _unit.InvalidateVerifiedTransactions();
+            Assert.AreEqual(0, _unit.VerifiedCount);
+            Assert.AreEqual(1, _unit.UnVerifiedCount);
+
+            var cancellingBlockTx = CreateTransaction(5000);
+            cancellingBlockTx.Signers = [new Signer { Account = senderAccount, Scopes = WitnessScope.None }];
+            cancellingBlockTx.Attributes = [new Conflicts { Hash = unverifiedConflicted.Hash }];
+
+            _unit.UpdatePoolForBlockPersisted(new Block
+            {
+                Header = new Header
+                {
+                    PrevHash = null!,
+                    MerkleRoot = null!,
+                    NextConsensus = null!,
+                    Witness = null!
+                },
+                Transactions = [cancellingBlockTx]
+            }, snapshot);
+
+            // cancellingBlockTx persisted with [Conflicts(unverifiedConflicted.Hash)] should discard
+            // unverifiedConflicted transaction. unverifiedConflicted should not survive UpdatePoolForBlockPersisted.
+            Assert.IsFalse(_unit.ContainsKey(unverifiedConflicted.Hash));
+            Assert.AreEqual(0, _unit.VerifiedCount);
         }
     }
 }
