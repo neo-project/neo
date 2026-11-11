@@ -32,6 +32,7 @@ namespace Neo.Network.P2P
     {
         internal record StartProtocol;
         internal record Relay(IInventory Inventory);
+        internal record ForgetBlock(UInt256 Hash);
 
         internal const int MaxQueuedMessages = 1024;
         internal const long MaxQueuedBytes = 256L * 1024 * 1024; // 256 MiB per connection, shared by both queues.
@@ -211,6 +212,9 @@ namespace Neo.Network.P2P
                     break;
                 case Relay relay:
                     OnRelay(relay.Inventory);
+                    break;
+                case ForgetBlock forget:
+                    _knownHashes.Remove(forget.Hash);
                     break;
                 case StartProtocol _:
                     OnStartProtocol();

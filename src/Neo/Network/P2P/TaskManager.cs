@@ -99,7 +99,30 @@ namespace Neo.Network.P2P
                 peerToDisconnect.Tell(Tcp.Abort.Instance);
             }
             foreach (var (actor, otherSession) in sessions)
-                if (actor != peerToDisconnect) RequestTasks(actor, otherSession);
+                if (!actor.Equals(peerToDisconnect)) RequestTasks(actor, otherSession);
+        }
+
+        private void OnInvalidBlockBody(Block invalidBlock, IActorRef? source)
+        {
+            if (!invalidBlock.TryGetHash(out var hash)) return;
+            _knownHashes.Remove(hash);
+
+            // A rejected body must not leave its height marked as received. Allow
+            // another body with the same hash (but different witnesses) through
+            // each peer's duplicate filter as well.
+            foreach (var (actor, session) in sessions)
+            {
+                if (session.ReceivedBlockHashes.TryGetValue(invalidBlock.Index, out var receivedHash) && receivedHash == hash)
+                {
+                    session.ReceivedBlockHashes.Remove(invalidBlock.Index);
+                    actor.Tell(new RemoteNode.ForgetBlock(hash));
+                }
+            }
+
+            // Give other peers the first chance. The timer can retry the source
+            // if it is the only peer, without immediately looping on a bad body.
+            foreach (var (actor, session) in sessions)
+                if (!actor.Equals(source)) RequestTasks(actor, session);
         }
 
         private void OnNewTasks(InvPayload payload)
@@ -192,7 +215,7 @@ namespace Neo.Network.P2P
                         if (rr.Result is VerifyResult.InvalidHash or VerifyResult.OverSize)
                             OnInvalidBlock(invalidBlock, rr.Source);
                         else if (rr.Result == VerifyResult.Invalid)
-                            OnInvalidBlock(invalidBlock);
+                            OnInvalidBlockBody(invalidBlock, rr.Source);
                     }
                     break;
                 case Timer _:

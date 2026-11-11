@@ -653,9 +653,36 @@ namespace Neo.UnitTests.Network.P2P
             peer.Send(taskManager, block);
             peer.Send(taskManager, new Blockchain.RelayResult(block, VerifyResult.Invalid, peer.Ref));
 
+            peer.ExpectMsg<RemoteNode.ForgetBlock>(m => m.Hash == block.Hash, cancellationToken: CancellationToken.None);
             peer.ExpectNoMsg(TimeSpan.FromMilliseconds(200), cancellationToken: CancellationToken.None);
-            Assert.IsTrue(GetSessions(taskManager)[peer.Ref].ReceivedBlockHashes.ContainsKey(block.Index));
+            Assert.IsFalse(GetSessions(taskManager)[peer.Ref].ReceivedBlockHashes.ContainsKey(block.Index));
 
+            Sys.Stop(taskManager);
+        }
+
+        [TestMethod]
+        public void GenericInvalidBlock_OnlyPeerCanRetryHeightAfterTimer()
+        {
+            using var neoSystem = TestBlockchain.GetSystem();
+            var currentHeight = NativeContract.Ledger.CurrentIndex(neoSystem.StoreView);
+            var taskManager = ActorOfAsTestActorRef(() => new TaskManager(neoSystem));
+            // Keep the test on block requests rather than header synchronization.
+            GetGlobalInvTasks(taskManager)[UInt256.Zero] = 3;
+            var peer = RegisterPeer(taskManager, currentHeight + 1);
+            var firstRequest = peer.ExpectMsg<Message>(m => m.Command == MessageCommand.GetBlockByIndex, cancellationToken: CancellationToken.None);
+            Assert.AreEqual(currentHeight + 1, ((GetBlockByIndexPayload)firstRequest.Payload!).IndexStart);
+
+            var block = CreateBlock(currentHeight + 1);
+            peer.Send(taskManager, block);
+            peer.Send(taskManager, new Blockchain.RelayResult(block, VerifyResult.Invalid, peer.Ref));
+
+            peer.ExpectMsg<RemoteNode.ForgetBlock>(m => m.Hash == block.Hash, cancellationToken: CancellationToken.None);
+            Assert.IsFalse(GetSessions(taskManager)[peer.Ref].ReceivedBlockHashes.ContainsKey(block.Index));
+            peer.ExpectNoMsg(TimeSpan.FromMilliseconds(200), cancellationToken: CancellationToken.None);
+
+            SendTimer(taskManager);
+            var retry = peer.ExpectMsg<Message>(m => m.Command == MessageCommand.GetBlockByIndex, cancellationToken: CancellationToken.None);
+            Assert.AreEqual(block.Index, ((GetBlockByIndexPayload)retry.Payload!).IndexStart);
             Sys.Stop(taskManager);
         }
 
