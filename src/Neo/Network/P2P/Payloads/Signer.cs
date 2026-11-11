@@ -124,6 +124,22 @@ namespace Neo.Network.P2P.Payloads
         /// <returns>The <see cref="WitnessRule"/> array used to represent the current signer.</returns>
         public IEnumerable<WitnessRule> GetAllRules()
         {
+            foreach (var rule in GetScopeRules())
+                yield return rule;
+            if (Scopes.HasFlag(WitnessScope.WitnessRules))
+            {
+                foreach (var rule in Rules!)
+                    yield return rule;
+            }
+        }
+
+        /// <summary>
+        /// Converts the scopes of the <see cref="Signer"/> object except <see cref="WitnessScope.WitnessRules"/>
+        /// to <see cref="WitnessRule"/>.
+        /// </summary>
+        /// <returns>The <see cref="WitnessRule"/> array used to represent the scopes of the current signer.</returns>
+        internal IEnumerable<WitnessRule> GetScopeRules()
+        {
             if (Scopes == WitnessScope.Global)
             {
                 yield return new WitnessRule
@@ -159,11 +175,6 @@ namespace Neo.Network.P2P.Payloads
                             Action = WitnessRuleAction.Allow,
                             Condition = new GroupCondition { Group = group }
                         };
-                }
-                if (Scopes.HasFlag(WitnessScope.WitnessRules))
-                {
-                    foreach (var rule in Rules!)
-                        yield return rule;
                 }
             }
         }
