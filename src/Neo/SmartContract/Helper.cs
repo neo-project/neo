@@ -39,7 +39,7 @@ namespace Neo.SmartContract
     public static class Helper
     {
         /// <summary>
-        /// The maximum GAS that can be consumed when <see cref="VerifyWitnesses"/> is called.
+        /// The maximum GAS that can be consumed when <see cref="VerifyWitnesses"/> is called with the GAS cap enabled.
         /// The unit is datoshi, 1 datoshi = 1e-8 GAS
         /// </summary>
         public const long MaxVerificationGas = 1_50000000;
@@ -345,11 +345,12 @@ namespace Neo.SmartContract
         /// <param name="settings">The <see cref="ProtocolSettings"/> to be used for the verification.</param>
         /// <param name="snapshot">The snapshot used to read data.</param>
         /// <param name="datoshi">The maximum GAS that can be used, in the unit of datoshi, 1 datoshi = 1e-8 GAS.</param>
+        /// <param name="capGas">Whether to limit the GAS to <see cref="MaxVerificationGas"/>.</param>
         /// <returns><see langword="true"/> if the <see cref="IVerifiable"/> is verified as valid; otherwise, <see langword="false"/>.</returns>
-        public static bool VerifyWitnesses(this IVerifiable verifiable, ProtocolSettings settings, DataCache snapshot, long datoshi)
+        public static bool VerifyWitnesses(this IVerifiable verifiable, ProtocolSettings settings, DataCache snapshot, long datoshi, bool capGas = true)
         {
             if (datoshi < 0) return false;
-            if (datoshi > MaxVerificationGas) datoshi = MaxVerificationGas;
+            if (capGas && datoshi > MaxVerificationGas) datoshi = MaxVerificationGas;
 
             UInt160[] hashes;
             try
