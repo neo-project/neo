@@ -209,7 +209,7 @@ namespace Neo.Network.P2P.Payloads
             if (prev.Index + 1 != Index) return false;
             if (prev.Hash != PrevHash) return false;
             if (prev.Header.Timestamp >= Timestamp) return false;
-            if (!this.VerifyWitnesses(settings, snapshot, 3_00000000L)) return false;
+            if (!this.VerifyWitnesses(settings, snapshot, 3_00000000L, capGas: false)) return false;
             return true;
         }
 
