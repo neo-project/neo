@@ -290,6 +290,41 @@ namespace Neo.UnitTests.SmartContract
         }
 
         [TestMethod]
+        // (205 + 6.926 * 0) * 30 = 6150.
+        [DataRow(true, 0, 6150L)]
+        // (205 + 6.926 * 1) * 30 = 6357.78, rounded up to 6358.
+        [DataRow(true, 1, 6358L)]
+        // (205 + 6.926 * 3) * 30 = 6773.34, rounded up to 6774.
+        [DataRow(true, 3, 6774L)]
+        [DataRow(false, 0, 122880L)]
+        [DataRow(false, 3, 122880L)]
+        public void System_Runtime_GetNotifications_Price(bool huyao, int notificationCount, long expectedFee)
+        {
+            var settings = TestProtocolSettings.Default with
+            {
+                Hardforks = huyao
+                    ? TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_Huyao, 0)
+                    : TestProtocolSettings.Default.Hardforks.Remove(Hardfork.HF_Huyao)
+            };
+
+            using var script = new ScriptBuilder();
+            script.EmitSysCall(ApplicationEngine.System_Runtime_GetNotifications);
+
+            using var engine = ApplicationEngine.Create(
+                TriggerType.Application, null, _snapshotCache.CloneCache(), settings: settings);
+            engine.LoadScript(script.ToArray());
+
+            for (int i = 0; i < notificationCount; i++)
+                engine.SendNotification(UInt160.Zero, "Test", new Array());
+
+            engine.Push(StackItem.Null);
+
+            Assert.AreEqual(VMState.HALT, engine.Execute());
+            Assert.AreEqual(expectedFee, engine.FeeConsumed);
+            Assert.HasCount(notificationCount, (Array)engine.ResultStack.Pop());
+        }
+
+        [TestMethod]
         public void System_Runtime_GetInvocationCounter()
         {
             var snapshot = _snapshotCache.CloneCache();
