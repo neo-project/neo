@@ -100,8 +100,8 @@ namespace Neo.UnitTests.Network.P2P
         {
             var peer = CreateTestProbe();
 
-            peer.Send(
-                taskManager,
+            // Registration must finish before tests inspect the peer's session.
+            taskManager.Receive(
                 new TaskManager.Register(new VersionPayload
                 {
                     UserAgent = "local-test",
@@ -109,7 +109,7 @@ namespace Neo.UnitTests.Network.P2P
                     [
                         new FullNodeCapability(startHeight)
                     ]
-                }));
+                }), peer);
 
             return peer;
         }
@@ -980,7 +980,8 @@ namespace Neo.UnitTests.Network.P2P
             // The block for this height was already persisted, so delivering it again
             // (e.g. unsolicited from another peer) must not be tracked by hash: nothing
             // consults an already-persisted height afterwards.
-            peer.Send(taskManager, historicalBlock);
+            // Process it before asserting that no hash was recorded.
+            taskManager.Receive(historicalBlock, peer);
 
             Assert.IsFalse(session.ReceivedBlockHashes.ContainsKey(historicalBlock.Index), "An already-persisted height must not be recorded in ReceivedBlockHashes.");
 
@@ -1360,6 +1361,104 @@ namespace Neo.UnitTests.Network.P2P
             Sys.Stop(peer2.Ref);
             AwaitNoHeaderRefs(taskManager);
 
+            Sys.Stop(taskManager);
+        }
+
+        [TestMethod]
+        public void ExpiredIndexTask_IsReassignedToAnotherEligiblePeer()
+        {
+            using var neoSystem = TestBlockchain.GetSystem();
+            var index = NativeContract.Ledger.CurrentIndex(neoSystem.StoreView) + 1;
+            var taskManager = ActorOfAsTestActorRef(() => new TaskManager(neoSystem));
+            GetGlobalInvTasks(taskManager)[UInt256.Zero] = 3; // Isolate index scheduling from header requests.
+
+            var withholdingPeer = RegisterPeer(taskManager, index);
+            var firstRequest = withholdingPeer.FishForMessage<Message>(
+                m => m.Command == MessageCommand.GetBlockByIndex,
+                TimeSpan.FromSeconds(3), cancellationToken: CancellationToken.None);
+            Assert.AreEqual(index, ((GetBlockByIndexPayload)firstRequest.Payload!).IndexStart);
+
+            var honestPeer = RegisterPeer(taskManager, index);
+            Assert.IsFalse(GetSessions(taskManager)[honestPeer.Ref].IndexTasks.ContainsKey(index));
+
+            GetSessions(taskManager)[withholdingPeer.Ref].IndexTasks[index] = TimeProvider.Current.UtcNow.AddMinutes(-2);
+            SendTimer(taskManager);
+
+            var retry = honestPeer.FishForMessage<Message>(
+                m => m.Command == MessageCommand.GetBlockByIndex,
+                TimeSpan.FromSeconds(3), cancellationToken: CancellationToken.None);
+            Assert.AreEqual(index, ((GetBlockByIndexPayload)retry.Payload!).IndexStart);
+            Assert.IsFalse(GetSessions(taskManager)[withholdingPeer.Ref].IndexTasks.ContainsKey(index));
+            Assert.IsTrue(GetSessions(taskManager)[honestPeer.Ref].IndexTasks.ContainsKey(index));
+            Assert.AreEqual(1, GetGlobalIndexTasks(taskManager)[index]);
+            Assert.AreEqual(1u, GetSessions(taskManager)[withholdingPeer.Ref].BlockTaskTimeouts);
+            Assert.AreEqual(0u, GetSessions(taskManager)[honestPeer.Ref].BlockTaskTimeouts);
+            withholdingPeer.ExpectNoMsg(TimeSpan.FromMilliseconds(100), CancellationToken.None);
+            SendTimer(taskManager);
+            Assert.AreEqual(1u, GetSessions(taskManager)[withholdingPeer.Ref].BlockTaskTimeouts);
+            Sys.Stop(taskManager);
+        }
+
+        [TestMethod]
+        public void ExpiredIndexTask_RetriesFormerOwnerWhenNoOtherPeerCanServeIt()
+        {
+            using var neoSystem = TestBlockchain.GetSystem();
+            var index = NativeContract.Ledger.CurrentIndex(neoSystem.StoreView) + 1;
+            var taskManager = ActorOfAsTestActorRef(() => new TaskManager(neoSystem));
+            GetGlobalInvTasks(taskManager)[UInt256.Zero] = 3;
+
+            var peer = RegisterPeer(taskManager, index);
+            peer.FishForMessage<Message>(
+                m => m.Command == MessageCommand.GetBlockByIndex,
+                TimeSpan.FromSeconds(3), cancellationToken: CancellationToken.None);
+            GetSessions(taskManager)[peer.Ref].IndexTasks[index] = TimeProvider.Current.UtcNow.AddMinutes(-2);
+
+            SendTimer(taskManager);
+
+            var retry = peer.FishForMessage<Message>(
+                m => m.Command == MessageCommand.GetBlockByIndex,
+                TimeSpan.FromSeconds(3), cancellationToken: CancellationToken.None);
+            Assert.AreEqual(index, ((GetBlockByIndexPayload)retry.Payload!).IndexStart);
+            Assert.IsTrue(GetSessions(taskManager)[peer.Ref].IndexTasks.ContainsKey(index));
+            Assert.AreEqual(1, GetGlobalIndexTasks(taskManager)[index]);
+            Assert.AreEqual(1u, GetSessions(taskManager)[peer.Ref].BlockTaskTimeouts);
+            Sys.Stop(taskManager);
+        }
+
+        [TestMethod]
+        public void ExpiredIndexTasks_PreferPeerWithoutTimedOutRequests()
+        {
+            using var neoSystem = TestBlockchain.GetSystem();
+            var index = NativeContract.Ledger.CurrentIndex(neoSystem.StoreView) + 1;
+            var taskManager = ActorOfAsTestActorRef(() => new TaskManager(neoSystem));
+            GetGlobalInvTasks(taskManager)[UInt256.Zero] = 3;
+
+            var firstOwner = RegisterPeer(taskManager, index);
+            var secondOwner = RegisterPeer(taskManager, index + 1);
+            var honestPeer = RegisterPeer(taskManager, index + 1);
+            firstOwner.FishForMessage<Message>(
+                m => m.Command == MessageCommand.GetBlockByIndex,
+                TimeSpan.FromSeconds(3), cancellationToken: CancellationToken.None);
+            secondOwner.FishForMessage<Message>(
+                m => m.Command == MessageCommand.GetBlockByIndex,
+                TimeSpan.FromSeconds(3), cancellationToken: CancellationToken.None);
+
+            GetSessions(taskManager)[firstOwner.Ref].IndexTasks[index] = TimeProvider.Current.UtcNow.AddMinutes(-2);
+            GetSessions(taskManager)[secondOwner.Ref].IndexTasks[index + 1] = TimeProvider.Current.UtcNow.AddMinutes(-2);
+            SendTimer(taskManager);
+
+            var request = honestPeer.FishForMessage<Message>(
+                m => m.Command == MessageCommand.GetBlockByIndex,
+                TimeSpan.FromSeconds(3), cancellationToken: CancellationToken.None);
+            var payload = (GetBlockByIndexPayload)request.Payload!;
+            Assert.AreEqual(index, payload.IndexStart);
+            Assert.AreEqual(2, payload.Count);
+            Assert.IsTrue(GetSessions(taskManager)[honestPeer.Ref].IndexTasks.ContainsKey(index));
+            Assert.IsTrue(GetSessions(taskManager)[honestPeer.Ref].IndexTasks.ContainsKey(index + 1));
+            Assert.IsFalse(GetSessions(taskManager)[firstOwner.Ref].IndexTasks.ContainsKey(index));
+            Assert.IsFalse(GetSessions(taskManager)[secondOwner.Ref].IndexTasks.ContainsKey(index + 1));
+            Assert.AreEqual(1u, GetSessions(taskManager)[firstOwner.Ref].BlockTaskTimeouts);
+            Assert.AreEqual(1u, GetSessions(taskManager)[secondOwner.Ref].BlockTaskTimeouts);
             Sys.Stop(taskManager);
         }
 

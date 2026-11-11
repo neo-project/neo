@@ -214,10 +214,10 @@ namespace Neo.Network.P2P
             foreach (var hash in payload.Hashes)
             {
                 globalInvTasks.Remove(hash);
-                foreach (var session in sessions.Values)
+                foreach (var s in sessions.Values)
                 {
-                    session.AvailableTasks.Remove(hash);
-                    session.InvTasks.Remove(hash);
+                    s.AvailableTasks.Remove(hash);
+                    s.InvTasks.Remove(hash);
                 }
             }
 
@@ -379,10 +379,16 @@ namespace Neo.Network.P2P
             {
                 var now = TimeProvider.Current.UtcNow;
                 session.InvTasks.RemoveWhere(p => now - p.Value > TaskTimeout, p => DecrementGlobalTask(p.Key));
-                session.IndexTasks.RemoveWhere(p => now - p.Value > TaskTimeout, p => DecrementGlobalTask(p.Key));
+                session.IndexTasks.RemoveWhere(p => now - p.Value > TaskTimeout, p =>
+                {
+                    DecrementGlobalTask(p.Key);
+                    if (session.BlockTaskTimeouts < uint.MaxValue)
+                        session.BlockTaskTimeouts++;
+                });
             }
 
-            foreach (var (actor, session) in sessions)
+            // Prefer peers with fewer timed-out block requests.
+            foreach (var (actor, session) in sessions.OrderBy(p => p.Value.BlockTaskTimeouts))
             {
                 RequestTasks(actor, session);
             }
