@@ -112,7 +112,14 @@ namespace Neo.Json.UnitTests
         [TestMethod]
         [DataRow("9007199254740992")]
         [DataRow("-9007199254740992")]
+        [DataRow("9007199254740991.1")]
+        [DataRow("-9007199254740991.1")]
+        [DataRow("9007199254740991.0000000000000000000000001")]
+        [DataRow("9.0071992547409911e15")]
+        [DataRow("0.90071992547409911e16")]
+        [DataRow("90071992547409911e-1")]
         [DataRow("[0,{\"value\":9007199254740992}]")]
+        [DataRow("[0,{\"value\":9007199254740991.1}]")]
         public void TestParseSafeIntegerRange(string json)
         {
             Assert.ThrowsExactly<FormatException>(() => JToken.Parse(json));
@@ -125,6 +132,26 @@ namespace Neo.Json.UnitTests
         public void TestParseSafeIntegerBoundaries(string json)
         {
             Assert.AreEqual(json, JToken.Parse(json)!.ToString());
+        }
+
+        [TestMethod]
+        [DataRow("9007199254740991.0000000000000000000000000")]
+        [DataRow("9.007199254740991e15")]
+        [DataRow("0.9007199254740991e16")]
+        [DataRow("9e15")]
+        [DataRow("90071992547409910e-1")]
+        [DataRow("9007199254740990.9")]
+        public void TestParseSafeIntegerRangeEquivalentValues(string json)
+        {
+            Assert.IsNotNull(JToken.Parse(json));
+        }
+
+        [TestMethod]
+        [DataRow("9007199254740990.9")]
+        [DataRow("-9007199254740990.9")]
+        public void TestParseRoundedValueWithinSafeIntegerRange(string json)
+        {
+            Assert.AreEqual(JNumber.MAX_SAFE_INTEGER, Math.Abs(JToken.Parse(json)!.GetNumber()));
         }
 
         [TestMethod]

@@ -182,6 +182,9 @@ namespace Neo.Json
         private static JNumber ReadNumber(ref Utf8JsonReader reader, bool checkNumbers)
         {
             double value = reader.GetDouble();
+            if (checkNumbers && Math.Abs(value) == JNumber.MAX_SAFE_INTEGER && IsOutsideSafeIntegerRange(reader.ValueSpan))
+                throw new FormatException("JSON number is outside the safe integer range");
+
             if (checkNumbers && value == 0)
             {
                 foreach (byte digit in reader.ValueSpan)
@@ -192,6 +195,46 @@ namespace Neo.Json
                 }
             }
             return new JNumber(value, checkNumbers);
+        }
+
+        private static bool IsOutsideSafeIntegerRange(ReadOnlySpan<byte> number)
+        {
+            int exponentIndex = number.IndexOfAny((byte)'e', (byte)'E');
+            ReadOnlySpan<byte> mantissa = exponentIndex < 0 ? number : number[..exponentIndex];
+            ReadOnlySpan<byte> exponentDigits = exponentIndex < 0 ? [] : number[(exponentIndex + 1)..];
+            bool negativeExponent = !exponentDigits.IsEmpty && exponentDigits[0] == (byte)'-';
+            if (!exponentDigits.IsEmpty && (exponentDigits[0] == (byte)'-' || exponentDigits[0] == (byte)'+'))
+                exponentDigits = exponentDigits[1..];
+
+            long exponent = 0;
+            // A span cannot contain enough digits to offset a larger exponent.
+            foreach (byte digit in exponentDigits)
+                exponent = Math.Min(exponent * 10 + digit - (byte)'0', 10_000_000_000L);
+            if (negativeExponent) exponent = -exponent;
+
+            if (mantissa[0] == (byte)'-') mantissa = mantissa[1..];
+            int point = mantissa.IndexOf((byte)'.');
+            if (point < 0) point = mantissa.Length;
+            int first = 0;
+            while (first < mantissa.Length && (mantissa[first] == (byte)'0' || mantissa[first] == (byte)'.'))
+                first++;
+            if (first == mantissa.Length) return false;
+
+            ReadOnlySpan<byte> limit = "9007199254740991"u8;
+            long integerDigits = point - first + (first > point ? 1 : 0) + exponent;
+            if (integerDigits != limit.Length) return integerDigits > limit.Length;
+
+            // Compare the significant digits exactly, including any fraction beyond double precision.
+            int index = first;
+            foreach (byte boundDigit in limit)
+            {
+                if (index < mantissa.Length && mantissa[index] == (byte)'.') index++;
+                byte digit = index < mantissa.Length ? mantissa[index++] : (byte)'0';
+                if (digit != boundDigit) return digit > boundDigit;
+            }
+            for (; index < mantissa.Length; index++)
+                if (mantissa[index] != (byte)'0' && mantissa[index] != (byte)'.') return true;
+            return false;
         }
 
         private static JArray ReadArray(ref Utf8JsonReader reader, bool checkNumbers)

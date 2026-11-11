@@ -467,6 +467,8 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         [DataRow("9007199254740992")]
         [DataRow("-9007199254740992")]
+        [DataRow("9007199254740991.1")]
+        [DataRow("[0,{\"value\":9007199254740991.1}]")]
         [DataRow("[0,{\"value\":9007199254740992}]")]
         [DataRow("1e-400")]
         public void Json_Deserialize_NumberChecksAtIara(string json)
