@@ -300,7 +300,8 @@ namespace Neo.SmartContract.Native
                 GetMinimumDeploymentFee(engine.SnapshotCache)), true);
 
             NefFile nef = nefFile.AsSerializable<NefFile>();
-            ContractManifest parsedManifest = ContractManifest.Parse(manifest);
+            ContractManifest parsedManifest = ContractManifest.Parse(manifest,
+                engine.IsHardforkEnabled(Hardfork.HF_Huyao) ? null : LegacyContractPermissionDescriptorComparer.Instance);
             Helper.Check(new Script(nef.Script, engine.IsHardforkEnabled(Hardfork.HF_Basilisk)), parsedManifest.Abi);
             UInt160 hash = Helper.GetContractHash(tx.Sender, nef.CheckSum, parsedManifest.Name);
 
@@ -389,7 +390,8 @@ namespace Neo.SmartContract.Native
                 if (manifest.Length == 0)
                     throw new ArgumentException($"Manifest length cannot be zero.");
 
-                var manifestNew = ContractManifest.Parse(manifest);
+                var manifestNew = ContractManifest.Parse(manifest,
+                    engine.IsHardforkEnabled(Hardfork.HF_Huyao) ? null : LegacyContractPermissionDescriptorComparer.Instance);
                 if (manifestNew.Name != contract.Manifest.Name)
                     throw new InvalidOperationException("The name of the contract can't be changed.");
                 if (!manifestNew.IsValid(engine.Limits, contract.Hash))
@@ -438,8 +440,8 @@ namespace Neo.SmartContract.Native
 
             if (blockBeforeErase)
             {
-                // Lock contract (and allow to receive an unclaimed GAS after votes revoke, if so,
-                // because the contract is not yet removed from the snapshot).
+                // From Huyao, mint accrued rewards to Treasury when blocking the contract.
+                // Earlier hardforks still claim GAS before removing the contract.
                 await Policy.BlockAccountInternal(engine, hash);
                 // Clean whitelist (emit event if exists with the old manifest information).
                 Policy.CleanWhitelist(engine, contract);

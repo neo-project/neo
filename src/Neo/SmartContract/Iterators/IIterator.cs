@@ -29,7 +29,9 @@ namespace Neo.SmartContract.Iterators
         /// <summary>
         /// Gets the element in the collection at the current position of the iterator.
         /// </summary>
+        /// <param name="bytesDeserialized">The total length of <see cref="ByteString"/> and <see cref="VM.Types.Buffer"/>
+        /// items deserialized to produce the element, 0 if no deserialization is performed.</param>
         /// <returns>The element in the collection at the current position of the iterator.</returns>
-        StackItem Value();
+        StackItem Value(out int bytesDeserialized);
     }
 }
