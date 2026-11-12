@@ -178,6 +178,10 @@ namespace Neo.Network.P2P
 
             foreach (var (actor, session) in sessions)
             {
+                // Release persisted heights first so RequestTasks sees the freed capacity.
+                // This is not a timeout, so BlockTaskTimeouts is intentionally untouched.
+                session.IndexTasks.RemoveWhere(p => p.Key <= block.Index, p => DecrementGlobalTask(p.Key));
+
                 if (session.ReceivedBlockHashes.Remove(block.Index, out var receivedBlockHash))
                 {
                     if (block.Hash == receivedBlockHash)
@@ -498,7 +502,7 @@ namespace Neo.Network.P2P
                 while (endHeight < uint.MaxValue)
                 {
                     var next = endHeight + 1;
-                    if (globalIndexTasks.ContainsKey(next) || next > session.LastBlockIndex || next - currentHeight > InvPayload.MaxHashesCount)
+                    if (globalIndexTasks.ContainsKey(next) || session.ReceivedBlockHashes.ContainsKey(next) || next > session.LastBlockIndex || next - currentHeight > InvPayload.MaxHashesCount)
                         break;
                     endHeight = next;
                 }

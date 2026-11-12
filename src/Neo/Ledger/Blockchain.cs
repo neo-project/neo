@@ -280,11 +280,11 @@ namespace Neo.Ledger
                     if (blockToPersist.Index + 99 >= headerHeight)
                         _system.LocalNode.Tell(new LocalNode.RelayDirectly(blockToPersist));
                 }
-                if (_blockCacheUnverified.TryGetValue(currentHeight + 1, out var unverifiedBlocks))
+                var nextIndex = blocksToPersistList[^1].Index + 1;
+                if (_blockCacheUnverified.Remove(nextIndex, out var unverifiedBlocks))
                 {
                     foreach (var unverifiedBlock in unverifiedBlocks.Blocks)
                         Self.Tell(unverifiedBlock, ActorRefs.NoSender);
-                    _blockCacheUnverified.Remove(block.Index + 1);
                 }
             }
             else
