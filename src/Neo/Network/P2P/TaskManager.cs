@@ -212,9 +212,11 @@ namespace Neo.Network.P2P
                 case Blockchain.RelayResult rr:
                     if (rr.Inventory is Block invalidBlock)
                     {
-                        if (rr.Result is VerifyResult.InvalidHash or VerifyResult.OverSize)
+                        // Oversized transaction witnesses can leave the block hash unchanged,
+                        // so another peer may still have a valid body for that hash.
+                        if (rr.Result == VerifyResult.InvalidHash)
                             OnInvalidBlock(invalidBlock, rr.Source);
-                        else if (rr.Result == VerifyResult.Invalid)
+                        else if (rr.Result is VerifyResult.Invalid or VerifyResult.OverSize)
                             OnInvalidBlockBody(invalidBlock, rr.Source);
                     }
                     break;

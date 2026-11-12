@@ -591,9 +591,7 @@ namespace Neo.UnitTests.Network.P2P
         }
 
         [TestMethod]
-        [DataRow(VerifyResult.InvalidHash)]
-        [DataRow(VerifyResult.OverSize)]
-        public void RejectedBlock_AbortsOnlyThePeerThatSuppliedIt(VerifyResult result)
+        public void InvalidHashBlock_AbortsOnlyThePeerThatSuppliedIt()
         {
             using var neoSystem = TestBlockchain.GetSystem();
             var currentHeight = NativeContract.Ledger.CurrentIndex(neoSystem.StoreView);
@@ -611,12 +609,46 @@ namespace Neo.UnitTests.Network.P2P
             Assert.AreEqual(badBlock.Hash, goodBlock.Hash);
             Assert.AreNotEqual(badBlock.Size, goodBlock.Size);
 
-            badPeer.Send(taskManager, new Blockchain.RelayResult(badBlock, result, badPeer.Ref));
+            badPeer.Send(taskManager, new Blockchain.RelayResult(badBlock, VerifyResult.InvalidHash, badPeer.Ref));
 
             badPeer.FishForMessage(m => m is Tcp.Abort, TimeSpan.FromSeconds(3), cancellationToken: CancellationToken.None);
             goodPeer.ExpectNoMsg(TimeSpan.FromMilliseconds(200), cancellationToken: CancellationToken.None);
             Assert.IsFalse(GetSessions(taskManager)[badPeer.Ref].ReceivedBlockHashes.ContainsKey(badBlock.Index));
             Assert.IsTrue(GetSessions(taskManager)[goodPeer.Ref].ReceivedBlockHashes.ContainsKey(goodBlock.Index));
+
+            Sys.Stop(taskManager);
+        }
+
+        [TestMethod]
+        public void OverSizeBlock_AllowsAnotherBodyWithTheSameHash()
+        {
+            using var neoSystem = TestBlockchain.GetSystem();
+            var currentHeight = NativeContract.Ledger.CurrentIndex(neoSystem.StoreView);
+            var taskManager = ActorOfAsTestActorRef(() => new TaskManager(neoSystem));
+            var badPeer = RegisterPeer(taskManager, currentHeight);
+            var goodPeer = RegisterPeer(taskManager, currentHeight);
+            badPeer.FishForMessage<Message>(m => m.Command == MessageCommand.Mempool, TimeSpan.FromSeconds(3), cancellationToken: CancellationToken.None);
+            goodPeer.FishForMessage<Message>(m => m.Command == MessageCommand.Mempool, TimeSpan.FromSeconds(3), cancellationToken: CancellationToken.None);
+
+            var goodBlock = CreateBlock(currentHeight + 1);
+            var transaction = CreateTransaction();
+            goodBlock.Transactions = [transaction];
+            goodBlock.Header.MerkleRoot = transaction.Hash;
+            var badBlock = goodBlock.ToArray().AsSerializable<Block>();
+            badBlock.Transactions[0].Witnesses = [new Witness { InvocationScript = new byte[1024] }];
+            Assert.AreEqual(goodBlock.Hash, badBlock.Hash);
+            Assert.AreNotEqual(goodBlock.Size, badBlock.Size);
+
+            badPeer.Send(taskManager, badBlock);
+            goodPeer.Send(taskManager, goodBlock);
+            badPeer.Send(taskManager, new Blockchain.RelayResult(badBlock, VerifyResult.OverSize, badPeer.Ref));
+
+            badPeer.ExpectMsg<RemoteNode.ForgetBlock>(m => m.Hash == badBlock.Hash, cancellationToken: CancellationToken.None);
+            goodPeer.ExpectMsg<RemoteNode.ForgetBlock>(m => m.Hash == goodBlock.Hash, cancellationToken: CancellationToken.None);
+            badPeer.ExpectNoMsg(TimeSpan.FromMilliseconds(200), cancellationToken: CancellationToken.None);
+            goodPeer.ExpectNoMsg(TimeSpan.FromMilliseconds(200), cancellationToken: CancellationToken.None);
+            Assert.IsFalse(GetSessions(taskManager)[badPeer.Ref].ReceivedBlockHashes.ContainsKey(badBlock.Index));
+            Assert.IsFalse(GetSessions(taskManager)[goodPeer.Ref].ReceivedBlockHashes.ContainsKey(goodBlock.Index));
 
             Sys.Stop(taskManager);
         }
@@ -641,7 +673,9 @@ namespace Neo.UnitTests.Network.P2P
         }
 
         [TestMethod]
-        public void GenericInvalidBlock_DoesNotAbortPeer()
+        [DataRow(VerifyResult.Invalid)]
+        [DataRow(VerifyResult.OverSize)]
+        public void InvalidBlockBody_DoesNotAbortPeer(VerifyResult result)
         {
             using var neoSystem = TestBlockchain.GetSystem();
             var currentHeight = NativeContract.Ledger.CurrentIndex(neoSystem.StoreView);
@@ -651,7 +685,7 @@ namespace Neo.UnitTests.Network.P2P
 
             var block = CreateBlock(currentHeight + 1);
             peer.Send(taskManager, block);
-            peer.Send(taskManager, new Blockchain.RelayResult(block, VerifyResult.Invalid, peer.Ref));
+            peer.Send(taskManager, new Blockchain.RelayResult(block, result, peer.Ref));
 
             peer.ExpectMsg<RemoteNode.ForgetBlock>(m => m.Hash == block.Hash, cancellationToken: CancellationToken.None);
             peer.ExpectNoMsg(TimeSpan.FromMilliseconds(200), cancellationToken: CancellationToken.None);
@@ -661,7 +695,9 @@ namespace Neo.UnitTests.Network.P2P
         }
 
         [TestMethod]
-        public void GenericInvalidBlock_OnlyPeerCanRetryHeightAfterTimer()
+        [DataRow(VerifyResult.Invalid)]
+        [DataRow(VerifyResult.OverSize)]
+        public void InvalidBlockBody_OnlyPeerCanRetryHeightAfterTimer(VerifyResult result)
         {
             using var neoSystem = TestBlockchain.GetSystem();
             var currentHeight = NativeContract.Ledger.CurrentIndex(neoSystem.StoreView);
@@ -674,7 +710,7 @@ namespace Neo.UnitTests.Network.P2P
 
             var block = CreateBlock(currentHeight + 1);
             peer.Send(taskManager, block);
-            peer.Send(taskManager, new Blockchain.RelayResult(block, VerifyResult.Invalid, peer.Ref));
+            peer.Send(taskManager, new Blockchain.RelayResult(block, result, peer.Ref));
 
             peer.ExpectMsg<RemoteNode.ForgetBlock>(m => m.Hash == block.Hash, cancellationToken: CancellationToken.None);
             Assert.IsFalse(GetSessions(taskManager)[peer.Ref].ReceivedBlockHashes.ContainsKey(block.Index));
