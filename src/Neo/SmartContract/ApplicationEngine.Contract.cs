@@ -176,6 +176,7 @@ namespace Neo.SmartContract
         /// <param name="m">The number of correct signatures that need to be provided in order for the verification to pass.</param>
         /// <param name="pubKeys">The public keys of the account.</param>
         /// <returns>The hash of the account.</returns>
+        [InteropPrice(Hardfork.HF_Huyao, CreateMultisigAccountBasePrice)]
         internal protected UInt160 CreateMultisigAccount(int m, byte[][] pubKeys)
         {
             if (!IsHardforkEnabled(Hardfork.HF_Huyao))
@@ -189,10 +190,7 @@ namespace Neo.SmartContract
                 return Contract.CreateMultiSigRedeemScript(m, points).ToScriptHash();
             }
 
-            if (m < 1)
-                throw new ArgumentOutOfRangeException(nameof(m));
-            var price = CreateMultisigAccountPricePerKey * pubKeys.Length + CreateMultisigAccountBasePrice;
-            AddFemtoGas(price * _execFeeFactor, false);
+            AddFemtoGas(CreateMultisigAccountPricePerKey * pubKeys.Length * _execFeeFactor, false);
             return Contract.CreateMultiSigRedeemScript(m, DecodePublicKeys(pubKeys)).ToScriptHash();
         }
 
