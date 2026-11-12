@@ -290,15 +290,20 @@ namespace Neo.UnitTests.SmartContract
         }
 
         [TestMethod]
-        // (205 + 6.926 * 0) * 30 = 6150.
-        [DataRow(true, 0, 6150L)]
-        // (205 + 6.926 * 1) * 30 = 6357.78, rounded up to 6358.
-        [DataRow(true, 1, 6358L)]
-        // (205 + 6.926 * 3) * 30 = 6773.34, rounded up to 6774.
-        [DataRow(true, 3, 6774L)]
-        [DataRow(false, 0, 122880L)]
-        [DataRow(false, 3, 122880L)]
-        public void System_Runtime_GetNotifications_Price(bool huyao, int notificationCount, long expectedFee)
+        // (205 + 6.926 * 0) * 30 = 6150 datoshi.
+        [DataRow(true, 0, 0, false, 6150L)]
+        // Three emitted notifications, none match the hash filter.
+        [DataRow(true, 0, 3, true, 6150L)]
+        // (205 + 6.926 * 1) * 30 = 6357.78 datoshi, rounded up to 6358.
+        [DataRow(true, 1, 0, false, 6358L)]
+        // Three emitted notifications, only one matches the hash filter.
+        [DataRow(true, 1, 2, true, 6358L)]
+        // (205 + 6.926 * 3) * 30 = 6773.34 datoshi, rounded up to 6774.
+        [DataRow(true, 3, 0, false, 6774L)]
+        [DataRow(false, 0, 0, false, 122880L)]
+        [DataRow(false, 3, 0, false, 122880L)]
+        public void System_Runtime_GetNotifications_Price(
+            bool huyao, int matchingCount, int otherCount, bool filterByHash, long expectedFee)
         {
             var settings = TestProtocolSettings.Default with
             {
@@ -314,14 +319,21 @@ namespace Neo.UnitTests.SmartContract
                 TriggerType.Application, null, _snapshotCache.CloneCache(), settings: settings);
             engine.LoadScript(script.ToArray());
 
-            for (int i = 0; i < notificationCount; i++)
-                engine.SendNotification(UInt160.Zero, "Test", new Array());
+            var hash = UInt160.Zero;
+            var otherHash = UInt160.Parse("0x0000000000000000000000000000000000000001");
+            for (int i = 0; i < matchingCount; i++)
+                engine.SendNotification(hash, "Test", new Array());
+            for (int i = 0; i < otherCount; i++)
+                engine.SendNotification(otherHash, "Test", new Array());
 
-            engine.Push(StackItem.Null);
+            if (filterByHash)
+                engine.Push(hash.ToArray());
+            else
+                engine.Push(StackItem.Null);
 
             Assert.AreEqual(VMState.HALT, engine.Execute());
             Assert.AreEqual(expectedFee, engine.FeeConsumed);
-            Assert.HasCount(notificationCount, (Array)engine.ResultStack.Pop());
+            Assert.HasCount(matchingCount + (filterByHash ? 0 : otherCount), (Array)engine.ResultStack.Pop());
         }
 
         [TestMethod]
