@@ -123,7 +123,7 @@ namespace Neo.Network.P2P
                 if (session.ReceivedBlockHashes.TryGetValue(invalidBlock.Index, out var receivedHash) && receivedHash == hash)
                 {
                     session.ReceivedBlockHashes.Remove(invalidBlock.Index);
-                    actor.Tell(new RemoteNode.ForgetBlock(hash));
+                    actor.Tell(new RemoteNode.RestartInventory(hash));
                 }
             }
 

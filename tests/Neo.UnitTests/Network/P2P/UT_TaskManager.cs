@@ -646,8 +646,8 @@ namespace Neo.UnitTests.Network.P2P
             goodPeer.Send(taskManager, goodBlock);
             badPeer.Send(taskManager, new Blockchain.RelayResult(badBlock, VerifyResult.OverSize, badPeer.Ref));
 
-            badPeer.ExpectMsg<RemoteNode.ForgetBlock>(m => m.Hash == badBlock.Hash, cancellationToken: CancellationToken.None);
-            goodPeer.ExpectMsg<RemoteNode.ForgetBlock>(m => m.Hash == goodBlock.Hash, cancellationToken: CancellationToken.None);
+            badPeer.ExpectMsg<RemoteNode.RestartInventory>(m => m.Hash == badBlock.Hash, cancellationToken: CancellationToken.None);
+            goodPeer.ExpectMsg<RemoteNode.RestartInventory>(m => m.Hash == goodBlock.Hash, cancellationToken: CancellationToken.None);
             badPeer.ExpectNoMsg(TimeSpan.FromMilliseconds(200), cancellationToken: CancellationToken.None);
             goodPeer.ExpectNoMsg(TimeSpan.FromMilliseconds(200), cancellationToken: CancellationToken.None);
             Assert.IsFalse(GetSessions(taskManager)[badPeer.Ref].ReceivedBlockHashes.ContainsKey(badBlock.Index));
@@ -690,7 +690,7 @@ namespace Neo.UnitTests.Network.P2P
             peer.Send(taskManager, block);
             peer.Send(taskManager, new Blockchain.RelayResult(block, result, peer.Ref));
 
-            peer.ExpectMsg<RemoteNode.ForgetBlock>(m => m.Hash == block.Hash, cancellationToken: CancellationToken.None);
+            peer.ExpectMsg<RemoteNode.RestartInventory>(m => m.Hash == block.Hash, cancellationToken: CancellationToken.None);
             peer.ExpectNoMsg(TimeSpan.FromMilliseconds(200), cancellationToken: CancellationToken.None);
             Assert.IsFalse(GetSessions(taskManager)[peer.Ref].ReceivedBlockHashes.ContainsKey(block.Index));
 
@@ -715,7 +715,7 @@ namespace Neo.UnitTests.Network.P2P
             peer.Send(taskManager, block);
             peer.Send(taskManager, new Blockchain.RelayResult(block, result, peer.Ref));
 
-            peer.ExpectMsg<RemoteNode.ForgetBlock>(m => m.Hash == block.Hash, cancellationToken: CancellationToken.None);
+            peer.ExpectMsg<RemoteNode.RestartInventory>(m => m.Hash == block.Hash, cancellationToken: CancellationToken.None);
             Assert.IsFalse(GetSessions(taskManager)[peer.Ref].ReceivedBlockHashes.ContainsKey(block.Index));
             peer.ExpectNoMsg(TimeSpan.FromMilliseconds(200), cancellationToken: CancellationToken.None);
 

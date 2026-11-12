@@ -71,17 +71,20 @@ namespace Neo.UnitTests.Network.P2P
             (T)typeof(RemoteNode).GetField(name, BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(node)!;
 
         [TestMethod]
-        public void ForgetBlock_RemovesHashFromDuplicateFilter()
+        public void RestartInventory_AllowsReacceptingHash()
         {
             var connection = CreateTestProbe();
             var actor = ActorOfAsTestActorRef(() => new RemoteNode(_system, new LocalNode(_system), connection, null, null, new ChannelsConfig()));
             var hashes = Field<HashSetCache<UInt256>>(actor.UnderlyingActor, "_knownHashes");
+            var pending = Field<HashSetCache<UInt256>>(actor.UnderlyingActor, "_pendingKnownHashes");
             var hash = UInt256.Parse("0x1111111111111111111111111111111111111111111111111111111111111111");
             Assert.IsTrue(hashes.TryAdd(hash));
+            Assert.IsTrue(pending.TryAdd(hash));
 
-            actor.Tell(new RemoteNode.ForgetBlock(hash));
+            actor.Tell(new RemoteNode.RestartInventory(hash));
 
             Assert.IsTrue(hashes.TryAdd(hash));
+            Assert.IsTrue(pending.TryAdd(hash));
             Sys.Stop(actor);
         }
 
