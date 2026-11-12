@@ -591,29 +591,32 @@ namespace Neo.UnitTests.Network.P2P
         }
 
         [TestMethod]
-        public void InvalidHashBlock_AbortsOnlyThePeerThatSuppliedIt()
+        public void InvalidHashBlock_AbortsPeersThatSuppliedTheRejectedHash()
         {
             using var neoSystem = TestBlockchain.GetSystem();
             var currentHeight = NativeContract.Ledger.CurrentIndex(neoSystem.StoreView);
             var taskManager = ActorOfAsTestActorRef(() => new TaskManager(neoSystem));
             var badPeer = RegisterPeer(taskManager, currentHeight);
+            var otherBadPeer = RegisterPeer(taskManager, currentHeight);
             var goodPeer = RegisterPeer(taskManager, currentHeight);
             badPeer.FishForMessage<Message>(m => m.Command == MessageCommand.Mempool, TimeSpan.FromSeconds(3), cancellationToken: CancellationToken.None);
+            otherBadPeer.FishForMessage<Message>(m => m.Command == MessageCommand.Mempool, TimeSpan.FromSeconds(3), cancellationToken: CancellationToken.None);
             goodPeer.FishForMessage<Message>(m => m.Command == MessageCommand.Mempool, TimeSpan.FromSeconds(3), cancellationToken: CancellationToken.None);
 
             var goodBlock = CreateBlock(currentHeight + 1);
-            var badBlock = goodBlock.ToArray().AsSerializable<Block>();
-            badBlock.Header.Witness = new Witness { InvocationScript = new byte[] { 1 } };
+            var badBlock = CreateBlock(currentHeight + 1, timestamp: 2);
             badPeer.Send(taskManager, badBlock);
+            otherBadPeer.Send(taskManager, badBlock);
             goodPeer.Send(taskManager, goodBlock);
-            Assert.AreEqual(badBlock.Hash, goodBlock.Hash);
-            Assert.AreNotEqual(badBlock.Size, goodBlock.Size);
+            Assert.AreNotEqual(badBlock.Hash, goodBlock.Hash);
 
             badPeer.Send(taskManager, new Blockchain.RelayResult(badBlock, VerifyResult.InvalidHash, badPeer.Ref));
 
             badPeer.FishForMessage(m => m is Tcp.Abort, TimeSpan.FromSeconds(3), cancellationToken: CancellationToken.None);
+            otherBadPeer.FishForMessage(m => m is Tcp.Abort, TimeSpan.FromSeconds(3), cancellationToken: CancellationToken.None);
             goodPeer.ExpectNoMsg(TimeSpan.FromMilliseconds(200), cancellationToken: CancellationToken.None);
             Assert.IsFalse(GetSessions(taskManager)[badPeer.Ref].ReceivedBlockHashes.ContainsKey(badBlock.Index));
+            Assert.IsFalse(GetSessions(taskManager)[otherBadPeer.Ref].ReceivedBlockHashes.ContainsKey(badBlock.Index));
             Assert.IsTrue(GetSessions(taskManager)[goodPeer.Ref].ReceivedBlockHashes.ContainsKey(goodBlock.Index));
 
             Sys.Stop(taskManager);

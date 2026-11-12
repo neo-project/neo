@@ -92,14 +92,22 @@ namespace Neo.Network.P2P
         /// <param name="peerToDisconnect">The peer to disconnect, or null to retry without disconnecting a peer.</param>
         private void OnInvalidBlock(Block invalidBlock, IActorRef? peerToDisconnect = null)
         {
-            if (invalidBlock.TryGetHash(out var hash)) _knownHashes.Remove(hash);
-            if (peerToDisconnect is not null && sessions.TryGetValue(peerToDisconnect, out var session))
+            invalidBlock.TryGetHash(out var hash);
+            if (hash is not null) _knownHashes.Remove(hash);
+            foreach (var (actor, session) in sessions)
             {
-                session.ReceivedBlockHashes.Remove(invalidBlock.Index);
-                peerToDisconnect.Tell(Tcp.Abort.Instance);
+                var suppliedInvalidHash = hash is not null &&
+                    session.ReceivedBlockHashes.TryGetValue(invalidBlock.Index, out var receivedHash) && receivedHash == hash;
+                if (actor.Equals(peerToDisconnect) || suppliedInvalidHash)
+                {
+                    session.ReceivedBlockHashes.Remove(invalidBlock.Index);
+                    actor.Tell(Tcp.Abort.Instance);
+                }
+                else
+                {
+                    RequestTasks(actor, session);
+                }
             }
-            foreach (var (actor, otherSession) in sessions)
-                if (!actor.Equals(peerToDisconnect)) RequestTasks(actor, otherSession);
         }
 
         private void OnInvalidBlockBody(Block invalidBlock, IActorRef? source)
