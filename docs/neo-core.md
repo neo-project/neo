@@ -7,7 +7,7 @@ It is **not** the process that binds ports 10332/10333. That process is [Neo-CLI
 - Source: [github.com/neo-project/neo](https://github.com/neo-project/neo)
 - Default N3 branch: **`master-n3`**
 - Next generation: **`master`** (NEO-4)
-- Current package prefix: **3.10.2**, target **net10.0** (`src/Directory.Build.props`)
+- Current package prefix: **3.10.2**, target **net11.0** (`src/Directory.Build.props`)
 
 ## What this library is responsible for
 

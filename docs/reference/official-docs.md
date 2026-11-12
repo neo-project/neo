@@ -20,7 +20,7 @@ We used [developers.neo.org](https://developers.neo.org/) while writing these gu
 | --- | --- |
 | Download / source **neo-project/neo-cli** | CLI source is **[neo-project/neo-node](https://github.com/neo-project/neo-node)** (`src/Neo.CLI`). Releases: [neo-node/releases](https://github.com/neo-project/neo-node/releases). |
 | neo-node README: `cd neo-node/neo-cli` | Path is `src/Neo.CLI` |
-| neo-node README: “.NET Core”, Ubuntu 14/16/18 | Projects target **.NET 10** (`net10.0`) |
+| neo-node README: “.NET Core”, Ubuntu 14/16/18 | Projects target **.NET 11** (`net11.0`) |
 | `dotnet neo-cli.dll` | Published output may be `Neo.CLI.dll` / `neo-cli`; run from the publish folder |
 | `list nativecontract` sample includes **NameService** | Not a native contract in current `neo` source. See [non-native-contracts](https://github.com/neo-project/non-native-contracts). |
 | Root README “Documentation »” → docs.neo.org | N3 developer hub is [developers.neo.org](https://developers.neo.org/) |
@@ -31,8 +31,8 @@ We used [developers.neo.org](https://developers.neo.org/) while writing these gu
 - `gh api repos/neo-project/neo/contents/src?ref=master-n3`
 - `gh api repos/neo-project/neo-node/contents/src?ref=master-n3` and `…/plugins`
 - `gh api repos/neo-project/neo-vm/contents/src?ref=master`
-- `src/Directory.Build.props` in this repo: `VersionPrefix` 3.10.2, tests `net10.0`
-- neo-node and neo-vm csproj / Directory.Build.props: `net10.0`, `3.10.2`
+- `src/Directory.Build.props` in this repo: `VersionPrefix` 3.10.2, tests `net11.0`
+- neo-node and neo-vm csproj / Directory.Build.props: `net11.0`, `3.10.2`
 - `src/Neo/SmartContract/Native/` file list for native contracts
 - `src/Neo/Hardfork.cs` for hardfork names
 
