@@ -446,7 +446,7 @@ namespace Neo.SmartContract
         /// </summary>
         /// <param name="eventName">The name of the event.</param>
         /// <param name="state">The arguments of the event.</param>
-        [InteropPrice(Hardfork.HF_Huyao, 0)]
+        [InteropPrice(Hardfork.HF_Huyao, NotifyBasePrice)]
         protected internal void RuntimeNotify(byte[] eventName, Array state)
         {
             if (!IsHardforkEnabled(Hardfork.HF_Basilisk))
@@ -477,10 +477,7 @@ namespace Neo.SmartContract
             BinarySerializer.Serialize(writer, state, MaxNotificationSize, Limits.MaxStackSize);
             SendNotification(CurrentScriptHash!, name, state, out var count);
             if (IsHardforkEnabled(Hardfork.HF_Huyao))
-            {
-                var price = NotifyPricePerItem * count + NotifyBasePrice;
-                AddFemtoGas(price * _execFeeFactor, false);
-            }
+                AddFemtoGas(NotifyPricePerItem * count * _execFeeFactor, false);
         }
 
         protected internal void RuntimeNotifyV1(byte[] eventName, Array state)
@@ -535,7 +532,7 @@ namespace Neo.SmartContract
         /// </summary>
         /// <param name="hash">The hash of the specified contract. It can be set to <see langword="null"/> to get all notifications.</param>
         /// <returns>The notifications sent during the execution.</returns>
-        [InteropPrice(Hardfork.HF_Huyao, 0)]
+        [InteropPrice(Hardfork.HF_Huyao, GetNotificationsBasePrice)]
         protected internal Array GetNotifications(UInt160? hash)
         {
             IEnumerable<NotifyEventArgs> notifications = Notifications;
@@ -544,10 +541,7 @@ namespace Neo.SmartContract
             var array = notifications.ToArray();
             if (array.Length > Limits.MaxStackSize) throw new InvalidOperationException();
             if (IsHardforkEnabled(Hardfork.HF_Huyao))
-            {
-                var price = GetNotificationsPricePerNotification * array.Length + GetNotificationsBasePrice;
-                AddFemtoGas(price * _execFeeFactor, false);
-            }
+                AddFemtoGas(GetNotificationsPricePerNotification * array.Length * _execFeeFactor, false);
             Array notifyArray = new();
             foreach (var notify in array)
             {
