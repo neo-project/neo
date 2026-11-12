@@ -170,6 +170,16 @@ namespace Neo.SmartContract
         /// Gets the notifications sent by the specified contract during the execution.
         /// </summary>
         public static readonly InteropDescriptor System_Runtime_GetNotifications = Register("System.Runtime.GetNotifications", nameof(GetNotifications), 1 << 12, CallFlags.None);
+        /// <summary>
+        /// The price of System.Runtime.GetNotifications per notification since Huyao hardfork,
+        /// in the unit of 1e-11 GAS.
+        /// </summary>
+        private const long GetNotificationsPricePerNotification = 6926;
+
+        /// <summary>
+        /// The base price of System.Runtime.GetNotifications since Huyao hardfork, in the unit of 1e-11 GAS.
+        /// </summary>
+        private const long GetNotificationsBasePrice = 205000;
 
         /// <summary>
         /// The <see cref="InteropDescriptor"/> of System.Runtime.GasLeft.
@@ -533,6 +543,7 @@ namespace Neo.SmartContract
         /// </summary>
         /// <param name="hash">The hash of the specified contract. It can be set to <see langword="null"/> to get all notifications.</param>
         /// <returns>The notifications sent during the execution.</returns>
+        [InteropPrice(Hardfork.HF_Huyao, 0)]
         protected internal Array GetNotifications(UInt160? hash)
         {
             IEnumerable<NotifyEventArgs> notifications = Notifications;
@@ -540,6 +551,11 @@ namespace Neo.SmartContract
                 notifications = notifications.Where(p => p.ScriptHash == hash);
             var array = notifications.ToArray();
             if (array.Length > Limits.MaxStackSize) throw new InvalidOperationException();
+            if (IsHardforkEnabled(Hardfork.HF_Huyao))
+            {
+                var price = GetNotificationsPricePerNotification * array.Length + GetNotificationsBasePrice;
+                AddFemtoGas(price * _execFeeFactor, false);
+            }
             Array notifyArray = new();
             foreach (var notify in array)
             {

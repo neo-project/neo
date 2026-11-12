@@ -658,7 +658,7 @@ namespace Neo.SmartContract
                 StackItem[] args = new StackItem[token.ParametersCount];
                 for (int i = 0; i < token.ParametersCount; i++)
                     args[i] = app.Pop();
-                app.CallContractInternal(token.Hash, token.Method, token.CallFlags, token.HasReturnValue, args);
+                app.CallContractInternal(token.Hash, token.Method, token.CallFlags, token.HasReturnValue, args, chargeCallFee: true);
             }
             else
             {
@@ -743,9 +743,11 @@ namespace Neo.SmartContract
             OnFault(ex);
         }
 
-        private ExecutionContext CallContractInternal(UInt160 contractHash, string method, CallFlags flags, bool hasReturnValue, StackItem[] args)
+        private ExecutionContext CallContractInternal(UInt160 contractHash, string method, CallFlags flags, bool hasReturnValue, StackItem[] args, bool chargeCallFee = false)
         {
             ContractState? contract = NativeContract.ContractManagement.GetContract(SnapshotCache, contractHash);
+            if (chargeCallFee)
+                AddContractCallFee(contract);
             if (contract is null) throw new InvalidOperationException($"Called Contract Does Not Exist: {contractHash}");
             ContractMethodDescriptor? md = contract.Manifest.Abi.GetMethod(method, args.Length);
             if (md is null) throw new InvalidOperationException($"Method \"{method}\" with {args.Length} parameter(s) doesn't exist in the contract {contractHash}.");
