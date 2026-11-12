@@ -1468,10 +1468,9 @@ namespace Neo.UnitTests.SmartContract.Native
         }
 
         [TestMethod]
-        public void TestWhiteListFee_DynamicOpCodePrice()
+        public void TestWhiteListFee_CallTChargesCaller()
         {
-            // Ensure that dynamic fee charging mechanism (applied starting from Huyao) properly calculates the price of
-            // instruction that loads whitelisted context onto stack.
+            // CALLT must charge its caller even when the callee has a whitelisted context.
             var snapshotCache = _snapshotCache.CloneCache();
 
             // Create and whitelist contract A - the callee contract.
@@ -1525,7 +1524,8 @@ namespace Neo.UnitTests.SmartContract.Native
             // Check that CALLT price is properly charged.
             Assert.AreEqual(VMState.HALT, engine.Execute());
             Assert.AreEqual(0, engine.ResultStack.Count);
-            Assert.AreEqual(engine.OpcodeV1(NativeContract.Policy.GetExecFeeFactor(engine), OpCode.CALLT, new RunStats()), engine.FeeConsumed * ApplicationEngine.OpcodePriceMultiplier); // in the unit of femtoGas.
+            // (2205 + 6799.366) * 30 = 270130.98 datoshi, rounded up.
+            Assert.AreEqual(270131L, engine.FeeConsumed);
         }
 
         [TestMethod]

@@ -28,7 +28,7 @@ namespace Neo.SmartContract
         public static readonly InteropDescriptor System_Contract_Call = Register("System.Contract.Call", nameof(CallContract), 1 << 15, CallFlags.ReadStates | CallFlags.AllowCall);
 
         /// <summary>
-        /// The price of System.Contract.Call since Huyao hardfork, in the unit of 1e-11 GAS.
+        /// The price of System.Contract.Call and CALLT since Huyao hardfork, in the unit of 1e-11 GAS.
         /// </summary>
         private const long ContractCallPrice = 2205000;
 
@@ -101,14 +101,7 @@ namespace Neo.SmartContract
                 throw new ArgumentException($"Method name '{method}' cannot start with underscore.", nameof(method));
 
             ContractState? contract = NativeContract.ContractManagement.GetContract(SnapshotCache, contractHash);
-            if (IsHardforkEnabled(Hardfork.HF_Huyao))
-            {
-                var price = ContractCallPrice;
-                // A missing contract lookup or a non-native contract may require a disk read.
-                if (contract is null || contract.Id >= 0)
-                    price += ReadFromDiskPrice;
-                AddFemtoGas(price * _execFeeFactor, false);
-            }
+            AddContractCallFee(contract);
             if (contract is null) throw new InvalidOperationException($"Called Contract Does Not Exist: {contractHash}.{method}");
 
             ContractMethodDescriptor? md = contract.Manifest.Abi.GetMethod(method, args.Count);
@@ -117,6 +110,17 @@ namespace Neo.SmartContract
 
             ExecutionContext context = CallContractInternal(contract, md, callFlags, hasReturnValue, args);
             context.GetState<ExecutionContextState>().IsDynamicCall = true;
+        }
+
+        private void AddContractCallFee(ContractState? contract)
+        {
+            if (!IsHardforkEnabled(Hardfork.HF_Huyao)) return;
+
+            var price = ContractCallPrice;
+            // A missing contract lookup or a non-native contract may require a disk read.
+            if (contract is null || contract.Id >= 0)
+                price += ReadFromDiskPrice;
+            AddFemtoGas(price * _execFeeFactor, false);
         }
 
         /// <summary>
