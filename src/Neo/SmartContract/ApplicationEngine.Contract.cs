@@ -92,7 +92,7 @@ namespace Neo.SmartContract
         /// <param name="method">The method of the contract to be called.</param>
         /// <param name="callFlags">The <see cref="CallFlags"/> to be used to call the contract.</param>
         /// <param name="args">The arguments to be used.</param>
-        [InteropPrice(Hardfork.HF_Huyao, 0)]
+        [InteropPrice(Hardfork.HF_Huyao, ContractCallPrice)]
         protected internal void CallContract(UInt160 contractHash, string method, CallFlags callFlags, Array args)
         {
             if ((callFlags & ~CallFlags.All) != 0)
@@ -116,11 +116,9 @@ namespace Neo.SmartContract
         {
             if (!IsHardforkEnabled(Hardfork.HF_Huyao)) return;
 
-            var price = ContractCallPrice;
             // A missing contract lookup or a non-native contract may require a disk read.
             if (contract is null || contract.Id >= 0)
-                price += ReadFromDiskPrice;
-            AddFemtoGas(price * _execFeeFactor, false);
+                AddFemtoGas(ReadFromDiskPrice * _execFeeFactor, false);
         }
 
         /// <summary>

@@ -72,10 +72,11 @@ namespace Neo.UnitTests.SmartContract
             AssertPrice(ApplicationEngine.System_Runtime_GetRandom, 0, 15833);
             AssertPrice(ApplicationEngine.System_Runtime_GetScriptContainer, 1 << 3, 36533);
             AssertPrice(ApplicationEngine.System_Runtime_BurnGas, 1 << 4, 3067);
+            // Base prices are charged by OnSysCall; handlers charge only the dynamic part.
+            AssertPrice(ApplicationEngine.System_Contract_Call, 1 << 15, 2205000);
             // Dynamic prices are charged in-place, so the descriptor price is zero since Huyao.
             AssertPrice(ApplicationEngine.System_Runtime_CheckWitness, 1 << 10, 0);
             AssertPrice(ApplicationEngine.System_Runtime_CurrentSigners, 1 << 4, 0);
-            AssertPrice(ApplicationEngine.System_Contract_Call, 1 << 15, 0);
             AssertPrice(ApplicationEngine.System_Contract_CallNative, 0, 1130000);
         }
 

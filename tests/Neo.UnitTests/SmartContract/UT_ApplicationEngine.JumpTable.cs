@@ -165,8 +165,8 @@ namespace Neo.UnitTests.SmartContract
         // (2205 + 6799.366) * 30 = 270130.98 datoshi, rounded up to 270131.
         [DataRow(true, "contract", 270131L)]
         [DataRow(true, "missing", 270131L)]
-        // Invalid caller flags are rejected before charging the call.
-        [DataRow(true, "invalidFlags", 0L)]
+        // The CALLT opcode base fee is charged even when caller flags are invalid.
+        [DataRow(true, "invalidFlags", 66150L)]
         public void CallT_Price(bool huyao, string scenario, long expectedFee)
         {
             var snapshot = _snapshotCache.CloneCache();
