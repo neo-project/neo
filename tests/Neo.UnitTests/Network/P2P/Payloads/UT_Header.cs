@@ -12,8 +12,11 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
 using Neo.IO;
+using Neo.Ledger;
 using Neo.Network.P2P.Payloads;
+using Neo.SmartContract;
 using Neo.SmartContract.Native;
+using Neo.VM;
 using System;
 using System.Runtime.CompilerServices;
 
@@ -139,6 +142,52 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             item.Witnesses = [new()];
             Assert.HasCount(1, item.Witnesses);
+        }
+
+        [TestMethod]
+        public void Verify_HeaderCacheUsesSameThreeGasLimit()
+        {
+            var settings = TestProtocolSettings.Default;
+            var snapshot = TestBlockchain.GetTestSnapshotCache().CloneCache();
+            var previous = TestUtils.MakeHeader(null, UInt256.Zero);
+            previous.Index = 1;
+
+            var verificationScript = new byte[] { (byte)OpCode.PUSH1 };
+            previous.NextConsensus = new Witness { VerificationScript = verificationScript }.ScriptHash;
+            TestUtils.BlocksAdd(snapshot, previous.Hash, TrimmedBlock.Create(previous, []));
+
+            using var cache = new HeaderCache();
+            Assert.IsTrue(cache.Add(previous));
+
+            Header CreateHeader(long gas)
+            {
+                using var invocation = new ScriptBuilder();
+                invocation.EmitPush(gas);
+                invocation.EmitSysCall(ApplicationEngine.System_Runtime_BurnGas);
+
+                var header = TestUtils.MakeHeader(snapshot, previous.Hash);
+                header.Timestamp = previous.Timestamp + 1;
+                header.Witness = new Witness
+                {
+                    InvocationScript = invocation.ToArray(),
+                    VerificationScript = verificationScript
+                };
+                return header;
+            }
+
+            var withinLimit = CreateHeader(50000000L);
+            Assert.IsTrue(withinLimit.Verify(settings, snapshot));
+            Assert.IsTrue(withinLimit.Verify(settings, snapshot, cache));
+
+            var aboveGenericLimit = CreateHeader(global::Neo.SmartContract.Helper.MaxVerificationGas + 50000000L);
+            Assert.IsFalse(aboveGenericLimit.VerifyWitnesses(settings, snapshot, 3_00000000L));
+            Assert.IsTrue(aboveGenericLimit.VerifyWitnesses(settings, snapshot, 3_00000000L, capGas: false));
+            Assert.IsTrue(aboveGenericLimit.Verify(settings, snapshot));
+            Assert.IsTrue(aboveGenericLimit.Verify(settings, snapshot, cache));
+
+            var overLimit = CreateHeader(3_00000000L + 50000000L);
+            Assert.IsFalse(overLimit.Verify(settings, snapshot));
+            Assert.IsFalse(overLimit.Verify(settings, snapshot, cache));
         }
     }
 }

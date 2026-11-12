@@ -18,6 +18,7 @@ using Neo.SmartContract.Manifest;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
+using System.Buffers.Binary;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -113,6 +114,56 @@ namespace Neo.UnitTests.SmartContract.Manifest
                 }
             ];
             Assert.AreEqual(manifest.ToJson().ToString(), check.ToJson().ToString());
+        }
+
+        [TestMethod]
+        public void ParseFromJson_DistinctPermissionsAndTrustsWithCollidingHashCodes()
+        {
+            byte[] firstBytes = new byte[UInt160.Length];
+            BinaryPrimitives.WriteUInt64LittleEndian(firstBytes, 0x00000000_00000001UL);
+            UInt160 first = new(firstBytes);
+
+            byte[] secondBytes = new byte[UInt160.Length];
+            BinaryPrimitives.WriteUInt64LittleEndian(secondBytes, 0x00000001_00000000UL);
+            UInt160 second = new(secondBytes);
+
+            Assert.AreNotEqual(first, second);
+            Assert.AreEqual(ContractPermissionDescriptor.Create(first).GetHashCode(),
+                ContractPermissionDescriptor.Create(second).GetHashCode());
+
+            string json = $$"""
+            {
+                "name":"testManifest",
+                "groups":[],
+                "features":{},
+                "supportedstandards":[],
+                "abi":{
+                    "methods":[
+                        {"name":"testMethod","parameters":[],"returntype":"Void","offset":0,"safe":true}
+                    ],
+                    "events":[]
+                },
+                "permissions":[
+                    {"contract":"{{first}}","methods":"*"},
+                    {"contract":"{{second}}","methods":"*"}
+                ],
+                "trusts":["{{first}}","{{second}}"],
+                "extra":null
+            }
+            """;
+
+            ContractManifest manifest = ContractManifest.Parse(json);
+            Assert.AreEqual(2, manifest.Permissions.Length);
+            Assert.AreEqual(2, manifest.Trusts.Count);
+
+            Assert.ThrowsExactly<ArgumentException>(() => ContractManifest.Parse(json.ToStrictUtf8Bytes(),
+                LegacyContractPermissionDescriptorComparer.Instance));
+
+            // Check trusts independently; the permissions above fail first in the legacy path.
+            JObject trustsOnly = (JObject)JToken.Parse(json)!;
+            trustsOnly["permissions"] = new JArray();
+            Assert.ThrowsExactly<ArgumentException>(() => ContractManifest.Parse(trustsOnly.ToByteArray(false),
+                LegacyContractPermissionDescriptorComparer.Instance));
         }
 
         [TestMethod]
