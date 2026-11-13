@@ -411,7 +411,7 @@ namespace Neo.SmartContract
                         var index = (int)key.GetInteger();
                         if (index < 0 || index >= array.Count)
                         {
-                            engine.JumpTable.ExecuteThrow(engine, $"The index of {nameof(VMArray)} is out of range, {index}/[0, {array.Count}).", out int _);
+                            engine.JumpTable.ExecuteThrow(engine, FormattableString.Invariant($"The index of {nameof(VMArray)} is out of range, {index}/[0, {array.Count})."), out int _);
                             return;
                         }
                         if (array.IsStackReferenced)
@@ -443,7 +443,7 @@ namespace Neo.SmartContract
                         var index = (int)key.GetInteger();
                         if (index < 0 || index >= buffer.Size)
                         {
-                            engine.JumpTable.ExecuteThrow(engine, $"The index of {nameof(Buffer)} is out of range, {index}/[0, {buffer.Size}).", out int _);
+                            engine.JumpTable.ExecuteThrow(engine, FormattableString.Invariant($"The index of {nameof(Buffer)} is out of range, {index}/[0, {buffer.Size})."), out int _);
                             return;
                         }
                         if (value is not PrimitiveType p)
@@ -483,7 +483,7 @@ namespace Neo.SmartContract
                         {
                             engine.ReferenceCounter.RemoveStackReference(value);
                             var r4 = engine.ReferenceCounter.Count;
-                            engine.JumpTable.ExecuteThrow(engine, $"The index of {nameof(VMArray)} is out of range, {index}/[0, {array.Count}).", out int refsDelta);
+                            engine.JumpTable.ExecuteThrow(engine, FormattableString.Invariant($"The index of {nameof(VMArray)} is out of range, {index}/[0, {array.Count})."), out int refsDelta);
                             runStats.CollectRefDelta((r1 - r2) + (r3 - r2) + (r3 - r4) + refsDelta);
                             runStats.CollectClonedItems(nClonedItems);
                             return;
@@ -521,7 +521,7 @@ namespace Neo.SmartContract
                         if (index < 0 || index >= buffer.Size)
                         {
                             var r4 = engine.ReferenceCounter.Count;
-                            engine.JumpTable.ExecuteThrow(engine, $"The index of {nameof(Buffer)} is out of range, {index}/[0, {buffer.Size}).", out int refsDelta);
+                            engine.JumpTable.ExecuteThrow(engine, FormattableString.Invariant($"The index of {nameof(Buffer)} is out of range, {index}/[0, {buffer.Size})."), out int refsDelta);
                             runStats.CollectRefDelta((r1 - r2) + (r3 - r2) + (r3 - r4) + refsDelta);
                             runStats.CollectClonedItems(nClonedItems);
                             return;
@@ -552,7 +552,7 @@ namespace Neo.SmartContract
                         var index = (int)key.GetInteger();
                         if (index < 0 || index >= array.Count)
                         {
-                            engine.JumpTable.ExecuteThrow(engine, $"The index of {nameof(VMArray)} is out of range, {index}/[0, {array.Count}).", out int _);
+                            engine.JumpTable.ExecuteThrow(engine, FormattableString.Invariant($"The index of {nameof(VMArray)} is out of range, {index}/[0, {array.Count})."), out int _);
                             return;
                         }
                         engine.Push(array[index]);
@@ -562,7 +562,10 @@ namespace Neo.SmartContract
                     {
                         if (!map.TryGetValue(key, out var value))
                         {
-                            engine.JumpTable.ExecuteThrow(engine, $"Key {key} not found in {nameof(Map)}.", out int _);
+                            var keyText = key is Neo.VM.Types.Integer
+                                ? key.GetInteger().ToString(System.Globalization.CultureInfo.InvariantCulture)
+                                : key.ToString();
+                            engine.JumpTable.ExecuteThrow(engine, $"Key {keyText} not found in {nameof(Map)}.", out int _);
                             return;
                         }
                         engine.Push(value);
@@ -574,7 +577,7 @@ namespace Neo.SmartContract
                         var index = (int)key.GetInteger();
                         if (index < 0 || index >= byteArray.Length)
                         {
-                            engine.JumpTable.ExecuteThrow(engine, $"The index of {nameof(PrimitiveType)} is out of range, {index}/[0, {byteArray.Length}).", out int _);
+                            engine.JumpTable.ExecuteThrow(engine, FormattableString.Invariant($"The index of {nameof(PrimitiveType)} is out of range, {index}/[0, {byteArray.Length})."), out int _);
                             return;
                         }
                         engine.Push((BigInteger)byteArray[index]);
@@ -585,7 +588,7 @@ namespace Neo.SmartContract
                         var index = (int)key.GetInteger();
                         if (index < 0 || index >= buffer.Size)
                         {
-                            engine.JumpTable.ExecuteThrow(engine, $"The index of {nameof(Buffer)} is out of range, {index}/[0, {buffer.Size}).", out int _);
+                            engine.JumpTable.ExecuteThrow(engine, FormattableString.Invariant($"The index of {nameof(Buffer)} is out of range, {index}/[0, {buffer.Size})."), out int _);
                             return;
                         }
                         engine.Push((BigInteger)buffer.InnerBuffer.Span[index]);
