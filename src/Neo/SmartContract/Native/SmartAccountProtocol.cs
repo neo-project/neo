@@ -9,9 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-// SYNC CONTRACT (identity-fork convergence): this file is byte-identical to
-// the matching file in neo-native-core/src/Neo/SmartContract/Native/. Any
-// change MUST be applied to both copies in the same commit.
+// GENERATED from neo-os-aa implementations/native/core/SmartAccount/ — do not edit here; regenerate via scripts/sync_native_smartaccount.py
 
 using Neo.Extensions;
 using Neo.VM;
