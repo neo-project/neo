@@ -12,6 +12,8 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
+using Neo.SmartContract.Native;
+using Neo.UnitTests.Extensions;
 using Neo.VM;
 using System;
 using System.Globalization;
@@ -228,6 +230,72 @@ namespace Neo.UnitTests.SmartContract
             engine = Execute(script, settings, index: 30u);
             Assert.AreEqual(VMState.HALT, engine.State);
             Assert.AreEqual(1, engine.ResultStack.Count);
+        }
+
+        [TestMethod]
+        // Before Huyao: (1 << 15) * 30 = 983040 datoshi.
+        [DataRow(false, "native", 983040L)]
+        [DataRow(false, "contract", 983040L)]
+        [DataRow(false, "missing", 983040L)]
+        [DataRow(false, "invalidFlags", 983040L)]
+        // 2205 * 30 = 66150 datoshi.
+        [DataRow(true, "native", 66150L)]
+        // (2205 + 6799.366) * 30 = 270130.98 datoshi, rounded up to 270131.
+        [DataRow(true, "contract", 270131L)]
+        [DataRow(true, "missing", 270131L)]
+        // Invalid caller flags are rejected before charging the call.
+        [DataRow(true, "invalidFlags", 0L)]
+        public void CallT_Price(bool huyao, string scenario, long expectedFee)
+        {
+            var snapshot = _snapshotCache.CloneCache();
+            var callee = TestUtils.GetContract([(byte)OpCode.RET],
+                TestUtils.CreateManifest("foo", ContractParameterType.Void));
+            snapshot.DeleteContract(callee.Hash);
+            snapshot.AddContract(callee.Hash, callee);
+
+            var token = new MethodToken
+            {
+                Hash = scenario switch
+                {
+                    "native" => NativeContract.NEO.Hash,
+                    "missing" => UInt160.Zero,
+                    _ => callee.Hash
+                },
+                Method = scenario == "native" ? "symbol" : "foo",
+                ParametersCount = 0,
+                HasReturnValue = scenario == "native",
+                CallFlags = CallFlags.All
+            };
+            using var script = new ScriptBuilder();
+            script.Emit(OpCode.CALLT, new byte[] { 0, 0 });
+            var caller = TestUtils.GetContract(script.ToArray(),
+                TestUtils.CreateManifest("main", ContractParameterType.Void));
+            caller.Nef.Tokens = [token];
+            caller.Nef.CheckSum = NefFile.ComputeChecksum(caller.Nef);
+
+            var settings = TestProtocolSettings.Default with
+            {
+                Hardforks = huyao
+                    ? TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_Huyao, 0)
+                    : TestProtocolSettings.Default.Hardforks.Remove(Hardfork.HF_Huyao)
+            };
+            using var engine = ApplicationEngine.Create(
+                TriggerType.Application, null, snapshot, settings: settings);
+            engine.LoadContract(caller, caller.Manifest.Abi.GetMethod("main", 0),
+                scenario == "invalidFlags" ? CallFlags.ReadStates : CallFlags.All);
+
+            new Debugger(engine).StepInto(); // Charge CALLT without executing the callee.
+
+            Assert.AreEqual(expectedFee, engine.FeeConsumed);
+            Assert.AreEqual(
+                scenario is "missing" or "invalidFlags" ? VMState.FAULT : VMState.BREAK,
+                engine.State, engine.FaultException?.ToString());
+            if (scenario == "missing")
+                Assert.Contains("Called Contract Does Not Exist", engine.FaultException.GetBaseException().Message);
+            else if (scenario == "invalidFlags")
+                Assert.Contains("Cannot call this SYSCALL", engine.FaultException.GetBaseException().Message);
+            else
+                Assert.AreEqual(token.Hash, engine.CurrentScriptHash);
         }
 
         private static byte[] BuildHasKeyLargeIndexScript()
