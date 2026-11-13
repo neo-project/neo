@@ -56,6 +56,49 @@ namespace Neo.UnitTests.SmartContract
         }
 
         [TestMethod]
+        [DataRow(5u, false, "The index of VMArray is out of range, -1/[0, 0).")]
+        [DataRow(15u, false, "The index of VMArray is out of range, -1/[0, 0).")]
+        [DataRow(5u, true, "The index of Buffer is out of range, -1/[0, 0).")]
+        [DataRow(15u, true, "The index of Buffer is out of range, -1/[0, 0).")]
+        public void TestSetItemCaughtErrorTextIsCultureInvariant(uint index, bool buffer, string expected)
+        {
+            var previous = CultureInfo.CurrentCulture;
+            try
+            {
+                CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo("sv-SE");
+                using var script = new ScriptBuilder();
+                script.Emit(OpCode.TRY, new byte[] { (byte)(buffer ? 8 : 7), 0 });
+                if (buffer)
+                {
+                    script.Emit(OpCode.PUSH0);
+                    script.Emit(OpCode.NEWBUFFER);
+                }
+                else
+                {
+                    script.Emit(OpCode.NEWARRAY0);
+                }
+                script.Emit(OpCode.PUSHM1);
+                script.Emit(OpCode.PUSH1);
+                script.Emit(OpCode.SETITEM);
+                script.Emit(OpCode.RET);
+
+                var settings = ProtocolSettings.Default with
+                {
+                    Hardforks = ProtocolSettings.Default.Hardforks
+                        .SetItem(Hardfork.HF_Gorgon, 10u)
+                        .SetItem(Hardfork.HF_Huyao, 20u)
+                };
+                var engine = Execute(script.ToArray(), settings, index);
+                Assert.AreEqual(VMState.HALT, engine.State);
+                Assert.AreEqual(expected, Encoding.UTF8.GetString(engine.ResultStack.Peek().GetSpan()));
+            }
+            finally
+            {
+                CultureInfo.CurrentCulture = previous;
+            }
+        }
+
+        [TestMethod]
         public void TestSHR_SHL_WithDifferentHF()
         {
             foreach (var op in new OpCode[] { OpCode.SHL, OpCode.SHR })
