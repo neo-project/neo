@@ -146,6 +146,29 @@ namespace Neo.UnitTests.Ledger
         }
 
         [TestMethod]
+        public void InvalidHeaderVerificationReportsInvalid()
+        {
+            var height = NativeContract.Ledger.CurrentIndex(_system.StoreView);
+            var block = new Block
+            {
+                Header = new Header
+                {
+                    Index = height + 1,
+                    PrevHash = UInt256.Zero,
+                    MerkleRoot = UInt256.Zero,
+                    Timestamp = 0,
+                    NextConsensus = UInt160.Zero,
+                    Witness = Witness.Empty
+                },
+                Transactions = []
+            };
+            var actor = ActorOfAsTestActorRef<Blockchain>(Akka.Actor.Props.Create(() => new Blockchain(_system)));
+            senderProbe.Send(actor.Ref, block);
+            senderProbe.ExpectMsg<Blockchain.RelayResult>(p => p.Result == VerifyResult.Invalid && p.Source == senderProbe.Ref,
+                cancellationToken: CancellationToken.None);
+        }
+
+        [TestMethod]
         [DataRow(0)]
         [DataRow(1)]
         [DataRow(2)]

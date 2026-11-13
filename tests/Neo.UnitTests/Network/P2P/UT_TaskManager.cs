@@ -591,7 +591,9 @@ namespace Neo.UnitTests.Network.P2P
         }
 
         [TestMethod]
-        public void InvalidHashBlock_AbortsPeersThatSuppliedTheRejectedHash()
+        [DataRow(VerifyResult.InvalidHash)]
+        [DataRow(VerifyResult.Invalid)]
+        public void InvalidBlock_AbortsPeersThatSuppliedTheRejectedHash(VerifyResult result)
         {
             using var neoSystem = TestBlockchain.GetSystem();
             var currentHeight = NativeContract.Ledger.CurrentIndex(neoSystem.StoreView);
@@ -610,7 +612,7 @@ namespace Neo.UnitTests.Network.P2P
             goodPeer.Send(taskManager, goodBlock);
             Assert.AreNotEqual(badBlock.Hash, goodBlock.Hash);
 
-            badPeer.Send(taskManager, new Blockchain.RelayResult(badBlock, VerifyResult.InvalidHash, badPeer.Ref));
+            badPeer.Send(taskManager, new Blockchain.RelayResult(badBlock, result, badPeer.Ref));
 
             badPeer.FishForMessage(m => m is Tcp.Abort, TimeSpan.FromSeconds(3), cancellationToken: CancellationToken.None);
             otherBadPeer.FishForMessage(m => m is Tcp.Abort, TimeSpan.FromSeconds(3), cancellationToken: CancellationToken.None);
@@ -646,12 +648,15 @@ namespace Neo.UnitTests.Network.P2P
             goodPeer.Send(taskManager, goodBlock);
             badPeer.Send(taskManager, new Blockchain.RelayResult(badBlock, VerifyResult.OverSize, badPeer.Ref));
 
-            badPeer.ExpectMsg<RemoteNode.RestartInventory>(m => m.Hash == badBlock.Hash, cancellationToken: CancellationToken.None);
             goodPeer.ExpectMsg<RemoteNode.RestartInventory>(m => m.Hash == goodBlock.Hash, cancellationToken: CancellationToken.None);
             badPeer.ExpectNoMsg(TimeSpan.FromMilliseconds(200), cancellationToken: CancellationToken.None);
             goodPeer.ExpectNoMsg(TimeSpan.FromMilliseconds(200), cancellationToken: CancellationToken.None);
             Assert.IsFalse(GetSessions(taskManager)[badPeer.Ref].ReceivedBlockHashes.ContainsKey(badBlock.Index));
             Assert.IsFalse(GetSessions(taskManager)[goodPeer.Ref].ReceivedBlockHashes.ContainsKey(goodBlock.Index));
+
+            SendTimer(taskManager);
+            badPeer.FishForMessage(m => m is RemoteNode.RestartInventory restart && restart.Hash == badBlock.Hash,
+                TimeSpan.FromSeconds(3), cancellationToken: CancellationToken.None);
 
             Sys.Stop(taskManager);
         }
@@ -676,9 +681,7 @@ namespace Neo.UnitTests.Network.P2P
         }
 
         [TestMethod]
-        [DataRow(VerifyResult.Invalid)]
-        [DataRow(VerifyResult.OverSize)]
-        public void InvalidBlockBody_DoesNotAbortPeer(VerifyResult result)
+        public void OverSizeBlock_DoesNotAbortPeer()
         {
             using var neoSystem = TestBlockchain.GetSystem();
             var currentHeight = NativeContract.Ledger.CurrentIndex(neoSystem.StoreView);
@@ -688,19 +691,20 @@ namespace Neo.UnitTests.Network.P2P
 
             var block = CreateBlock(currentHeight + 1);
             peer.Send(taskManager, block);
-            peer.Send(taskManager, new Blockchain.RelayResult(block, result, peer.Ref));
+            peer.Send(taskManager, new Blockchain.RelayResult(block, VerifyResult.OverSize, peer.Ref));
 
-            peer.ExpectMsg<RemoteNode.RestartInventory>(m => m.Hash == block.Hash, cancellationToken: CancellationToken.None);
             peer.ExpectNoMsg(TimeSpan.FromMilliseconds(200), cancellationToken: CancellationToken.None);
             Assert.IsFalse(GetSessions(taskManager)[peer.Ref].ReceivedBlockHashes.ContainsKey(block.Index));
+
+            SendTimer(taskManager);
+            peer.FishForMessage(m => m is RemoteNode.RestartInventory restart && restart.Hash == block.Hash,
+                TimeSpan.FromSeconds(3), cancellationToken: CancellationToken.None);
 
             Sys.Stop(taskManager);
         }
 
         [TestMethod]
-        [DataRow(VerifyResult.Invalid)]
-        [DataRow(VerifyResult.OverSize)]
-        public void InvalidBlockBody_OnlyPeerCanRetryHeightAfterTimer(VerifyResult result)
+        public void OverSizeBlock_OnlyPeerCanRetryHeightAfterTimer()
         {
             using var neoSystem = TestBlockchain.GetSystem();
             var currentHeight = NativeContract.Ledger.CurrentIndex(neoSystem.StoreView);
@@ -713,13 +717,13 @@ namespace Neo.UnitTests.Network.P2P
 
             var block = CreateBlock(currentHeight + 1);
             peer.Send(taskManager, block);
-            peer.Send(taskManager, new Blockchain.RelayResult(block, result, peer.Ref));
+            peer.Send(taskManager, new Blockchain.RelayResult(block, VerifyResult.OverSize, peer.Ref));
 
-            peer.ExpectMsg<RemoteNode.RestartInventory>(m => m.Hash == block.Hash, cancellationToken: CancellationToken.None);
             Assert.IsFalse(GetSessions(taskManager)[peer.Ref].ReceivedBlockHashes.ContainsKey(block.Index));
             peer.ExpectNoMsg(TimeSpan.FromMilliseconds(200), cancellationToken: CancellationToken.None);
 
             SendTimer(taskManager);
+            peer.ExpectMsg<RemoteNode.RestartInventory>(m => m.Hash == block.Hash, cancellationToken: CancellationToken.None);
             var retry = peer.ExpectMsg<Message>(m => m.Command == MessageCommand.GetBlockByIndex, cancellationToken: CancellationToken.None);
             Assert.AreEqual(block.Index, ((GetBlockByIndexPayload)retry.Payload!).IndexStart);
             Sys.Stop(taskManager);

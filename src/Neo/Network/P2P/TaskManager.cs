@@ -115,15 +115,19 @@ namespace Neo.Network.P2P
             if (!invalidBlock.TryGetHash(out var hash)) return;
             _knownHashes.Remove(hash);
 
-            // A rejected body must not leave its height marked as received. Allow
-            // another body with the same hash (but different witnesses) through
-            // each peer's duplicate filter as well.
+            // A rejected body must not leave its height marked as received. Other
+            // peers can provide a different body with the same hash immediately.
+            // Delay clearing the source's duplicate filter until the retry timer,
+            // so it cannot immediately send the rejected body again.
             foreach (var (actor, session) in sessions)
             {
+                if (actor.Equals(source))
+                    session.DeferredInventoryRestarts.Add(hash);
                 if (session.ReceivedBlockHashes.TryGetValue(invalidBlock.Index, out var receivedHash) && receivedHash == hash)
                 {
                     session.ReceivedBlockHashes.Remove(invalidBlock.Index);
-                    actor.Tell(new RemoteNode.RestartInventory(hash));
+                    if (!actor.Equals(source))
+                        actor.Tell(new RemoteNode.RestartInventory(hash));
                 }
             }
 
@@ -182,6 +186,7 @@ namespace Neo.Network.P2P
                 // This is not a timeout, so BlockTaskTimeouts is intentionally untouched.
                 session.IndexTasks.RemoveWhere(p => p.Key <= block.Index, p => DecrementGlobalTask(p.Key));
 
+                session.DeferredInventoryRestarts.Remove(block.Hash);
                 if (session.ReceivedBlockHashes.Remove(block.Index, out var receivedBlockHash))
                 {
                     if (block.Hash == receivedBlockHash)
@@ -224,11 +229,12 @@ namespace Neo.Network.P2P
                 case Blockchain.RelayResult rr:
                     if (rr.Inventory is Block invalidBlock)
                     {
-                        // Oversized transaction witnesses can leave the block hash unchanged,
+                        // A failed header verification invalidates the peer's block.
+                        // An oversized transaction witness can leave the hash unchanged,
                         // so another peer may still have a valid body for that hash.
-                        if (rr.Result == VerifyResult.InvalidHash)
+                        if (rr.Result is VerifyResult.InvalidHash or VerifyResult.Invalid)
                             OnInvalidBlock(invalidBlock, rr.Source);
-                        else if (rr.Result is VerifyResult.Invalid or VerifyResult.OverSize)
+                        else if (rr.Result == VerifyResult.OverSize)
                             OnInvalidBlockBody(invalidBlock, rr.Source);
                     }
                     break;
@@ -422,6 +428,9 @@ namespace Neo.Network.P2P
             // Prefer peers with fewer timed-out block requests.
             foreach (var (actor, session) in sessions.OrderBy(p => p.Value.BlockTaskTimeouts))
             {
+                foreach (var hash in session.DeferredInventoryRestarts)
+                    actor.Tell(new RemoteNode.RestartInventory(hash));
+                session.DeferredInventoryRestarts.Clear();
                 RequestTasks(actor, session);
             }
         }
