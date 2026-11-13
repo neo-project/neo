@@ -19,7 +19,6 @@ using Neo.SmartContract.Native;
 using Neo.UnitTests.Extensions;
 using Neo.VM;
 using Neo.VM.Types;
-using System;
 using System.Linq;
 
 namespace Neo.UnitTests.SmartContract
@@ -352,9 +351,9 @@ namespace Neo.UnitTests.SmartContract
                 contractA = TestUtils.GetContract(new byte[] { (byte)OpCode.DROP, (byte)OpCode.DROP }.Concat(script.ToArray()).ToArray());
                 contractB = TestUtils.GetContract(new byte[] { (byte)OpCode.DROP, (byte)OpCode.DROP, (byte)OpCode.NOP }.Concat(script.ToArray()).ToArray());
                 contractC = TestUtils.GetContract(new byte[] { (byte)OpCode.DROP, (byte)OpCode.DROP, (byte)OpCode.NOP, (byte)OpCode.NOP }.Concat(script.ToArray()).ToArray());
-                contractA.Hash = ((ReadOnlyMemory<byte>)contractA.Script).Span.ToScriptHash();
-                contractB.Hash = ((ReadOnlyMemory<byte>)contractB.Script).Span.ToScriptHash();
-                contractC.Hash = ((ReadOnlyMemory<byte>)contractC.Script).Span.ToScriptHash();
+                contractA.Hash = ((System.ReadOnlyMemory<byte>)contractA.Script).Span.ToScriptHash();
+                contractB.Hash = ((System.ReadOnlyMemory<byte>)contractB.Script).Span.ToScriptHash();
+                contractC.Hash = ((System.ReadOnlyMemory<byte>)contractC.Script).Span.ToScriptHash();
 
                 // Init A,B,C contracts
                 // First two drops is for drop method and arguments
