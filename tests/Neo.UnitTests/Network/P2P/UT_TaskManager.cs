@@ -555,12 +555,12 @@ namespace Neo.UnitTests.Network.P2P
             var block = CreateBlock(currentHeight + 1);
 
             // No InvTasks/IndexTasks entry: the block is unsolicited but still in-window.
-            peer.Send(taskManager, block);
+            taskManager.Receive(block, peer.Ref);
 
             Assert.IsTrue(session.ReceivedBlockHashes.ContainsKey(block.Index),
                 "The unsolicited in-window block must be tracked by hash.");
 
-            peer.Send(taskManager, new Blockchain.RelayResult(block, VerifyResult.Invalid));
+            taskManager.Receive(new Blockchain.RelayResult(block, VerifyResult.Invalid), peer.Ref);
 
             peer.FishForMessage(m => m is Tcp.Abort, TimeSpan.FromSeconds(3), cancellationToken: CancellationToken.None);
 
@@ -579,11 +579,13 @@ namespace Neo.UnitTests.Network.P2P
 
             var block = CreateBlock(currentHeight + 1);
             session.IndexTasks.Add(block.Index, TimeProvider.Current.UtcNow);
-            peer.Send(taskManager, block);
+            // Receive runs the actor on this thread. peer.Send/Tell can return before the
+            // mailbox records the hash, which failed this assert on the macOS CI runner.
+            taskManager.Receive(block, peer.Ref);
 
             Assert.IsTrue(session.ReceivedBlockHashes.ContainsKey(block.Index));
 
-            peer.Send(taskManager, new Blockchain.RelayResult(block, VerifyResult.Invalid));
+            taskManager.Receive(new Blockchain.RelayResult(block, VerifyResult.Invalid), peer.Ref);
 
             peer.FishForMessage(m => m is Tcp.Abort, TimeSpan.FromSeconds(3), cancellationToken: CancellationToken.None);
 
@@ -602,11 +604,11 @@ namespace Neo.UnitTests.Network.P2P
 
             var block = CreateBlock(currentHeight + 1);
             session.IndexTasks.Add(block.Index, TimeProvider.Current.UtcNow);
-            peer.Send(taskManager, block);
+            taskManager.Receive(block, peer.Ref);
 
             Assert.IsTrue(session.ReceivedBlockHashes.ContainsKey(block.Index));
 
-            peer.Send(taskManager, new Blockchain.PersistCompleted(block));
+            taskManager.Receive(new Blockchain.PersistCompleted(block), peer.Ref);
 
             Assert.IsEmpty(session.ReceivedBlockHashes, "The tracked hash must be removed once the height is persisted.");
 
@@ -625,7 +627,7 @@ namespace Neo.UnitTests.Network.P2P
 
             var receivedBlock = CreateBlock(currentHeight + 1, timestamp: 1);
             session.IndexTasks.Add(receivedBlock.Index, TimeProvider.Current.UtcNow);
-            peer.Send(taskManager, receivedBlock);
+            taskManager.Receive(receivedBlock, peer.Ref);
 
             Assert.IsTrue(session.ReceivedBlockHashes.ContainsKey(receivedBlock.Index));
 
@@ -633,7 +635,7 @@ namespace Neo.UnitTests.Network.P2P
             var persistedBlock = CreateBlock(currentHeight + 1, timestamp: 2);
             Assert.AreNotEqual(receivedBlock.Hash, persistedBlock.Hash);
 
-            peer.Send(taskManager, new Blockchain.PersistCompleted(persistedBlock));
+            taskManager.Receive(new Blockchain.PersistCompleted(persistedBlock), peer.Ref);
 
             peer.FishForMessage(m => m is Tcp.Abort, TimeSpan.FromSeconds(3), cancellationToken: CancellationToken.None);
 

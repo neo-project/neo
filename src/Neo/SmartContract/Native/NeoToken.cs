@@ -117,9 +117,9 @@ namespace Neo.SmartContract.Native
             }
         }
 
-        protected override void OnManifestCompose(IsHardforkEnabledDelegate hfChecker, uint blockHeight, ContractManifest manifest)
+        protected override void OnManifestCompose(IsHardforkEnabledDelegate hfChecker, ProtocolSettings settings, IReadOnlyStore snapshot, uint blockHeight, ContractManifest manifest)
         {
-            if (hfChecker(Hardfork.HF_Echidna, blockHeight))
+            if (hfChecker(settings, snapshot, Hardfork.HF_Echidna, blockHeight))
             {
                 manifest.SupportedStandards = ["NEP-17", "NEP-27"];
             }

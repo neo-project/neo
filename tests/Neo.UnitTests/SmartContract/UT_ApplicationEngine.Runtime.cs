@@ -39,7 +39,8 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void TestNotSupportedNotification()
         {
-            using var engine = ApplicationEngine.Create(TriggerType.Application, null, null, _system.GenesisBlock, settings: TestProtocolSettings.Default, gas: 1100_00000000);
+            var snapshot = _snapshotCache.CloneCache();
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, _system.GenesisBlock, settings: TestProtocolSettings.Default, gas: 1100_00000000);
             engine.LoadScript(Array.Empty<byte>());
             engine.CurrentContext.GetState<ExecutionContextState>().Contract = new()
             {
@@ -109,10 +110,11 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void TestGetRandomSameBlock()
         {
+            var snapshot = _snapshotCache.CloneCache();
             var tx = TestUtils.GetTransaction(UInt160.Zero);
             // Even if persisting the same block, in different ApplicationEngine instance, the random number should be different
-            using var engine_1 = ApplicationEngine.Create(TriggerType.Application, tx, null, _system.GenesisBlock, settings: TestProtocolSettings.Default, gas: 1100_00000000);
-            using var engine_2 = ApplicationEngine.Create(TriggerType.Application, tx, null, _system.GenesisBlock, settings: TestProtocolSettings.Default, gas: 1100_00000000);
+            using var engine_1 = ApplicationEngine.Create(TriggerType.Application, tx, snapshot, _system.GenesisBlock, settings: TestProtocolSettings.Default, gas: 1100_00000000);
+            using var engine_2 = ApplicationEngine.Create(TriggerType.Application, tx, snapshot, _system.GenesisBlock, settings: TestProtocolSettings.Default, gas: 1100_00000000);
 
             engine_1.LoadScript(new byte[] { 0x01 });
             engine_2.LoadScript(new byte[] { 0x01 });
@@ -145,6 +147,7 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         public void TestGetRandomDifferentBlock()
         {
+            var snapshot = _snapshotCache.CloneCache();
             var tx_1 = TestUtils.GetTransaction(UInt160.Zero);
 
             var tx_2 = new Transaction
@@ -160,9 +163,9 @@ namespace Neo.UnitTests.SmartContract
                 Witnesses = Array.Empty<Witness>()
             };
 
-            using var engine_1 = ApplicationEngine.Create(TriggerType.Application, tx_1, null, _system.GenesisBlock, settings: TestProtocolSettings.Default, gas: 1100_00000000);
+            using var engine_1 = ApplicationEngine.Create(TriggerType.Application, tx_1, snapshot, _system.GenesisBlock, settings: TestProtocolSettings.Default, gas: 1100_00000000);
             // The next_nonce shuld be reinitialized when a new block is persisting
-            using var engine_2 = ApplicationEngine.Create(TriggerType.Application, tx_2, null, _system.GenesisBlock, settings: TestProtocolSettings.Default, gas: 1100_00000000);
+            using var engine_2 = ApplicationEngine.Create(TriggerType.Application, tx_2, snapshot, _system.GenesisBlock, settings: TestProtocolSettings.Default, gas: 1100_00000000);
 
             var rand_1 = engine_1.GetRandom();
             var rand_2 = engine_1.GetRandom();
