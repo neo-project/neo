@@ -9,10 +9,15 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+// SYNC CONTRACT (identity-fork convergence): this file is byte-identical to
+// neo-native-core/src/Neo/SmartContract/Native/SmartAccountState.cs. Any change
+// MUST be applied to both copies in the same commit.
+
 using Neo.Extensions;
 using Neo.IO;
 using Neo.VM.Types;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using Array = Neo.VM.Types.Array;
@@ -43,11 +48,7 @@ namespace Neo.SmartContract.Native
         internal Array ToStackItem() => new([Contract.ToArray(), CodeHash.ToArray()]);
     }
 
-    /// <summary>
-    /// Canonical account storage and immutable lifecycle transitions. The native runtime
-    /// must supply witness facts and validate callbacks before persisting a returned state.
-    /// This component does not register a contract or perform ledger access.
-    /// </summary>
+    /// <summary>Canonical account storage and immutable lifecycle transitions.</summary>
     internal sealed record SmartAccountState
     {
         internal const ulong ModuleChangeDelayMs = 86_400_000;
@@ -81,7 +82,6 @@ namespace Neo.SmartContract.Native
                 new BigInteger(ProposedAt), new BigInteger(MatureAt), new BigInteger(Epoch)]);
         }
 
-        // No mutable hash instance escapes a state or a pending intent.
         private sealed record PendingAddress(byte[] Address, ulong ProposedAt, ulong MatureAt, ulong Epoch)
         {
             internal Array ToStackItem() => new([
@@ -110,6 +110,21 @@ namespace Neo.SmartContract.Native
                 Hook = hook,
                 Status = SmartAccountStatus.Active
             };
+        }
+
+        internal UInt160[] GetAuthorities()
+        {
+            List<UInt160> authorities = new(4);
+            Add(CustodyAddress);
+            Add(RecoveryAddress);
+            if (PendingRecoveryAddress is not null) Add(new UInt160(PendingRecoveryAddress.Address));
+            if (PendingRecovery is not null) Add(new UInt160(PendingRecovery.Address));
+            return authorities.ToArray();
+
+            void Add(UInt160 address)
+            {
+                if (address != UInt160.Zero && !authorities.Contains(address)) authorities.Add(address);
+            }
         }
 
         internal Array ToStackItem() => new([
@@ -322,6 +337,13 @@ namespace Neo.SmartContract.Native
         internal SmartAccountState CancelModule(SmartAccountModuleKind kind, bool custodyAuthorized)
         {
             var intent = GetPending(kind);
+            // M-4 (documented asymmetry): cancellation deliberately does NOT call
+            // RequireConfiguration. Propose/activate require an Active account and
+            // are blocked during custody recovery, but cancelling an already-proposed
+            // intent is always the conservative action: it only removes a future
+            // capability and never grants one, so allowing it while Frozen or during
+            // recovery is intentionally more permissive and cannot be used to
+            // advance an attacker-controlled transition.
             Require(custodyAuthorized && intent is not null, "Cancellation requires custody authorization and a pending module change.");
             return kind == SmartAccountModuleKind.Verifier ? this with { PendingVerifier = null } : this with { PendingHook = null };
         }
@@ -347,6 +369,9 @@ namespace Neo.SmartContract.Native
 
         internal SmartAccountState CancelRecoveryAddress(bool custodyAuthorized)
         {
+            // M-4 (documented asymmetry): see CancelModule; cancelling a pending
+            // recovery-address rotation is always allowed for custody and never
+            // requires an Active configuration state.
             Require(custodyAuthorized && PendingRecoveryAddress is not null, "Cancellation requires custody authorization and a pending recovery-address change.");
             return this with { PendingRecoveryAddress = null };
         }
@@ -365,8 +390,6 @@ namespace Neo.SmartContract.Native
             Require(intent is not null, "No custody recovery is pending.");
             RequireMature(now, intent.MatureAt, intent.Epoch);
             Require(AuthorityEpoch < ulong.MaxValue, "The authority epoch is exhausted.");
-            // Recovery revokes all old module authority without executing untrusted cleanup.
-            // Module storage remains unreachable through its former authority-epoch namespace.
             return Advance() with { Custody = intent.Address, AuthorityEpoch = AuthorityEpoch + 1, Verifier = null, Hook = null };
         }
 

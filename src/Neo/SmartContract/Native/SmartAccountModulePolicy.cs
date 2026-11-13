@@ -9,6 +9,10 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+// SYNC CONTRACT (identity-fork convergence): this file is byte-identical to
+// neo-native-core/src/Neo/SmartContract/Native/SmartAccountModulePolicy.cs. Any
+// change MUST be applied to both copies in the same commit.
+
 using Neo.Extensions;
 using Neo.IO;
 using Neo.Json;
@@ -76,7 +80,7 @@ namespace Neo.SmartContract.Native
             if (contract.Manifest.Extra?["smartAccount"] is not JObject profile ||
                 profile["abiVersion"] is not JNumber version || version.Value != 2)
                 throw new InvalidOperationException("The module must declare native SmartAccount ABI 2 with epoch-isolated authorization.");
-            if (profile["profileDigest"] is not JString digestValue || digestValue.GetString() != AccountManagement.ParameterDigest ||
+            if (profile["profileDigest"] is not JString digestValue || digestValue.GetString() != SmartAccount.ParameterDigest ||
                 profile["compositeVerifier"] is not JBoolean composite || (kind == SmartAccountModuleKind.Hook && composite.Value))
                 throw new InvalidOperationException("The module must declare the exact native SmartAccount profile digest and composite verifier capability.");
             if (composite.Value)
@@ -109,7 +113,10 @@ namespace Neo.SmartContract.Native
             ArgumentNullException.ThrowIfNull(engine);
             ArgumentNullException.ThrowIfNull(binding);
             _ = Inspect(engine.SnapshotCache, binding.Contract, kind, binding);
-            var result = await engine.CallFromNativeContractWithGasLimitAsync(engine.CurrentScriptHash!, binding.Contract,
+            // M-1: the native SmartAccount service itself is the module's caller for
+            // discovery. engine.CurrentScriptHash depends on the dispatch path and
+            // must never become the module's caller identity.
+            var result = await engine.CallFromNativeContractWithGasLimitAsync(NativeContract.SmartAccount.Hash, binding.Contract,
                 "supportsComposition", CallFlags.ReadOnly, MaintenanceBudget);
             _ = Inspect(engine.SnapshotCache, binding.Contract, kind, binding);
             if (result is not Boolean boolean)
@@ -129,10 +136,9 @@ namespace Neo.SmartContract.Native
         {
             ArgumentNullException.ThrowIfNull(accountId);
             if (accountId == UInt160.Zero) throw new ArgumentException("A signer-domain query requires an account identity.", nameof(accountId));
-            // This deliberately repeats leaf discovery; a caller cannot bypass the
-            // no-nested-composition invariant with a stale result from another account.
             _ = await DiscoverAsync(engine, binding, SmartAccountModuleKind.Verifier, true);
-            var result = await engine.CallFromNativeContractWithGasLimitAsync(engine.CurrentScriptHash!, binding.Contract,
+            // M-1: see DiscoverAsync; the native service hash is the caller identity.
+            var result = await engine.CallFromNativeContractWithGasLimitAsync(NativeContract.SmartAccount.Hash, binding.Contract,
                 "getSignerDomains", CallFlags.ReadOnly, MaintenanceBudget, accountId.ToArray());
             _ = Inspect(engine.SnapshotCache, binding.Contract, SmartAccountModuleKind.Verifier, binding);
             if (result is not Array domains || result.Type != StackItemType.Array || domains.Count == 0)

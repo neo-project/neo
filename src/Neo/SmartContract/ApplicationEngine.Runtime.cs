@@ -258,10 +258,10 @@ namespace Neo.SmartContract
         {
             // Anyone can request native SmartAccount dispatch. Its caller identity
             // must never become a witness principal through the legacy fast path.
-            if (IsHardforkEnabled(Hardfork.HF_SmartAccountV1) && hash == NativeContract.AccountManagement.Hash)
+            if (IsHardforkEnabled(Hardfork.HF_SmartAccountV1) && hash == NativeContract.SmartAccount.Hash)
                 return false;
             if (Trigger == TriggerType.Application && IsHardforkEnabled(Hardfork.HF_SmartAccountV1) &&
-                NativeContract.AccountManagement.IsRegisteredProxy(SnapshotCache, hash) &&
+                NativeContract.SmartAccount.IsRegisteredProxy(SnapshotCache, hash) &&
                 !(GetState<SmartAccountInvocationContext>()?.IsWitnessAuthorized(this, hash) ?? false))
                 return false;
             if (hash.Equals(CallingScriptHash)) return true;

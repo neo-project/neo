@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2026 The Neo Project.
 //
-// AccountManagement.cs file belongs to the neo project and is free
+// SmartAccount.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -8,6 +8,10 @@
 //
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
+
+// SYNC CONTRACT (identity-fork convergence): this file is byte-identical to
+// neo-native-core/src/Neo/SmartContract/Native/SmartAccount.cs. Any change
+// MUST be applied to both copies in the same commit.
 
 #pragma warning disable IDE0051
 
@@ -17,17 +21,18 @@ using Neo.Persistence;
 using Neo.SmartContract.Manifest;
 using Neo.VM.Types;
 using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Numerics;
 using Array = Neo.VM.Types.Array;
 
 namespace Neo.SmartContract.Native
 {
-    /// <summary>The hardfork-gated native SmartAccount service.</summary>
-    public sealed partial class AccountManagement : NativeContract
+    /// <summary>The complete hardfork-gated native SmartAccount service.</summary>
+    public sealed partial class SmartAccount : NativeContract
     {
         private const long BaseCpuFee = 1 << 15;
-        internal const string ParameterDigest = "4201b02f571b7415121467d67343a8189b8070ad795a82424c0403782d22b1b4";
+        internal const string ParameterDigest = "ae557647b63789c7af0a8c7816dc90d5c0d7e65afb78ce3c669de9a01ce3c91a";
         private const byte ProxyPrefix = 0x11, PendingCallPrefix = 0x30, DependencyPrefix = 0x40;
         public override ImmutableHashSet<Hardfork?> Activations => [Hardfork.HF_SmartAccountV1];
 
@@ -47,7 +52,11 @@ namespace Neo.SmartContract.Native
         [ContractEvent(Hardfork.HF_SmartAccountV1, 13, "AccountFrozen", "accountId", ContractParameterType.Hash160)]
         [ContractEvent(Hardfork.HF_SmartAccountV1, 14, "AccountUnfrozen", "accountId", ContractParameterType.Hash160)]
         [ContractEvent(Hardfork.HF_SmartAccountV1, 15, "UserOpExecuted", "accountId", ContractParameterType.Hash160, "targetContract", ContractParameterType.Hash160, "method", ContractParameterType.String, "nonce", ContractParameterType.Integer)]
-        internal AccountManagement() { }
+        [ContractEvent(Hardfork.HF_SmartAccountV1, 16, "ModuleCallPending", "accountId", ContractParameterType.Hash160, "moduleType", ContractParameterType.String, "module", ContractParameterType.Hash160, "method", ContractParameterType.String, "matureAt", ContractParameterType.Integer, "configurationNonce", ContractParameterType.Integer)]
+        [ContractEvent(Hardfork.HF_SmartAccountV1, 17, "ModuleCallSettled", "accountId", ContractParameterType.Hash160, "moduleType", ContractParameterType.String, "configurationNonce", ContractParameterType.Integer)]
+        [ContractEvent(Hardfork.HF_SmartAccountV1, 18, "ModuleCallCancelled", "accountId", ContractParameterType.Hash160, "moduleType", ContractParameterType.String, "configurationNonce", ContractParameterType.Integer)]
+        [ContractEvent(Hardfork.HF_SmartAccountV1, 19, "ModuleDependenciesChanged", "accountId", ContractParameterType.Hash160, "moduleType", ContractParameterType.String, "activeChildren", ContractParameterType.Array, "configurationNonce", ContractParameterType.Integer)]
+        internal SmartAccount() { }
 
         protected override void OnManifestCompose(IsHardforkEnabledDelegate checker, uint height, ContractManifest manifest)
         {
@@ -83,24 +92,67 @@ namespace Neo.SmartContract.Native
             }
             return context;
         }
-        private SmartAccountState? ReadState(IReadOnlyStore snapshot, UInt160 id) => snapshot.TryGet(AccountKey(id), out var item) ? SmartAccountState.Deserialize(id, item.Value) : null;
+
+        private void ValidateRegisteredAuthorities(IReadOnlyStore snapshot, SmartAccountState state)
+        {
+            foreach (UInt160 authority in state.GetAuthorities())
+                if (IsRegisteredProxy(snapshot, authority))
+                    throw new InvalidOperationException("A current or pending SmartAccount authority cannot be a registered native proxy.");
+        }
+
+        private void ValidateAuthorityTransition(ApplicationEngine engine, SmartAccountState? prior, SmartAccountState next)
+        {
+            ValidateRegisteredAuthorities(engine.SnapshotCache, next);
+            HashSet<UInt160> retained = new(prior?.GetAuthorities() ?? []);
+            foreach (UInt160 authority in next.GetAuthorities())
+                if (!retained.Contains(authority) && !Witness(engine, authority))
+                    throw new InvalidOperationException("Every newly introduced nonzero authority must witness the transition.");
+        }
+
+        private SmartAccountState? ReadState(IReadOnlyStore snapshot, UInt160 id)
+        {
+            if (!snapshot.TryGet(AccountKey(id), out var item)) return null;
+            var state = SmartAccountState.Deserialize(id, item.Value);
+            ValidateRegisteredAuthorities(snapshot, state);
+            return state;
+        }
         private SmartAccountState RequireState(IReadOnlyStore snapshot, UInt160 id) => ReadState(snapshot, id) ?? throw new InvalidOperationException("The SmartAccount is not registered.");
         private void Put(ApplicationEngine engine, StorageKey key, byte[] value) => engine.Put(new StorageContext { Id = Id }, key.Key.ToArray(), value);
         private void Save(ApplicationEngine engine, SmartAccountState state)
         {
             var prior = ReadState(engine.SnapshotCache, state.AccountId);
+            ValidateAuthorityTransition(engine, prior, state);
             if (prior is not null && prior.ConfigurationNonce != state.ConfigurationNonce)
+                // Every configuration nonce advance voids any pending module-call
+                // intent (prefix 0x30). Notify the settlement so indexers can drop
+                // their pending-call view without replaying raw storage.
                 foreach (var kind in new[] { SmartAccountModuleKind.Verifier, SmartAccountModuleKind.Hook })
-                    engine.SnapshotCache.Delete(RoleKey(PendingCallPrefix, state.AccountId, kind));
+                {
+                    var key = RoleKey(PendingCallPrefix, state.AccountId, kind);
+                    if (engine.SnapshotCache.Contains(key))
+                    {
+                        engine.SnapshotCache.Delete(key);
+                        Notify(engine, "ModuleCallSettled", state.AccountId.ToArray(), ModuleTypeName(kind), new BigInteger(state.ConfigurationNonce));
+                    }
+                }
             if (prior is not null && prior.AuthorityEpoch != state.AuthorityEpoch)
-                // Recovery must not parse stale dependency records or call revoked modules.
+                // An authority-epoch advance orphans the whole dependency registry
+                // (prefix 0x40). Notify the empty roster for the same reason.
                 foreach (var kind in new[] { SmartAccountModuleKind.Verifier, SmartAccountModuleKind.Hook })
-                    engine.SnapshotCache.Delete(RoleKey(DependencyPrefix, state.AccountId, kind));
+                {
+                    var key = RoleKey(DependencyPrefix, state.AccountId, kind);
+                    if (engine.SnapshotCache.Contains(key))
+                    {
+                        engine.SnapshotCache.Delete(key);
+                        Notify(engine, "ModuleDependenciesChanged", state.AccountId.ToArray(), ModuleTypeName(kind), new Array(), new BigInteger(state.ConfigurationNonce));
+                    }
+                }
             Put(engine, AccountKey(state.AccountId), state.Serialize());
         }
         private void Notify(ApplicationEngine engine, string name, params StackItem[] fields) => engine.SendNotification(Hash, name, new Array(fields));
         private static bool Witness(ApplicationEngine engine, UInt160 address) => address != UInt160.Zero && engine.CheckWitnessInternal(address);
         private static SmartAccountModuleKind Kind(string type) => type switch { "verifier" => SmartAccountModuleKind.Verifier, "hook" => SmartAccountModuleKind.Hook, _ => throw new ArgumentException("Unknown SmartAccount module type.", nameof(type)) };
+        private static string ModuleTypeName(SmartAccountModuleKind kind) => kind == SmartAccountModuleKind.Verifier ? "verifier" : "hook";
         private static SmartAccountModuleBinding? Binding(SmartAccountState state, SmartAccountModuleKind kind) => kind == SmartAccountModuleKind.Verifier ? state.Verifier : state.Hook;
 
         internal bool IsRegisteredProxy(IReadOnlyStore snapshot, UInt160 proxy) => snapshot.TryGet(CreateStorageKey(ProxyPrefix, proxy), out _);
@@ -170,6 +222,7 @@ namespace Neo.SmartContract.Native
         {
             RequireApplication(engine);
             var empty = SmartAccountState.Create(engine.ProtocolSettings.Network, custodyAddress, salt, null, null, recoveryAddress, Witness(engine, custodyAddress));
+            ValidateAuthorityTransition(engine, null, empty);
             using var locked = Context(engine).EnterAccount(empty.AccountId);
             if (ReadState(engine.SnapshotCache, empty.AccountId) is not null || IsRegisteredProxy(engine.SnapshotCache, empty.AccountAddress))
                 throw new InvalidOperationException("The SmartAccount identity or proxy is already registered.");
@@ -209,16 +262,23 @@ namespace Neo.SmartContract.Native
             Transition(engine, accountId, s => s.CancelRecovery(Now(engine), Witness(engine, s.CustodyAddress), Witness(engine, s.RecoveryAddress)), "RecoveryCancelled", (p, n) => [accountId.ToArray(), new BigInteger(n.ConfigurationNonce)]);
         [ContractMethod(Hardfork.HF_SmartAccountV1, CpuFee = BaseCpuFee, RequiredCallFlags = CallFlags.All)]
         private void Freeze(ApplicationEngine engine, UInt160 accountId) =>
+            // M-2 (documented behavior): the underlying Advance() voids every pending
+            // intent (module changes, recovery-address change, custody recovery) and
+            // bumps the configuration nonce. AccountFrozen/AccountUnfrozen deliberately
+            // keep their minimal Hash160 payload: clients must treat any nonce change
+            // observed via getAccount as invalidating pending state rather than relying
+            // on per-pending summaries embedded in the event.
             Transition(engine, accountId, s => s.Freeze(Witness(engine, s.RecoveryAddress)), "AccountFrozen", (p, n) => [accountId.ToArray()]);
         [ContractMethod(Hardfork.HF_SmartAccountV1, CpuFee = BaseCpuFee, RequiredCallFlags = CallFlags.All)]
         private void Unfreeze(ApplicationEngine engine, UInt160 accountId) =>
+            // M-2 (documented behavior): see Freeze; Advance() voids all pending
+            // intents and the event payload intentionally reports only the account.
             Transition(engine, accountId, s => s.Unfreeze(Witness(engine, s.CustodyAddress), Witness(engine, s.RecoveryAddress)), "AccountUnfrozen", (p, n) => [accountId.ToArray()]);
 
         private async ContractTask ProposeModule(ApplicationEngine engine, UInt160 id, UInt160 module, SmartAccountModuleKind kind)
         {
             RequireApplication(engine); using var locked = Context(engine).EnterAccount(id);
             var state = RequireState(engine.SnapshotCache, id);
-            // Validate authority/status before allowing any plugin discovery.
             _ = state.ProposeModule(kind, null, Now(engine), Witness(engine, state.CustodyAddress));
             var binding = await Admit(engine, module, kind);
             var next = state.ProposeModule(kind, binding, Now(engine), true); Save(engine, next);

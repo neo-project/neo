@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2026 The Neo Project.
 //
-// AccountManagement.Keys.cs file belongs to the neo project and is free
+// SmartAccount.Keys.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -9,6 +9,10 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+// SYNC CONTRACT (identity-fork convergence): this file is byte-identical to
+// the matching file in neo-native-core/src/Neo/SmartContract/Native/. Any
+// change MUST be applied to both copies in the same commit.
+
 #pragma warning disable IDE0051
 using Neo.Cryptography.ECC;
 using Neo.VM.Types;
@@ -16,7 +20,7 @@ using System;
 
 namespace Neo.SmartContract.Native
 {
-    partial class AccountManagement
+    partial class SmartAccount
     {
         private sealed class P256PublicKeyAttribute : ValidatorAttribute
         {
@@ -26,6 +30,7 @@ namespace Neo.SmartContract.Native
                     throw new FormatException("A P-256 public key must be an exact ByteString.");
             }
         }
+
         [ContractMethod(Hardfork.HF_SmartAccountV1, CpuFee = BaseCpuFee, RequiredCallFlags = CallFlags.None)]
         private static byte[] CanonicalP256PublicKey([P256PublicKey] byte[] publicKey)
         {
@@ -40,12 +45,9 @@ namespace Neo.SmartContract.Native
             }
             else throw new FormatException("A canonical P-256 public key requires a 33-byte compressed or 65-byte uncompressed encoding.");
 
-            // Compressed decoding checks the field and square root. Do not decode
-            // the uncompressed input directly: that parser preserves unchecked Y.
             var point = ECPoint.DecodePoint(compressed, ECCurve.Secp256r1);
             if (publicKey.Length == 65 && !publicKey.AsSpan().SequenceEqual(point.EncodePoint(false)))
                 throw new FormatException("The uncompressed P-256 public key is not a point on the curve.");
-            // ECPoint caches its encoded arrays; never expose the cache's backing bytes.
             return point.EncodePoint(true).AsSpan().ToArray();
         }
     }

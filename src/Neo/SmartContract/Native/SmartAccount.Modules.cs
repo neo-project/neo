@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2026 The Neo Project.
 //
-// AccountManagement.Modules.cs file belongs to the neo project and is free
+// SmartAccount.Modules.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -8,6 +8,10 @@
 //
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
+
+// SYNC CONTRACT (identity-fork convergence): this file is byte-identical to
+// neo-native-core/src/Neo/SmartContract/Native/SmartAccount.Modules.cs. Any change
+// MUST be applied to both copies in the same commit.
 
 #pragma warning disable IDE0051
 using Neo.Extensions;
@@ -25,7 +29,7 @@ using Boolean = Neo.VM.Types.Boolean;
 
 namespace Neo.SmartContract.Native
 {
-    partial class AccountManagement
+    partial class SmartAccount
     {
         private sealed record Dependencies(SmartAccountModuleBinding? Root, SmartAccountModuleBinding[] Enrolled, UInt160[] Active)
         {
@@ -77,8 +81,6 @@ namespace Neo.SmartContract.Native
             var args = ExactArray(record[6]);
             if (record[5] is not ByteString || args.Count == 0 || new UInt160(Bytes(args[0], UInt160.Length)) != state.AccountId)
                 throw new FormatException("The pending call requires an exact method and account-prefixed arguments.");
-            // Reuse operation canonicalization for exact method, type, depth and
-            // byte limits without trusting the stored serializer representation.
             _ = SnapshotOperation(new Array([selected.Contract.ToArray(), record[5], args, BigInteger.Zero, BigInteger.Zero, ByteString.Empty]));
             return record;
         }
@@ -97,11 +99,15 @@ namespace Neo.SmartContract.Native
                 throw new FormatException("The dependency registry has an invalid leaf roster.");
             return new(storedRoot, enrolled, active);
         }
-        private void WriteDependencies(ApplicationEngine engine, UInt160 id, SmartAccountModuleKind kind, Dependencies value)
+        private void WriteDependencies(ApplicationEngine engine, UInt160 id, SmartAccountModuleKind kind, Dependencies value, ulong configurationNonce)
         {
             var key = RoleKey(DependencyPrefix, id, kind);
             if (value.Enrolled.Length == 0 && value.Active.Length == 0) engine.SnapshotCache.Delete(key);
             else Put(engine, key, BinarySerializer.Serialize(value.ToArray(), 8192, 8192));
+            // H-2: every registry write or delete reports the resulting active
+            // roster so indexers can follow the dependency namespace.
+            Notify(engine, "ModuleDependenciesChanged", id.ToArray(), ModuleTypeName(kind),
+                new Array(value.Active.Select(p => (StackItem)p.ToArray())), new BigInteger(configurationNonce));
         }
         private UInt160[] ActiveChildren(ApplicationEngine engine, SmartAccountState state, SmartAccountModuleKind kind)
         {
@@ -113,8 +119,12 @@ namespace Neo.SmartContract.Native
         private void RequireCompositeProfile(ApplicationEngine engine, SmartAccountModuleBinding root, SmartAccountModuleKind kind)
         {
             var contract = ContractManagement.GetContract(engine.SnapshotCache, root.Contract)!;
-            string name = kind == SmartAccountModuleKind.Verifier ? "MultiSigVerifier" : "MultiHook";
-            if (contract.Manifest.Name != name ||
+            // M-3: composite admission is declared by the module manifest
+            // (Extra.smartAccount.compositeProfile) instead of hardcoding the
+            // "MultiSigVerifier"/"MultiHook" contract names in chain code. A
+            // composite verifier must additionally agree with its declared
+            // compositeVerifier capability marker.
+            if (contract.Manifest.Extra?["smartAccount"]?["compositeProfile"] is not JString declared || string.IsNullOrEmpty(declared.GetString()) ||
                 (kind == SmartAccountModuleKind.Verifier && !SmartAccountModulePolicy.IsCompositeVerifier(engine.SnapshotCache, root.Contract)))
                 throw new InvalidOperationException("The declared composite profile is not supported.");
         }
@@ -181,9 +191,19 @@ namespace Neo.SmartContract.Native
             var registry = ReadDependencies(engine.SnapshotCache, state, kind); var root = Binding(state, kind);
             if (root is null) return;
             foreach (var child in registry.Enrolled)
+                // M-6: every cleanup callback is capped by the fixed maintenance
+                // budget. CleanupRoot runs from the top-level native activation
+                // context, so the cap is a fresh bounded budget here.
                 _ = await ModuleCall(engine, state, kind, child, "clearAccount", SmartAccountCallbackPhase.Cleanup,
                     CallFlags.All, SmartAccountModulePolicy.MaintenanceBudget, false, state.AccountId.ToArray());
-            engine.SnapshotCache.Delete(RoleKey(DependencyPrefix, state.AccountId, kind));
+            var registryKey = RoleKey(DependencyPrefix, state.AccountId, kind);
+            if (engine.SnapshotCache.Contains(registryKey))
+            {
+                engine.SnapshotCache.Delete(registryKey);
+                // H-2: report the emptied registry so indexers can drop the roster.
+                Notify(engine, "ModuleDependenciesChanged", state.AccountId.ToArray(), ModuleTypeName(kind),
+                    new Array(), new BigInteger(state.ConfigurationNonce));
+            }
             _ = await ModuleCall(engine, state, kind, root, "clearAccount", SmartAccountCallbackPhase.Cleanup,
                 CallFlags.All, SmartAccountModulePolicy.MaintenanceBudget, false, state.AccountId.ToArray());
         }
@@ -214,9 +234,14 @@ namespace Neo.SmartContract.Native
             var next = new Dependencies(root, enrolled.ToArray(), active);
             if (kind == SmartAccountModuleKind.Verifier) await CheckDomains(engine, id, next, true);
             foreach (var child in removed)
+                // M-6: this cleanup is a continuation of the root's bounded
+                // configuration callback, whose budget is already capped at the
+                // same fixed maintenance budget. A fresh nested budget could
+                // never fit inside the parent's remaining gas, so the callback
+                // must inherit the enclosing (equally capped) budget instead.
                 _ = await ModuleCall(engine, state, kind, prior.Enrolled.Single(p => p.Contract == child), "clearAccount", SmartAccountCallbackPhase.Cleanup,
                     CallFlags.All, SmartAccountModulePolicy.MaintenanceBudget, true, id.ToArray());
-            WriteDependencies(engine, id, kind, next);
+            WriteDependencies(engine, id, kind, next, state.ConfigurationNonce);
         }
         private async ContractTask ClearDependencies(ApplicationEngine engine, UInt160 id, SmartAccountModuleKind kind)
         {
@@ -274,10 +299,12 @@ namespace Neo.SmartContract.Native
         private void CancelModuleCall(ApplicationEngine engine, UInt160 accountId, string moduleType)
         {
             RequireApplication(engine); using var locked = Context(engine).EnterAccount(accountId);
-            var state = RequireState(engine.SnapshotCache, accountId); var key = RoleKey(PendingCallPrefix, accountId, Kind(moduleType));
+            var state = RequireState(engine.SnapshotCache, accountId); var kind = Kind(moduleType); var key = RoleKey(PendingCallPrefix, accountId, kind);
             if (!Witness(engine, state.CustodyAddress) || !engine.SnapshotCache.Contains(key))
                 throw new InvalidOperationException("Cancellation requires custody and a pending module call.");
             engine.SnapshotCache.Delete(key);
+            // H-2: report the explicit pending-intent cancellation.
+            Notify(engine, "ModuleCallCancelled", accountId.ToArray(), ModuleTypeName(kind), new BigInteger(state.ConfigurationNonce));
         }
         private async ContractTask<StackItem> Configure(ApplicationEngine engine, UInt160 id, UInt160? child, string method, Array args, SmartAccountModuleKind kind)
         {
@@ -304,6 +331,9 @@ namespace Neo.SmartContract.Native
                 var pending = new Array([1, id.ToArray(), (int)kind, root.ToStackItem(), selected.ToStackItem(), method, ownedArgs,
                     new BigInteger(now), new BigInteger(now + SmartAccountState.ModuleChangeDelayMs), new BigInteger(state.ConfigurationNonce)]);
                 Put(engine, key, BinarySerializer.Serialize(pending, 8192, 8192));
+                // H-2: report every pending module-call intent (prefix 0x30) write.
+                Notify(engine, "ModuleCallPending", id.ToArray(), ModuleTypeName(kind), selected.Contract.ToArray(), method,
+                    new BigInteger(now + SmartAccountState.ModuleChangeDelayMs), new BigInteger(state.ConfigurationNonce));
                 return false;
             }
             var intent = ReadIntent(stored.Value, state, kind);
@@ -316,7 +346,7 @@ namespace Neo.SmartContract.Native
             if (child is not null && !registry.Enrolled.Any(p => p.Contract == child))
             {
                 if (registry.Enrolled.Length >= (kind == SmartAccountModuleKind.Verifier ? 3 : 8)) throw new InvalidOperationException("The enrolled leaf roster is full.");
-                registry = registry with { Enrolled = [.. registry.Enrolled, selected] }; WriteDependencies(engine, id, kind, registry);
+                registry = registry with { Enrolled = [.. registry.Enrolled, selected] }; WriteDependencies(engine, id, kind, registry, state.ConfigurationNonce);
             }
             var result = await ModuleCall(engine, state, kind, selected, method, SmartAccountCallbackPhase.Configuration,
                 CallFlags.All, SmartAccountModulePolicy.MaintenanceBudget, false, ownedArgs.ToArray());

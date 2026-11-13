@@ -9,6 +9,10 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+// SYNC CONTRACT (identity-fork convergence): this file is byte-identical to
+// the matching file in neo-native-core/src/Neo/SmartContract/Native/. Any
+// change MUST be applied to both copies in the same commit.
+
 using Neo.Json;
 using Neo.SmartContract.Manifest;
 using System;
@@ -114,8 +118,6 @@ namespace Neo.SmartContract.Native
         {
             if (!double.IsFinite(value)) throw new FormatException("Canonical JSON requires finite numbers.");
             if (value == 0) return "0";
-            // .NET's shortest round-trip digits use nearest/even ties. Apply the
-            // ECMAScript decimal/exponent presentation thresholds to those digits.
             string raw = Math.Abs(value).ToString("R", CultureInfo.InvariantCulture);
             int exponentIndex = raw.IndexOf('E');
             int exponent = exponentIndex < 0 ? 0 : int.Parse(raw[(exponentIndex + 1)..], CultureInfo.InvariantCulture);

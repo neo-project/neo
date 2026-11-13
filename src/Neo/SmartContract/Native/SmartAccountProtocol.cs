@@ -9,6 +9,10 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+// SYNC CONTRACT (identity-fork convergence): this file is byte-identical to
+// the matching file in neo-native-core/src/Neo/SmartContract/Native/. Any
+// change MUST be applied to both copies in the same commit.
+
 using Neo.Extensions;
 using Neo.VM;
 using Neo.VM.Types;
@@ -23,10 +27,7 @@ using Boolean = Neo.VM.Types.Boolean;
 
 namespace Neo.SmartContract.Native
 {
-    /// <summary>
-    /// State-independent identity, signing, and nonce encoding for native SmartAccount v1.
-    /// This codec does not register or activate a native contract.
-    /// </summary>
+    /// <summary>State-independent identity, signing and nonce encoding for native SmartAccount ABI 2.</summary>
     internal static class SmartAccountProtocol
     {
         internal const byte Version = 2;
@@ -44,7 +45,7 @@ namespace Neo.SmartContract.Native
         private const int UnsignedOperationSizeMax = 2 + 2 + UInt160.Length + 2 + MethodBytesMax
             + ArgumentSizeMax + 2 * (2 + Integer.MaxSize) + 2;
 
-        private static readonly byte[] ServiceHashBytes = Helper.GetContractHash(UInt160.Zero, 0, "AccountManagement").ToArray();
+        private static readonly byte[] ServiceHashBytes = Helper.GetContractHash(UInt160.Zero, 0, "SmartAccount").ToArray();
         internal static UInt160 ServiceHash => new(ServiceHashBytes);
         private static readonly BigInteger IntegerLimit = BigInteger.One << 255;
         private static readonly BigInteger ChannelLimit = BigInteger.One << 191;
@@ -137,8 +138,6 @@ namespace Neo.SmartContract.Native
             HashSet<Array> seen = new(ReferenceEqualityComparer.Instance);
             ValidateArgument(args, 0, seen, ref size);
             Array unsigned = new([op[0], op[1], args, nonce, deadline, ByteString.Empty]);
-            // Every serialized value occupies at least one byte. The size bound therefore
-            // also bounds the worklist and item count, independently of VM host defaults.
             return BinarySerializer.Serialize(unsigned, UnsignedOperationSizeMax, UnsignedOperationSizeMax);
         }
 
@@ -161,14 +160,13 @@ namespace Neo.SmartContract.Native
                     if (depth > ArgumentDepthMax || !seen.Add(array))
                         throw new FormatException("Argument containers must have bounded depth and unique references.");
                     Charge(1 + VarIntSize(array.Count), ref size);
-                    // Even Null occupies a byte. Reject excessive fan-out before traversal.
                     if (array.Count > ArgumentSizeMax - size)
                         throw new FormatException("Serialized arguments exceed 4096 bytes.");
                     foreach (StackItem child in array)
                         ValidateArgument(child, depth + 1, seen, ref size);
                     break;
                 default:
-                    throw new FormatException("The argument type is not supported by SmartAccount v1.");
+                    throw new FormatException("The argument type is not supported by SmartAccount ABI 2.");
             }
         }
 

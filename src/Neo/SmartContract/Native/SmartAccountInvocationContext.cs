@@ -9,6 +9,10 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+// SYNC CONTRACT (identity-fork convergence): this file is byte-identical to
+// the matching file in neo-native-core/src/Neo/SmartContract/Native/. Any
+// change MUST be applied to both copies in the same commit.
+
 using Neo.Extensions;
 using Neo.VM;
 using System;
@@ -18,10 +22,7 @@ namespace Neo.SmartContract.Native
 {
     internal enum SmartAccountCallbackPhase { Validation, PreExecute, PostExecute, Configuration, Cleanup }
 
-    /// <summary>
-    /// Engine-local account locks and frame-bound callback/target grants. These are
-    /// additional authority constraints, not witness facts or module admission proofs.
-    /// </summary>
+    /// <summary>Engine-local account locks and frame-bound callback/target grants.</summary>
     internal sealed class SmartAccountInvocationContext
     {
         private readonly Dictionary<UInt160, AccountLease> _accounts = new();
@@ -164,8 +165,6 @@ namespace Neo.SmartContract.Native
                 return false;
             if (ReferenceEquals(caller, grant.Anchor))
                 return module == grant.Contract;
-            // Only the root's actual invocation can delegate one direct call to a
-            // registered leaf. Hash equality alone does not identify that invocation.
             return grant.Children.Contains(module) && MatchesContract(grant.Anchor, grant.Contract) &&
                 ReferenceEquals(caller!.CallingContext?.GetState<ExecutionContextState>(), grant.Anchor);
         }

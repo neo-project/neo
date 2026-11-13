@@ -9,6 +9,10 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
+// SYNC CONTRACT (identity-fork convergence): this file is byte-identical to
+// the matching file in neo-native-core/src/Neo/SmartContract/Native/. Any
+// change MUST be applied to both copies in the same commit.
+
 using Neo.Extensions;
 using Neo.IO;
 using Neo.Network.P2P.Payloads;
@@ -23,10 +27,7 @@ using Boolean = Neo.VM.Types.Boolean;
 
 namespace Neo.SmartContract.Native
 {
-    /// <summary>
-    /// Canonical, inert transaction-envelope decoding for native SmartAccount ABI v2.
-    /// Parsing is not account authorization and never executes caller-supplied bytecode.
-    /// </summary>
+    /// <summary>Canonical, inert transaction-envelope decoding for native SmartAccount ABI 2.</summary>
     internal sealed class SmartAccountEnvelope
     {
         internal const int BatchMax = 32;
@@ -55,7 +56,6 @@ namespace Neo.SmartContract.Native
         {
             if ((uint)index >= _operations.Length)
                 throw new ArgumentOutOfRangeException(nameof(index));
-            // Neither returned containers nor ByteString backing memory alias the snapshot.
             byte[] encoded = _operations[index].AsSpan().ToArray();
             MemoryReader reader = new(encoded);
             return (Array)BinarySerializer.Deserialize(ref reader, (uint)encoded.Length, (uint)encoded.Length);
@@ -179,7 +179,6 @@ namespace Neo.SmartContract.Native
 
         private static void EmitValue(ScriptBuilder builder, StackItem item)
         {
-            // Called only after complete profile validation, which bounds recursion depth.
             switch (item)
             {
                 case Null:
@@ -239,7 +238,6 @@ namespace Neo.SmartContract.Native
                         int length = opcode == OpCode.PUSHDATA1
                             ? ReadOperand(script, ref offset, 1)[0]
                             : BinaryPrimitives.ReadUInt16LittleEndian(ReadOperand(script, ref offset, 2));
-                        // All supported ByteString fields are bounded by the argument-byte cap.
                         if (length > SmartAccountProtocol.ArgumentSizeMax)
                             throw new FormatException("A SmartAccount initializer ByteString exceeds the profile bounds.");
                         values.Push(new(new ByteString(ReadOperand(script, ref offset, length).ToArray()), 0));
@@ -268,7 +266,6 @@ namespace Neo.SmartContract.Native
                         values.Push(new(array, depth));
                         break;
                     default:
-                        // PUSHDATA4 cannot be canonical for any permitted ByteString size.
                         throw new FormatException("The initializer contains an unsupported or executable opcode.");
                 }
             }

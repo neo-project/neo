@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2026 The Neo Project.
 //
-// AccountManagement.Execution.cs file belongs to the neo project and is free
+// SmartAccount.Execution.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -8,6 +8,10 @@
 //
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
+
+// SYNC CONTRACT (identity-fork convergence): this file is byte-identical to
+// the matching file in neo-native-core/src/Neo/SmartContract/Native/. Any
+// change MUST be applied to both copies in the same commit.
 
 #pragma warning disable IDE0051
 using Neo.Extensions;
@@ -22,7 +26,7 @@ using Boolean = Neo.VM.Types.Boolean;
 
 namespace Neo.SmartContract.Native
 {
-    partial class AccountManagement
+    partial class SmartAccount
     {
         private static byte[] SnapshotOperation(Array operation)
         {
@@ -36,17 +40,14 @@ namespace Neo.SmartContract.Native
         }
         private static byte[] SnapshotResult(ApplicationEngine engine, StackItem result)
         {
-            // Charge the same CPU price and enforce the same data limits as StdLib.serialize.
             engine.AddNativeCpuFee(1 << 12);
             return BinarySerializer.Serialize(result, engine.Limits);
         }
         private static StackItem ReadResult(ApplicationEngine engine, byte[] snapshot)
         {
             engine.AddNativeCpuFee(1 << 14);
-            // ByteString and Buffer backing memory must not alias the stored result snapshot.
             return BinarySerializer.Deserialize(snapshot.AsSpan().ToArray(), engine.Limits);
         }
-        // Validate before BigInteger's ordinary interop conversion can coerce Boolean/ByteString.
         private sealed class ExecutionCounterAttribute : ValidatorAttribute
         {
             public override void Validate(StackItem item)
@@ -66,7 +67,6 @@ namespace Neo.SmartContract.Native
             if (state.Status != SmartAccountStatus.Active || operation[4].GetInteger() < now)
                 throw new InvalidOperationException("The account is Frozen or the operation has expired.");
         }
-        // Host-owned, bounded and operation-local. No VM graph is retained across callbacks.
         private sealed record CompositeApproval(UInt160[] Children, byte[] Commitment)
         {
             internal Array ToStackItem() => new([Boolean.True,
@@ -108,11 +108,7 @@ namespace Neo.SmartContract.Native
                 !SmartAccountModulePolicy.IsCompositeVerifier(engine.SnapshotCache, module.Contract))
                 throw new InvalidOperationException("A scalar verifier cannot grant composite child authority.");
             if (approval is not null)
-            {
-                // Check all active pins above, including children outside the approved subset.
-                // Reparse our owned receipt against the current roster before granting any child.
                 children = ReadCompositeApproval(approval.ToStackItem(), children).Children;
-            }
             var task = inheritBudget
                 ? engine.CallFromNativeContractRawAsync(Hash, module.Contract, method, flags, true, args)
                 : engine.CallFromNativeContractWithGasLimitAsync(Hash, module.Contract, method, flags, budget, args);
@@ -166,8 +162,6 @@ namespace Neo.SmartContract.Native
             StackItem result;
             using (Context(engine).EnterTarget(id, target, engine.CurrentContext!.GetState<ExecutionContextState>()))
                 result = (await targetTask)!;
-            // Each root callback receives its own result graph. Neither one can rewrite
-            // the next callback's policy input or the value returned to the transaction.
             byte[] resultSnapshot = SnapshotResult(engine, result);
             if (state.Hook is not null)
                 _ = await ModuleCall(engine, state, SmartAccountModuleKind.Hook, state.Hook, "postExecute",
@@ -215,7 +209,6 @@ namespace Neo.SmartContract.Native
             var state = RequireState(engine.SnapshotCache, accountId);
             if (engine.CallingScriptHash != state.AccountAddress)
                 throw new InvalidOperationException("Verification must originate from the account's exact proxy script.");
-            // UserOperation signatures authorize actions, not the transaction's fee fields.
             if (tx.Sender == state.AccountAddress)
                 throw new InvalidOperationException("The SmartAccount proxy cannot be the transaction fee payer.");
             using var locked = Context(engine).EnterAccount(accountId);

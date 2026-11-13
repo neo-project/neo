@@ -116,7 +116,7 @@ namespace Neo.SmartContract.Native
         public static TemporaryStorage TemporaryStorage { get; } = new();
 
         /// <summary>Gets the independently activated SmartAccount native service.</summary>
-        public static AccountManagement AccountManagement { get; } = new();
+        public static SmartAccount SmartAccount { get; } = new();
 
         #endregion
 
