@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2026 The Neo Project.
 //
-// UT_AccountManagement.ResultIsolation.cs file belongs to the neo project and is free
+// UT_SmartAccount.ResultIsolation.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -20,7 +20,7 @@ using Array = Neo.VM.Types.Array;
 
 namespace Neo.UnitTests.SmartContract.Native
 {
-    public partial class UT_AccountManagement
+    public partial class UT_SmartAccount
     {
         [TestMethod]
         public void RootPostCallbacksReceiveIndependentNestedResultsAndOperations()

@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2026 The Neo Project.
 //
-// UT_AccountManagement.RecoveryEpoch.cs file belongs to the neo project and is free
+// UT_SmartAccount.RecoveryEpoch.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -23,7 +23,7 @@ using Array = Neo.VM.Types.Array;
 
 namespace Neo.UnitTests.SmartContract.Native
 {
-    public partial class UT_AccountManagement
+    public partial class UT_SmartAccount
     {
         [TestMethod]
         public void RecoveryEpochAbiAndRegisteredStateDomainAreExact()
@@ -40,7 +40,7 @@ namespace Neo.UnitTests.SmartContract.Native
             {
                 using var unknown = Invoke(snapshot, method, [Next]);
                 Assert.AreEqual(VMState.FAULT, unknown.State);
-                var abi = NativeContract.AccountManagement.GetContractState(Settings, 1).Manifest.Abi.GetMethod(method, 1);
+                var abi = NativeContract.SmartAccount.GetContractState(Settings, 1).Manifest.Abi.GetMethod(method, 1);
                 Assert.IsTrue(abi.Safe);
             }
         }
@@ -68,7 +68,7 @@ namespace Neo.UnitTests.SmartContract.Native
             var original = (Array)Success(snapshot, "getAccount", [id]);
             Success(snapshot, "callHook", [id, "configure", new object[] { 19 }]);
             if (frozen) Success(snapshot, "freeze", [id], signers: [Recovery]);
-            Success(snapshot, "proposeRecovery", [id, Next], signers: [Recovery]);
+            Success(snapshot, "proposeRecovery", [id, Next], signers: [Recovery, Next]);
             Success(snapshot, "executeRecovery", [id], 1000 + SmartAccountState.CustodyRecoveryDelayMs, []);
             var state = (Array)Success(snapshot, "getAccount", [id]);
             Assert.IsInstanceOfType<Null>(state[5]); Assert.IsInstanceOfType<Null>(state[6]);
@@ -81,7 +81,7 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.AreEqual(new BigInteger(17), new BigInteger(snapshot[ConfigKey(child, id)].Value.Span));
             foreach (byte role in new byte[] { 0, 1 })
                 foreach (byte prefix in new byte[] { 0x30, 0x40 })
-                    Assert.IsFalse(snapshot.Contains(new KeyBuilder(NativeContract.AccountManagement.Id, prefix).Add(id).Add(role)));
+                    Assert.IsFalse(snapshot.Contains(new KeyBuilder(NativeContract.SmartAccount.Id, prefix).Add(id).Add(role)));
             if (frozen)
             {
                 Fault(snapshot, "unfreeze", [id], signers: [Next]);
@@ -100,7 +100,7 @@ namespace Neo.UnitTests.SmartContract.Native
         {
             var snapshot = Snapshot(); var verifier = ModuleFixture(snapshot, 184, abortCleanup: true);
             var id = RegisterWithModules(snapshot, verifier);
-            Success(snapshot, "proposeRecovery", [id, Next], signers: [Recovery]);
+            Success(snapshot, "proposeRecovery", [id, Next], signers: [Recovery, Next]);
             if (mutation == 0) snapshot.DeleteContract(verifier.Hash);
             else if (mutation == 1)
             {
@@ -109,19 +109,20 @@ namespace Neo.UnitTests.SmartContract.Native
             }
             else
                 foreach (byte role in new byte[] { 0, 1 })
-                    snapshot.Add(new KeyBuilder(NativeContract.AccountManagement.Id, 0x40).Add(id).Add(role), new StorageItem(new byte[] { 0xff }));
+                    snapshot.Add(new KeyBuilder(NativeContract.SmartAccount.Id, 0x40).Add(id).Add(role), new StorageItem(new byte[] { 0xff }));
             using var engine = Invoke(snapshot, "executeRecovery", [id], 1000 + SmartAccountState.CustodyRecoveryDelayMs, []);
             Assert.AreEqual(VMState.HALT, engine.State, engine.FaultException?.ToString());
-            Assert.AreEqual(1, engine.Notifications.Count);
-            var notification = engine.Notifications.Single();
-            Assert.AreEqual("RecoveryExecuted", notification.EventName);
+            // H-2: discarding the corrupted dependency registry on the authority
+            // epoch advance is notified once per module kind.
+            Assert.AreEqual(mutation == 2 ? 3 : 1, engine.Notifications.Count);
+            var notification = engine.Notifications.Single(n => n.EventName == "RecoveryExecuted");
             Assert.AreEqual(5, notification.State.Count);
             Assert.AreEqual(BigInteger.One, notification.State[4].GetInteger());
             engine.SnapshotCache.Commit();
             var state = (Array)Success(snapshot, "getAccount", [id]);
             Assert.IsInstanceOfType<Null>(state[5]);
             foreach (byte role in new byte[] { 0, 1 })
-                Assert.IsFalse(snapshot.Contains(new KeyBuilder(NativeContract.AccountManagement.Id, 0x40).Add(id).Add(role)));
+                Assert.IsFalse(snapshot.Contains(new KeyBuilder(NativeContract.SmartAccount.Id, 0x40).Add(id).Add(role)));
         }
 
         [TestMethod]
@@ -130,7 +131,7 @@ namespace Neo.UnitTests.SmartContract.Native
             var snapshot = Snapshot(); var id = Register(snapshot, Recovery);
             var op = Operation(NativeContract.StdLib.Hash, "serialize", [7]);
             var before = Success(snapshot, "getOperationDigest", [id, op]).GetSpan().ToArray();
-            Success(snapshot, "proposeRecovery", [id, Next], signers: [Recovery]);
+            Success(snapshot, "proposeRecovery", [id, Next], signers: [Recovery, Next]);
             Success(snapshot, "executeRecovery", [id], 1000 + SmartAccountState.CustodyRecoveryDelayMs, []);
             var after = Success(snapshot, "getOperationDigest", [id, op]).GetSpan().ToArray();
             Assert.IsFalse(before.SequenceEqual(after));
@@ -145,14 +146,14 @@ namespace Neo.UnitTests.SmartContract.Native
             {
                 AssertPhase(script, "verifier", "validation");
                 script.Emit(OpCode.LDARG1).Emit(OpCode.LDARG0).EmitPush(2).Emit(OpCode.PACK)
-                    .EmitPush(CallFlags.ReadOnly).EmitPush("getOperationDigest").EmitPush(NativeContract.AccountManagement.Hash)
+                    .EmitPush(CallFlags.ReadOnly).EmitPush("getOperationDigest").EmitPush(NativeContract.SmartAccount.Hash)
                     .EmitSysCall(ApplicationEngine.System_Contract_Call);
                 script.Emit(OpCode.LDARG1).EmitPush(5).Emit(OpCode.PICKITEM).Emit(OpCode.EQUAL);
             });
             var id = RegisterWithModules(snapshot, verifier);
             var op = Operation(NativeContract.StdLib.Hash, "serialize", [7]);
             op[5] = Success(snapshot, "getOperationDigest", [id, op]).GetSpan().ToArray();
-            Success(snapshot, "proposeRecoveryAddress", [id, Next]);
+            Success(snapshot, "proposeRecoveryAddress", [id, Next], signers: [Custody, Next]);
             Success(snapshot, "activateRecoveryAddress", [id], 1000 + SmartAccountState.ModuleChangeDelayMs);
             using (var stale = Invoke(snapshot, "executeUserOp", [id, op]))
                 Rejected(stale, "exactly Boolean true");

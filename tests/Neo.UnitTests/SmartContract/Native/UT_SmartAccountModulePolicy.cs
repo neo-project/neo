@@ -76,7 +76,7 @@ namespace Neo.UnitTests.SmartContract.Native
                 ["smartAccount"] = new JObject
                 {
                     ["abiVersion"] = 2,
-                    ["profileDigest"] = NativeContract.AccountManagement.GetContractState(TestProtocolSettings.Default with { Hardforks = TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_SmartAccountV1, 0) }, 1).Manifest.Extra["smartAccount"]["profileParameterDigest"].GetString(),
+                    ["profileDigest"] = NativeContract.SmartAccount.GetContractState(TestProtocolSettings.Default with { Hardforks = TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_SmartAccountV1, 0) }, 1).Manifest.Extra["smartAccount"]["profileParameterDigest"].GetString(),
                     ["compositeVerifier"] = composite
                 }
             };
@@ -165,7 +165,10 @@ namespace Neo.UnitTests.SmartContract.Native
                     .SetItem(Hardfork.HF_Huyao, huyao ? 0U : uint.MaxValue)
             };
             var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: settings, gas: gas);
-            engine.LoadScript(new byte[] { (byte)OpCode.RET }, configureState: state => state.ScriptHash = NativeContract.ContractManagement.Hash);
+            // M-1: discovery and signer-domain callbacks are dispatched by the
+            // SmartAccount native contract itself, not by whichever context
+            // happens to be current.
+            engine.LoadScript(new byte[] { (byte)OpCode.RET }, configureState: state => state.ScriptHash = NativeContract.SmartAccount.Hash);
             return engine;
         }
         private static void Propagate<T>(ApplicationEngine engine, ContractTask<T> task)

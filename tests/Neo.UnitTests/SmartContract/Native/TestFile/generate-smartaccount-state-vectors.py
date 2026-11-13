@@ -51,8 +51,8 @@ def initialize(value):
 def vectors():
     address = lambda n: bytes([n]) * 20
     binding = lambda n: [address(n), bytes([n]) * 32]
-    service = hash160(b"\x38" + initialize(address(0)) + initialize(0) + initialize(b"AccountManagement"))
-    assert service[::-1].hex() == "d9421d07adf206e9dc4be746a02e8e087fa61741"
+    service = hash160(b"\x38" + initialize(address(0)) + initialize(0) + initialize(b"SmartAccount"))
+    assert service[::-1].hex() == "398dc3f0227d7efac5533ed5ce9937390c158084"
     account = hash160(b"NeoSmartAccount\x01" + (123).to_bytes(4, "little") + service + address(1) + bytes(32))
     proxy = hash160(initialize(account) + b"\x11\xc0\x15" + initialize(b"verify") + initialize(service) + bytes.fromhex("41627d5b52"))
     fresh = [2, account, proxy, address(1), address(2), binding(3), binding(4), 0, 0, None, None, None, None, 0]

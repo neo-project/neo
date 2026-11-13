@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2026 The Neo Project.
 //
-// UT_AccountManagement.PublicKey.cs file belongs to the neo project and is free
+// UT_SmartAccount.PublicKey.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -22,7 +22,7 @@ using System.Linq;
 
 namespace Neo.UnitTests.SmartContract.Native
 {
-    public partial class UT_AccountManagement
+    public partial class UT_SmartAccount
     {
         [TestMethod]
         [DataRow(false)]
@@ -32,7 +32,7 @@ namespace Neo.UnitTests.SmartContract.Native
             byte[] compressed = ECCurve.Secp256r1.G.EncodePoint(true).ToArray();
             byte[] raw = ECCurve.Secp256r1.G.EncodePoint(!uncompressed).ToArray();
             var snapshot = Snapshot();
-            var abi = NativeContract.AccountManagement.GetContractState(Settings, 1).Manifest.Abi.GetMethod("canonicalP256PublicKey", 1);
+            var abi = NativeContract.SmartAccount.GetContractState(Settings, 1).Manifest.Abi.GetMethod("canonicalP256PublicKey", 1);
             Assert.IsNotNull(abi);
             Assert.IsTrue(abi.Safe);
             Assert.AreEqual(ContractParameterType.ByteArray, abi.ReturnType);
@@ -52,7 +52,7 @@ namespace Neo.UnitTests.SmartContract.Native
             byte[] hybrid = point.ToArray(); hybrid[0] = 6;
             byte[] outsideField = new byte[] { 2 }.Concat(Enumerable.Repeat((byte)255, 32)).ToArray();
             byte[] noSquareRoot = new byte[33]; noSquareRoot[0] = 2; noSquareRoot[32] = 1;
-            var abi = NativeContract.AccountManagement.GetContractState(Settings, 1).Manifest.Abi.GetMethod("canonicalP256PublicKey", 1);
+            var abi = NativeContract.SmartAccount.GetContractState(Settings, 1).Manifest.Abi.GetMethod("canonicalP256PublicKey", 1);
             Assert.IsNotNull(abi, "Negative cases must execute the new method, not fault because it is absent.");
             foreach (byte[] raw in new List<byte[]> { System.Array.Empty<byte>(), new byte[] { 0 }, new byte[32], new byte[34], new byte[64], new byte[66],
                 new byte[33], new byte[65], badY, hybrid, outsideField, noSquareRoot })
@@ -79,7 +79,7 @@ namespace Neo.UnitTests.SmartContract.Native
         {
             var inactive = Settings with { Hardforks = Settings.Hardforks.SetItem(Hardfork.HF_SmartAccountV1, uint.MaxValue) };
             using var script = new ScriptBuilder();
-            script.EmitDynamicCall(NativeContract.AccountManagement.Hash, "canonicalP256PublicKey", ECCurve.Secp256r1.G.EncodePoint(true));
+            script.EmitDynamicCall(NativeContract.SmartAccount.Hash, "canonicalP256PublicKey", ECCurve.Secp256r1.G.EncodePoint(true));
             using var engine = ApplicationEngine.Create(TriggerType.Application, null, Snapshot(), Block(1000), inactive, gas: 100_000_000);
             engine.LoadScript(script.ToArray());
             Assert.AreEqual(VMState.FAULT, engine.Execute());

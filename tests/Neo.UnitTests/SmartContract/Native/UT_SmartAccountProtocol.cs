@@ -31,11 +31,11 @@ namespace Neo.UnitTests.SmartContract.Native
     public class UT_SmartAccountProtocol
     {
         private const uint Network = 0x12345678;
-        private static readonly UInt160 Service = UInt160.Parse("0xd9421d07adf206e9dc4be746a02e8e087fa61741");
-        private static readonly UInt160 Account = UInt160.Parse("0x3e25330008563c55fe2853e07868b36ca00020ac");
+        private static readonly UInt160 Service = UInt160.Parse("0x398dc3f0227d7efac5533ed5ce9937390c158084");
+        private static readonly UInt160 Account = UInt160.Parse("0x2168f4b52e13e1400a4cc93228f4c302d122b4b7");
         private static readonly UInt160 Custody = new(Convert.FromHexString("202122232425262728292a2b2c2d2e2f30313233"));
         private static readonly byte[] Salt = Convert.FromHexString("404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f");
-        private const string UnsignedVector = "400628144117a67f088e2ea046e74bdce906f2ad071d42d928087472616e7366657240022814ac2000a06cb36878e05328fe553c56080033253e21012a210021060068e5cf8b012800";
+        private const string UnsignedVector = "400628148480150c393799ced53e53c5fa7e7d22f0c38d3928087472616e7366657240022814b7b422d102c3f42832c94c0a40e1132eb5f4682121012a210021060068e5cf8b012800";
 
         private static Array Operation() => new([
             Service.ToArray(), "transfer", new Array([Account.ToArray(), 42]),
@@ -47,8 +47,8 @@ namespace Neo.UnitTests.SmartContract.Native
         {
             Assert.AreEqual(Service, SmartAccountProtocol.ServiceHash);
             Assert.AreEqual(Account, SmartAccountProtocol.GetAccountId(Network, Custody, Salt));
-            Assert.AreEqual(UInt160.Parse("0x7829f40af6380c00110932c9551ece0916fdcad1"), SmartAccountProtocol.GetAccountAddress(Account));
-            Assert.AreEqual("0c14ac2000a06cb36878e05328fe553c56080033253e11c0150c067665726966790c144117a67f088e2ea046e74bdce906f2ad071d42d941627d5b52",
+            Assert.AreEqual(UInt160.Parse("0x09e1715bc1e2860a9b45dd44f6e394c228bb69d6"), SmartAccountProtocol.GetAccountAddress(Account));
+            Assert.AreEqual("0c14b7b422d102c3f42832c94c0a40e1132eb5f4682111c0150c067665726966790c148480150c393799ced53e53c5fa7e7d22f0c38d3941627d5b52",
                 Convert.ToHexStringLower(SmartAccountProtocol.CreateVerificationScript(Account)));
         }
 
@@ -93,9 +93,9 @@ namespace Neo.UnitTests.SmartContract.Native
         public void PublishedOperationBytesAndDigestMatch()
         {
             Assert.AreEqual(UnsignedVector, Convert.ToHexStringLower(SmartAccountProtocol.SerializeUnsignedOperation(Operation())));
-            Assert.AreEqual("be6546454525ed1382f8d86380c5816fd24cf4f5674e00bc0e601af3a6952ea8",
+            Assert.AreEqual("048cb3885a6b6e1e508b972b43026bb24b01df3818435c28ef65e3904333d53d",
                 Convert.ToHexStringLower(SmartAccountProtocol.GetOperationDigest(Network, Account, Operation(), 0, 0)));
-            Assert.AreEqual("4e656f536d6172744163636f756e742f557365724f7065726174696f6e02785634124117a67f088e2ea046e74bdce906f2ad071d42d9ac2000a06cb36878e05328fe553c56080033253e00000000000000000000000000000000",
+            Assert.AreEqual("4e656f536d6172744163636f756e742f557365724f7065726174696f6e02785634128480150c393799ced53e53c5fa7e7d22f0c38d39b7b422d102c3f42832c94c0a40e1132eb5f4682100000000000000000000000000000000",
                 Convert.ToHexStringLower(SmartAccountProtocol.GetAuthorizationDomain(Network, Account, 0, 0)));
         }
 
@@ -309,9 +309,9 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void StorageKeysAreFixedWidthAndDomainSeparated()
         {
-            Assert.AreEqual("10ac2000a06cb36878e05328fe553c56080033253e", Convert.ToHexStringLower(SmartAccountProtocol.GetAccountKey(Account)));
+            Assert.AreEqual("10b7b422d102c3f42832c94c0a40e1132eb5f46821", Convert.ToHexStringLower(SmartAccountProtocol.GetAccountKey(Account)));
             byte[] key = SmartAccountProtocol.GetNonceKey(Account, 1);
-            Assert.AreEqual(45, key.Length);
+            Assert.HasCount(45, key);
             Assert.AreEqual(0x20, key[0]);
             Assert.AreSequenceEqual(Account.ToArray(), key[1..21]);
             Assert.IsTrue(key[21..44].All(b => b == 0));

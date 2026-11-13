@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2026 The Neo Project.
 //
-// UT_AccountManagement.Witness.cs file belongs to the neo project and is free
+// UT_SmartAccount.Witness.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -27,7 +27,7 @@ using Array = Neo.VM.Types.Array;
 
 namespace Neo.UnitTests.SmartContract.Native
 {
-    public partial class UT_AccountManagement
+    public partial class UT_SmartAccount
     {
         private static ContractState WitnessTarget(DataCache snapshot)
         {
@@ -172,7 +172,7 @@ namespace Neo.UnitTests.SmartContract.Native
                 script.Emit(OpCode.LDARG1).EmitPush(5).Emit(OpCode.PICKITEM);
                 script.EmitPush(userKey.PublicKey.EncodePoint(true));
                 script.Emit(OpCode.LDARG1).Emit(OpCode.LDARG0).EmitPush(2).Emit(OpCode.PACK)
-                    .EmitPush(CallFlags.ReadOnly).EmitPush("getOperationDigest").EmitPush(NativeContract.AccountManagement.Hash)
+                    .EmitPush(CallFlags.ReadOnly).EmitPush("getOperationDigest").EmitPush(NativeContract.SmartAccount.Hash)
                     .EmitSysCall(ApplicationEngine.System_Contract_Call);
                 script.EmitPush(4).Emit(OpCode.PACK).EmitPush(CallFlags.ReadOnly).EmitPush("verifyWithECDsa")
                     .EmitPush(NativeContract.CryptoLib.Hash).EmitSysCall(ApplicationEngine.System_Contract_Call);
@@ -211,7 +211,7 @@ namespace Neo.UnitTests.SmartContract.Native
         {
             var snapshot = Snapshot(); var id = Register(snapshot);
             var inner = Operation(NativeContract.StdLib.Hash, "serialize", [7]);
-            using var failed = Invoke(snapshot, "executeUserOp", [id, Operation(NativeContract.AccountManagement.Hash, "executeUserOp", [id, inner, 0, 0])]);
+            using var failed = Invoke(snapshot, "executeUserOp", [id, Operation(NativeContract.SmartAccount.Hash, "executeUserOp", [id, inner, 0, 0])]);
             Assert.AreEqual(VMState.FAULT, failed.State);
             Assert.Contains("already executing", failed.FaultException.Message);
             Assert.AreEqual(BigInteger.Zero, Success(snapshot, "getNonce", [id, BigInteger.Zero]).GetInteger());

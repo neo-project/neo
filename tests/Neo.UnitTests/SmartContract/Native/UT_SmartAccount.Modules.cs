@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2026 The Neo Project.
 //
-// UT_AccountManagement.Modules.cs file belongs to the neo project and is free
+// UT_SmartAccount.Modules.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -27,12 +27,12 @@ using Array = Neo.VM.Types.Array;
 
 namespace Neo.UnitTests.SmartContract.Native
 {
-    public partial class UT_AccountManagement
+    public partial class UT_SmartAccount
     {
         private static void CoreCall(ScriptBuilder script, string method, int count)
         {
             script.EmitPush(count).Emit(OpCode.PACK).EmitPush(CallFlags.All).EmitPush(method)
-                .EmitPush(NativeContract.AccountManagement.Hash).EmitSysCall(ApplicationEngine.System_Contract_Call);
+                .EmitPush(NativeContract.SmartAccount.Hash).EmitSysCall(ApplicationEngine.System_Contract_Call);
         }
         private static void AssertPhase(ScriptBuilder script, string role, string phase)
         {
@@ -40,7 +40,7 @@ namespace Neo.UnitTests.SmartContract.Native
                 .EmitPush(role).Emit(OpCode.LDARG0);
             // Safe context queries can be called from ReadOnly verifier validation.
             script.EmitPush(4).Emit(OpCode.PACK).EmitPush(CallFlags.ReadOnly).EmitPush("hasModuleContext")
-                .EmitPush(NativeContract.AccountManagement.Hash).EmitSysCall(ApplicationEngine.System_Contract_Call).Emit(OpCode.ASSERT);
+                .EmitPush(NativeContract.SmartAccount.Hash).EmitSysCall(ApplicationEngine.System_Contract_Call).Emit(OpCode.ASSERT);
         }
         private static ContractState ModuleFixture(DataCache snapshot, int number, bool hook = false, bool composite = false,
             bool abortPost = false, bool abortCleanup = false, int domain = -1, bool allowDestroy = false, UInt160 destroyRoot = null,
@@ -88,7 +88,7 @@ namespace Neo.UnitTests.SmartContract.Native
                     if (delegatedChild is not null) { Delegate("validateSignature", 2, true); script.Emit(OpCode.ASSERT); }
                     script.EmitPush(new byte[32]);
                     script.EmitPush("verifier").Emit(OpCode.LDARG0).EmitPush(2).Emit(OpCode.PACK)
-                        .EmitPush(CallFlags.ReadOnly).EmitPush("getModuleDependencies").EmitPush(NativeContract.AccountManagement.Hash)
+                        .EmitPush(CallFlags.ReadOnly).EmitPush("getModuleDependencies").EmitPush(NativeContract.SmartAccount.Hash)
                         .EmitSysCall(ApplicationEngine.System_Contract_Call).EmitPush(2).Emit(OpCode.PICKITEM);
                     script.EmitPush(true).EmitPush(3).Emit(OpCode.PACK);
                 }, ContractParameterType.Hash160, ContractParameterType.Array);
@@ -140,20 +140,26 @@ namespace Neo.UnitTests.SmartContract.Native
             var result = TestUtils.GetContract(script.ToArray()); result.Id = number;
             result.Manifest.Name = composite ? (hook ? "MultiHook" : "MultiSigVerifier") : $"Leaf{number}";
             result.Manifest.Abi.Methods = methods.ToArray();
-            result.Manifest.Extra = new JObject
+            var extra = new JObject
             {
-                ["smartAccount"] = new JObject
-                {
-                    ["abiVersion"] = 2,
-                    ["profileDigest"] = NativeContract.AccountManagement.GetContractState(Settings, 1).Manifest.Extra["smartAccount"]["profileParameterDigest"].GetString(),
-                    ["compositeVerifier"] = composite && !hook,
-                    ["configurationMethods"] = composite ? new JArray("configure", "roster", "clearRoster") : new JArray("configure")
-                }
+                ["abiVersion"] = 2,
+                ["profileDigest"] = NativeContract.SmartAccount.GetContractState(Settings, 1).Manifest.Extra["smartAccount"]["profileParameterDigest"].GetString(),
+                ["compositeVerifier"] = composite && !hook,
+                ["configurationMethods"] = composite ? new JArray("configure", "roster", "clearRoster") : new JArray("configure")
             };
+            // M-3: composite roots declare their composite profile in the manifest
+            // instead of relying on the contract name.
+            if (composite) extra["compositeProfile"] = hook ? "MultiHook" : "MultiSigVerifier";
+            result.Manifest.Extra = new JObject { ["smartAccount"] = extra };
             snapshot.AddContract(result.Hash, result); return result;
         }
-        private static UInt160 RegisterWithModules(DataCache snapshot, ContractState verifier = null, ContractState hook = null) =>
-            new(Success(snapshot, "registerAccount", [Custody, new byte[32], verifier?.Hash ?? UInt160.Zero, hook?.Hash ?? UInt160.Zero, Recovery]).GetSpan());
+        private static UInt160 RegisterWithModules(DataCache snapshot, ContractState verifier = null, ContractState hook = null)
+        {
+            // The admission fix requires every newly introduced nonzero
+            // authority (custody and recovery here; module contracts are not
+            // account authorities) to witness the registration transition.
+            return new(Success(snapshot, "registerAccount", [Custody, new byte[32], verifier?.Hash ?? UInt160.Zero, hook?.Hash ?? UInt160.Zero, Recovery], signers: [Custody, Recovery]).GetSpan());
+        }
         private static StorageKey ConfigKey(ContractState module, UInt160 id) => new() { Id = module.Id, Key = id.ToArray() };
         private static void Fault(DataCache snapshot, string method, object[] args, ulong time = 1000, UInt160[] signers = null)
         {
@@ -322,8 +328,8 @@ namespace Neo.UnitTests.SmartContract.Native
                 Success(snapshot, "propose" + role, [id, module.Hash]);
                 Success(snapshot, "activate" + role, [id], 1000 + SmartAccountState.ModuleChangeDelayMs);
             }
-            Success(snapshot, "proposeRecoveryAddress", [id, Next]); Success(snapshot, "cancelRecoveryAddress", [id]);
-            Success(snapshot, "proposeRecovery", [id, Next], signers: [Recovery]); Success(snapshot, "cancelRecovery", [id]);
+            Success(snapshot, "proposeRecoveryAddress", [id, Next], signers: [Custody, Next]); Success(snapshot, "cancelRecoveryAddress", [id]);
+            Success(snapshot, "proposeRecovery", [id, Next], signers: [Recovery, Next]); Success(snapshot, "cancelRecovery", [id]);
             Assert.AreEqual(new BigInteger(2), ((Array)Success(snapshot, "getAccount", [id]))[8].GetInteger());
             Assert.AreEqual(new BigInteger(2), Success(snapshot, "getVersion", []).GetInteger());
             Assert.IsInstanceOfType<ByteString>(Success(snapshot, "getOperationDigest", [id, Operation(NativeContract.StdLib.Hash, "serialize", [7])]));
@@ -337,7 +343,7 @@ namespace Neo.UnitTests.SmartContract.Native
         {
             var snapshot = Snapshot(); var module = ModuleFixture(snapshot, 120); var id = RegisterWithModules(snapshot, module);
             Success(snapshot, "callVerifier", [id, "configure", new object[] { 7 }]);
-            var key = new KeyBuilder(NativeContract.AccountManagement.Id, 0x30).Add(id).Add((byte)0);
+            var key = new KeyBuilder(NativeContract.SmartAccount.Id, 0x30).Add(id).Add((byte)0);
             var original = snapshot[key].Value.ToArray();
             Action<Array>[] changes = [
                 record => record[0] = true,

@@ -8,10 +8,10 @@ import sys
 
 def vectors():
     prefix = b"NeoSmartAccount/UserOperation\x02" + (0x12345678).to_bytes(4, "little")
-    prefix += bytes.fromhex("4117a67f088e2ea046e74bdce906f2ad071d42d9ac2000a06cb36878e05328fe553c56080033253e")
-    unsigned = bytes.fromhex("400628144117a67f088e2ea046e74bdce906f2ad071d42d928087472616e7366657240022814ac2000a06cb36878e05328fe553c56080033253e21012a210021060068e5cf8b012800")
+    prefix += bytes.fromhex("8480150c393799ced53e53c5fa7e7d22f0c38d39b7b422d102c3f42832c94c0a40e1132eb5f46821")
+    unsigned = bytes.fromhex("400628148480150c393799ced53e53c5fa7e7d22f0c38d3928087472616e7366657240022814b7b422d102c3f42832c94c0a40e1132eb5f4682121012a210021060068e5cf8b012800")
     cases = []
-    for epoch, nonce in [(0, 0), (0, 1), (1, 1), (7, 11), ((1 << 64) - 1, (1 << 64) - 1)]:
+    for epoch, nonce in [(0, 0), (1, 0), (0, 1), (1, 1), (7, 11), ((1 << 64) - 1, (1 << 64) - 1)]:
         domain = prefix + epoch.to_bytes(8, "little") + nonce.to_bytes(8, "little")
         cases.append({"authorityEpoch": str(epoch), "configurationNonce": str(nonce),
                       "domain": domain.hex(), "digest": hashlib.sha256(domain + unsigned).hexdigest()})

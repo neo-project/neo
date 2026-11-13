@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2026 The Neo Project.
 //
-// UT_AccountManagement.cs file belongs to the neo project and is free
+// UT_SmartAccount.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -14,7 +14,6 @@ using Neo.Extensions;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract;
-using Neo.SmartContract.Manifest;
 using Neo.SmartContract.Native;
 using Neo.UnitTests.Extensions;
 using Neo.VM;
@@ -27,7 +26,7 @@ using Array = Neo.VM.Types.Array;
 namespace Neo.UnitTests.SmartContract.Native
 {
     [TestClass]
-    public partial class UT_AccountManagement
+    public partial class UT_SmartAccount
     {
         private static readonly UInt160 Custody = UInt160.Parse("0x0101010101010101010101010101010101010101");
         private static readonly UInt160 Recovery = UInt160.Parse("0x0202020202020202020202020202020202020202");
@@ -39,7 +38,7 @@ namespace Neo.UnitTests.SmartContract.Native
         private static DataCache Snapshot()
         {
             var snapshot = TestBlockchain.GetTestSnapshotCache();
-            snapshot.AddContract(NativeContract.AccountManagement.Hash, NativeContract.AccountManagement.GetContractState(Settings, 1));
+            snapshot.AddContract(NativeContract.SmartAccount.Hash, NativeContract.SmartAccount.GetContractState(Settings, 1));
             return snapshot;
         }
         private static Block Block(ulong time) => new()
@@ -65,13 +64,11 @@ namespace Neo.UnitTests.SmartContract.Native
             else builder.EmitPush(value);
         }
         private static SmartAccountState ReadAccountState(DataCache snapshot, UInt160 id) => SmartAccountState.Deserialize(id,
-            snapshot[new StorageKey { Id = NativeContract.AccountManagement.Id, Key = SmartAccountProtocol.GetAccountKey(id) }].Value);
+            snapshot[new StorageKey { Id = NativeContract.SmartAccount.Id, Key = SmartAccountProtocol.GetAccountKey(id) }].Value);
 
         private static ApplicationEngine Invoke(DataCache snapshot, string method, object[] args, ulong time = 1000,
             UInt160[] signers = null, TriggerType trigger = TriggerType.Application, UInt160 target = null, Signer[] signerDetails = null)
         {
-            // Test convenience only: normal calls capture state before building the script.
-            // Explicit 4-argument calls and raw/script tests never refresh their commitment.
             if (target is null && (method is "executeUserOp" or "executeUserOps") && args.Length == 2)
             {
                 var state = ReadAccountState(snapshot, (UInt160)args[0]);
@@ -79,7 +76,7 @@ namespace Neo.UnitTests.SmartContract.Native
             }
             using var builder = new ScriptBuilder();
             Push(builder, args);
-            builder.EmitPush(CallFlags.All).EmitPush(method).EmitPush(target ?? NativeContract.AccountManagement.Hash).EmitSysCall(ApplicationEngine.System_Contract_Call);
+            builder.EmitPush(CallFlags.All).EmitPush(method).EmitPush(target ?? NativeContract.SmartAccount.Hash).EmitSysCall(ApplicationEngine.System_Contract_Call);
             var tx = new Transaction { Version = 0, Script = builder.ToArray(), Signers = signerDetails ?? (signers ?? [Custody]).Select(a => new Signer { Account = a, Scopes = WitnessScope.Global }).ToArray(), Attributes = [], Witnesses = [] };
             var engine = ApplicationEngine.Create(trigger, tx, snapshot, Block(time), Settings, gas: 10_000_000_000);
             engine.LoadScript(tx.Script); engine.Execute(); return engine;
@@ -90,26 +87,32 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.AreEqual(VMState.HALT, engine.State, engine.FaultException?.ToString());
             var result = engine.ResultStack.Pop(); engine.SnapshotCache.Commit(); return result;
         }
-        private static UInt160 Register(DataCache snapshot, UInt160 recovery = null) => new(Success(snapshot,
-            "registerAccount", [Custody, new byte[32], UInt160.Zero, UInt160.Zero, recovery ?? UInt160.Zero]).GetSpan());
+        private static UInt160 Register(DataCache snapshot, UInt160 recovery = null)
+        {
+            UInt160[] signers = recovery is null || recovery == UInt160.Zero ? [Custody] : [Custody, recovery];
+            return new(Success(snapshot, "registerAccount", [Custody, new byte[32], UInt160.Zero, UInt160.Zero, recovery ?? UInt160.Zero], signers: signers).GetSpan());
+        }
 
         [TestMethod]
         public void NativeIdentityActivationAndRequiredAbiAreStable()
         {
-            var native = NativeContract.AccountManagement;
+            var native = NativeContract.SmartAccount;
+            Assert.AreEqual("SmartAccount", native.Name);
+            Assert.AreEqual(UInt160.Parse("0x398dc3f0227d7efac5533ed5ce9937390c158084"), native.Hash);
             Assert.AreEqual(SmartAccountProtocol.ServiceHash, native.Hash);
             Assert.AreEqual(NativeContract.TemporaryStorage.Id - 1, native.Id);
             Assert.IsFalse(native.IsActive(TestProtocolSettings.Default, uint.MaxValue));
             var disabled = native.GetContractState(TestProtocolSettings.Default, 1);
-            Assert.AreEqual(0, disabled.Manifest.Abi.Methods.Length);
-            Assert.AreEqual(0, disabled.Manifest.Abi.Events.Length);
+            Assert.IsEmpty(disabled.Manifest.Abi.Methods);
+            Assert.IsEmpty(disabled.Manifest.Abi.Events);
             var state = native.GetContractState(Settings, 1);
-            Assert.AreEqual(6, state.Manifest.Abi.Events.Single(e => e.Name == "AccountCreated").Parameters.Length);
+            Assert.HasCount(6, state.Manifest.Abi.Events.Single(e => e.Name == "AccountCreated").Parameters);
             foreach (string method in new[] { "registerAccount", "verify", "executeUserOp", "executeUserOps", "getVersion", "getAccount", "getNonce",
                 "callVerifier", "callHook", "callVerifierChild", "callHookChild", "cancelModuleCall", "getPendingModuleCall", "getModuleDependencies",
                 "setVerifierDependencies", "setHookDependencies", "clearVerifierDependencies", "clearHookDependencies", "freeze", "unfreeze", "executeRecovery" })
-                Assert.IsTrue(state.Manifest.Abi.Methods.Any(m => m.Name == method), method);
+                Assert.Contains(method, state.Manifest.Abi.Methods.Select(m => m.Name).ToArray(), method);
             Assert.AreEqual(2, state.Manifest.Extra["smartAccount"]["abiVersion"].GetInt32());
+            Assert.AreEqual(SmartAccount.ParameterDigest, state.Manifest.Extra["smartAccount"]["profileParameterDigest"].GetString());
         }
 
         [TestMethod]
@@ -121,7 +124,7 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.AreEqual(14, state.Count); Assert.AreEqual(BigInteger.Zero, state[8].GetInteger());
             Assert.AreSequenceEqual(SmartAccountProtocol.GetAccountAddress(id).ToArray(), Success(snapshot, "getAccountAddress", [id]).GetSpan().ToArray());
             Assert.AreEqual(BigInteger.Zero, Success(snapshot, "getNonce", [id, BigInteger.Zero]).GetInteger());
-            using var duplicate = Invoke(snapshot, "registerAccount", [Custody, new byte[32], UInt160.Zero, UInt160.Zero, Recovery]);
+            using var duplicate = Invoke(snapshot, "registerAccount", [Custody, new byte[32], UInt160.Zero, UInt160.Zero, Recovery], signers: [Custody, Recovery]);
             Assert.AreEqual(VMState.FAULT, duplicate.State);
             using var missing = Invoke(snapshot, "registerAccount", [Next, new byte[32], UInt160.Zero, UInt160.Zero, UInt160.Zero]);
             Assert.AreEqual(VMState.FAULT, missing.State);
@@ -138,9 +141,9 @@ namespace Neo.UnitTests.SmartContract.Native
             script.EmitSysCall(ApplicationEngine.System_Runtime_CheckWitness).Emit(OpCode.RET);
             var target = TestUtils.GetContract(script.ToArray(), TestUtils.CreateManifest("check", ContractParameterType.Boolean, ContractParameterType.Hash160));
             snapshot.AddContract(target.Hash, target);
-            var result = Success(snapshot, "executeUserOp", [id, Operation(target.Hash, "check", [NativeContract.AccountManagement.Hash])]);
+            var result = Success(snapshot, "executeUserOp", [id, Operation(target.Hash, "check", [NativeContract.SmartAccount.Hash])]);
             Assert.IsFalse(result.GetBoolean(), "The permissionless native dispatcher is not an authorization identity.");
-            using var invalidGuardian = Invoke(snapshot, "proposeRecoveryAddress", [id, NativeContract.AccountManagement.Hash]);
+            using var invalidGuardian = Invoke(snapshot, "proposeRecoveryAddress", [id, NativeContract.SmartAccount.Hash]);
             Assert.AreEqual(VMState.FAULT, invalidGuardian.State);
         }
 
@@ -151,10 +154,10 @@ namespace Neo.UnitTests.SmartContract.Native
                 foreach (var trigger in new[] { TriggerType.Application, TriggerType.Verification })
                 {
                     var settings = active ? Settings : TestProtocolSettings.Default;
-                    var tx = new Transaction { Signers = [new Signer { Account = NativeContract.AccountManagement.Hash, Scopes = WitnessScope.Global }], Attributes = [], Witnesses = [] };
+                    var tx = new Transaction { Signers = [new Signer { Account = NativeContract.SmartAccount.Hash, Scopes = WitnessScope.Global }], Attributes = [], Witnesses = [] };
                     using var engine = ApplicationEngine.Create(trigger, tx, Snapshot(), Block(1000), settings);
-                    engine.LoadScript(new byte[] { (byte)OpCode.RET }, configureState: state => state.NativeCallingScriptHash = NativeContract.AccountManagement.Hash);
-                    Assert.AreEqual(!active, engine.CheckWitnessInternal(NativeContract.AccountManagement.Hash));
+                    engine.LoadScript(new byte[] { (byte)OpCode.RET }, configureState: state => state.NativeCallingScriptHash = NativeContract.SmartAccount.Hash);
+                    Assert.AreEqual(!active, engine.CheckWitnessInternal(NativeContract.SmartAccount.Hash));
                 }
         }
 
@@ -195,14 +198,14 @@ namespace Neo.UnitTests.SmartContract.Native
         public void RecoveryRotationFreezeAndMaturityUseRealWitnessesAndStorage()
         {
             var snapshot = Snapshot(); var id = Register(snapshot, Recovery);
-            Success(snapshot, "proposeRecoveryAddress", [id, Next]);
+            Success(snapshot, "proposeRecoveryAddress", [id, Next], signers: [Custody, Next]);
             using (var early = Invoke(snapshot, "activateRecoveryAddress", [id], 1001)) Assert.AreEqual(VMState.FAULT, early.State);
             Success(snapshot, "activateRecoveryAddress", [id], 1000 + SmartAccountState.ModuleChangeDelayMs, []);
             var state = (Array)Success(snapshot, "getAccount", [id]); Assert.AreEqual(BigInteger.One, state[8].GetInteger());
             Success(snapshot, "freeze", [id], signers: [Next]);
             using (var unauthorized = Invoke(snapshot, "unfreeze", [id])) Assert.AreEqual(VMState.FAULT, unauthorized.State);
             Success(snapshot, "unfreeze", [id], signers: [Custody, Next]);
-            Success(snapshot, "proposeRecovery", [id, Recovery], signers: [Next]);
+            Success(snapshot, "proposeRecovery", [id, Recovery], signers: [Next, Recovery]);
             using (var late = Invoke(snapshot, "cancelRecovery", [id], 1000 + SmartAccountState.CustodyRecoveryDelayMs)) Assert.AreEqual(VMState.FAULT, late.State);
             Success(snapshot, "executeRecovery", [id], 1000 + SmartAccountState.CustodyRecoveryDelayMs, []);
             state = (Array)Success(snapshot, "getAccount", [id]); Assert.AreSequenceEqual(Recovery.ToArray(), state[3].GetSpan().ToArray());

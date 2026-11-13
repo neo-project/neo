@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2026 The Neo Project.
 //
-// UT_AccountManagement.PendingIntent.cs file belongs to the neo project and is free
+// UT_SmartAccount.PendingIntent.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -23,7 +23,7 @@ using Array = Neo.VM.Types.Array;
 
 namespace Neo.UnitTests.SmartContract.Native
 {
-    public partial class UT_AccountManagement
+    public partial class UT_SmartAccount
     {
         private static (DataCache Snapshot, UInt160 Id) PendingIntentFixture()
         {
@@ -42,11 +42,11 @@ namespace Neo.UnitTests.SmartContract.Native
         private static byte[] GuardedPendingCancellation(UInt160 id, string role, byte[] reviewed)
         {
             using var script = new ScriptBuilder();
-            script.EmitDynamicCall(NativeContract.AccountManagement.Hash, "getPendingModuleCall", CallFlags.ReadOnly, id, role);
+            script.EmitDynamicCall(NativeContract.SmartAccount.Hash, "getPendingModuleCall", CallFlags.ReadOnly, id, role);
             script.EmitPush(1).Emit(OpCode.PACK).EmitPush(CallFlags.None).EmitPush("serialize")
                 .EmitPush(NativeContract.StdLib.Hash).EmitSysCall(ApplicationEngine.System_Contract_Call);
             script.EmitPush(reviewed).Emit(OpCode.EQUAL).Emit(OpCode.ASSERT);
-            script.EmitDynamicCall(NativeContract.AccountManagement.Hash, "cancelModuleCall", CallFlags.All, id, role);
+            script.EmitDynamicCall(NativeContract.SmartAccount.Hash, "cancelModuleCall", CallFlags.All, id, role);
             return script.ToArray();
         }
 
@@ -60,7 +60,7 @@ namespace Neo.UnitTests.SmartContract.Native
                 {
                     Account = account,
                     Scopes = WitnessScope.CustomContracts,
-                    AllowedContracts = [NativeContract.AccountManagement.Hash]
+                    AllowedContracts = [NativeContract.SmartAccount.Hash]
                 }).ToArray(),
                 Attributes = [],
                 Witnesses = []
@@ -166,7 +166,7 @@ namespace Neo.UnitTests.SmartContract.Native
             var (snapshot, id) = PendingIntentFixture();
             byte[] reviewed = PendingIntentBytes(snapshot, id, "verifier");
             using var script = new ScriptBuilder();
-            script.EmitDynamicCall(NativeContract.AccountManagement.Hash, "cancelModuleCall", CallFlags.All, id, "verifier");
+            script.EmitDynamicCall(NativeContract.SmartAccount.Hash, "cancelModuleCall", CallFlags.All, id, "verifier");
             Success(snapshot, "cancelModuleCall", [id, "verifier"]);
             Success(snapshot, "callVerifier", [id, "configure", new object[] { 99 }]);
             Assert.AreNotEqual(Convert.ToHexString(reviewed), Convert.ToHexString(PendingIntentBytes(snapshot, id, "verifier")));
@@ -194,7 +194,7 @@ namespace Neo.UnitTests.SmartContract.Native
         public void PendingIntentGuardExecutesExactSdkVector()
         {
             // Exact bytes emitted by NativeSmartAccountClient.buildAction for its deterministic transaction fixture.
-            const string sdkScript = "0c0876657269666965720c14111111111111111111111111111111111111111112c0150c1467657450656e64696e674d6f64756c6543616c6c0c144117a67f088e2ea046e74bdce906f2ad071d42d941627d5b5211c0100c0973657269616c697a650c14c0ef39cee0e4e925c6c2a06a79e1440dd86fceac41627d5b520cc3400a2101012814111111111111111111111111111111111111111121004002281455555555555555555555555555555555555555552820aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa4002281455555555555555555555555555555555555555552820aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa2809736574436f6e6669674002281411111111111111111111111111111111111111112101012101012104015c260521010b97390c0876657269666965720c14111111111111111111111111111111111111111112c01f0c1063616e63656c4d6f64756c6543616c6c0c144117a67f088e2ea046e74bdce906f2ad071d42d941627d5b52";
+            const string sdkScript = "0c0876657269666965720c14111111111111111111111111111111111111111112c0150c1467657450656e64696e674d6f64756c6543616c6c0c148480150c393799ced53e53c5fa7e7d22f0c38d3941627d5b5211c0100c0973657269616c697a650c14c0ef39cee0e4e925c6c2a06a79e1440dd86fceac41627d5b520cc3400a2101012814111111111111111111111111111111111111111121004002281455555555555555555555555555555555555555552820aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa4002281455555555555555555555555555555555555555552820aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa2809736574436f6e6669674002281411111111111111111111111111111111111111112101012101012104015c260521010b97390c0876657269666965720c14111111111111111111111111111111111111111112c01f0c1063616e63656c4d6f64756c6543616c6c0c148480150c393799ced53e53c5fa7e7d22f0c38d3941627d5b52";
             const string sdkPending = "400a2101012814111111111111111111111111111111111111111121004002281455555555555555555555555555555555555555552820aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa4002281455555555555555555555555555555555555555552820aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa2809736574436f6e6669674002281411111111111111111111111111111111111111112101012101012104015c260521010b";
             var snapshot = Snapshot();
             var id = UInt160.Parse(new string('1', 40));
@@ -204,9 +204,9 @@ namespace Neo.UnitTests.SmartContract.Native
             var record = new Array([2, id.ToArray(), SmartAccountProtocol.GetAccountAddress(id).ToArray(), custody.ToArray(),
                 UInt160.Parse(new string('6', 40)).ToArray(), Binding(), Binding(), 0, 11,
                 StackItem.Null, StackItem.Null, StackItem.Null, StackItem.Null, 7]);
-            snapshot.Add(new StorageKey { Id = NativeContract.AccountManagement.Id, Key = SmartAccountProtocol.GetAccountKey(id) },
+            snapshot.Add(new StorageKey { Id = NativeContract.SmartAccount.Id, Key = SmartAccountProtocol.GetAccountKey(id) },
                 new StorageItem(BinarySerializer.Serialize(record, 8192, 8192)));
-            var key = new KeyBuilder(NativeContract.AccountManagement.Id, 0x30).Add(id).Add((byte)0);
+            var key = new KeyBuilder(NativeContract.SmartAccount.Id, 0x30).Add(id).Add((byte)0);
             snapshot.Add(key, new StorageItem(Convert.FromHexString(sdkPending)));
             Assert.AreSequenceEqual(Convert.FromHexString(sdkPending), PendingIntentBytes(snapshot, id, "verifier"));
             Assert.AreSequenceEqual(Convert.FromHexString(sdkScript), GuardedPendingCancellation(id, "verifier", Convert.FromHexString(sdkPending)));

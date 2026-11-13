@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2026 The Neo Project.
 //
-// UT_AccountManagement.TransactionCommitment.cs file belongs to the neo project and is free
+// UT_SmartAccount.TransactionCommitment.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -26,7 +26,7 @@ using Array = Neo.VM.Types.Array;
 
 namespace Neo.UnitTests.SmartContract.Native
 {
-    public partial class UT_AccountManagement
+    public partial class UT_SmartAccount
     {
         private static Transaction SignCommittedExecution(DataCache snapshot, UInt160 id, KeyPair custodyKey, bool batch)
         {
@@ -74,16 +74,16 @@ namespace Neo.UnitTests.SmartContract.Native
                 });
             }
             var id = new UInt160(Success(snapshot, "registerAccount",
-                [custody, new byte[32], verifier?.Hash ?? UInt160.Zero, UInt160.Zero, Recovery], signers: [custody]).GetSpan());
+                [custody, new byte[32], verifier?.Hash ?? UInt160.Zero, UInt160.Zero, Recovery], signers: [custody, Recovery]).GetSpan());
             var transaction = SignCommittedExecution(snapshot, id, key, batch);
             Assert.AreEqual(VerifyResult.Succeed, transaction.VerifyStateIndependent(Settings));
             Assert.AreEqual(VerifyResult.Succeed, transaction.VerifyStateDependent(Settings, snapshot, null, []));
             byte[] raw = transaction.ToArray();
             if (recoveryCycle)
             {
-                Success(snapshot, "proposeRecovery", [id, Next], signers: [Recovery]);
+                Success(snapshot, "proposeRecovery", [id, Next], signers: [Recovery, Next]);
                 Success(snapshot, "executeRecovery", [id], 1000 + SmartAccountState.CustodyRecoveryDelayMs, []);
-                Success(snapshot, "proposeRecovery", [id, custody], 1000 + SmartAccountState.CustodyRecoveryDelayMs, [Recovery]);
+                Success(snapshot, "proposeRecovery", [id, custody], 1000 + SmartAccountState.CustodyRecoveryDelayMs, [Recovery, custody]);
                 Success(snapshot, "executeRecovery", [id], 1000 + 2 * SmartAccountState.CustodyRecoveryDelayMs, []);
                 if (nativeVerifier)
                 {
@@ -93,7 +93,7 @@ namespace Neo.UnitTests.SmartContract.Native
             }
             else
             {
-                Success(snapshot, "proposeRecoveryAddress", [id, Next], signers: [custody]);
+                Success(snapshot, "proposeRecoveryAddress", [id, Next], signers: [custody, Next]);
                 Success(snapshot, "activateRecoveryAddress", [id], 1000 + SmartAccountState.ModuleChangeDelayMs);
             }
             // Exactly the exported bytes and signatures are replayed; no refreshed domain/signature.
@@ -122,7 +122,7 @@ namespace Neo.UnitTests.SmartContract.Native
                 BigInteger.Zero, new BigInteger(long.MaxValue), ByteString.Empty]);
             Array payload = batch ? new Array([op]) : op;
             string method = batch ? "executeUserOps" : "executeUserOp";
-            var abi = NativeContract.AccountManagement.GetContractState(Settings, 1).Manifest.Abi;
+            var abi = NativeContract.SmartAccount.GetContractState(Settings, 1).Manifest.Abi;
             Assert.IsNull(abi.GetMethod(method, 2));
             var descriptor = abi.GetMethod(method, 4);
             Assert.IsNotNull(descriptor);
@@ -130,7 +130,7 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.AreEqual(ContractParameterType.Array, descriptor.Parameters[1].Type);
             foreach (int index in new[] { 2, 3 }) Assert.AreEqual(ContractParameterType.Integer, descriptor.Parameters[index].Type);
             // Direct entry does not accept the historical ABI even without a proxy witness.
-            using (var old = Invoke(snapshot, method, [id, batch ? new object[] { Operation(NativeContract.StdLib.Hash, "serialize", [7]) } : Operation(NativeContract.StdLib.Hash, "serialize", [7])], target: NativeContract.AccountManagement.Hash))
+            using (var old = Invoke(snapshot, method, [id, batch ? new object[] { Operation(NativeContract.StdLib.Hash, "serialize", [7]) } : Operation(NativeContract.StdLib.Hash, "serialize", [7])], target: NativeContract.SmartAccount.Hash))
                 Assert.AreEqual(VMState.FAULT, old.State);
             StackItem[] invalid = [StackItem.Null, true, false, ByteString.Empty, new byte[] { 0 }, new Array(), -1, new Integer(BigInteger.One << 64)];
             foreach (int index in new[] { 2, 3 })

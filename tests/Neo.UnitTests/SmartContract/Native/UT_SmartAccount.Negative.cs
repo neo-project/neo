@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2026 The Neo Project.
 //
-// UT_AccountManagement.Negative.cs file belongs to the neo project and is free
+// UT_SmartAccount.Negative.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -27,7 +27,7 @@ using Array = Neo.VM.Types.Array;
 
 namespace Neo.UnitTests.SmartContract.Native
 {
-    public partial class UT_AccountManagement
+    public partial class UT_SmartAccount
     {
         private static ApplicationEngine InvokeItems(DataCache snapshot, string method, Array args,
             TriggerType trigger = TriggerType.Application, bool ledgerTime = false, UInt160[] signers = null)
@@ -39,7 +39,7 @@ namespace Neo.UnitTests.SmartContract.Native
             }
             using var script = new ScriptBuilder();
             script.EmitDynamicCall(NativeContract.StdLib.Hash, "deserialize", BinarySerializer.Serialize(args, 16384, 8192))
-                .EmitPush(CallFlags.All).EmitPush(method).EmitPush(NativeContract.AccountManagement.Hash)
+                .EmitPush(CallFlags.All).EmitPush(method).EmitPush(NativeContract.SmartAccount.Hash)
                 .EmitSysCall(ApplicationEngine.System_Contract_Call);
             var tx = new Transaction { Script = script.ToArray(), Signers = (signers ?? [Custody]).Select(h => new Signer { Account = h, Scopes = WitnessScope.Global }).ToArray(), Attributes = [], Witnesses = [] };
             var engine = ApplicationEngine.Create(trigger, tx, snapshot, ledgerTime ? null : Block(1000), Settings, gas: 10_000_000_000);
@@ -127,9 +127,14 @@ namespace Neo.UnitTests.SmartContract.Native
                 Assert.AreEqual(BigInteger.Zero, ((Array)Success(snapshot, "getAccount", [id]))[8].GetInteger());
                 Assert.AreEqual(0, ((Array)((Array)Success(snapshot, "getModuleDependencies", [id, "verifier"]))[1]).Count);
             }
-            var invalid = Snapshot(); var named = ModuleFixture(invalid, 149, composite: true); named.Manifest.Name = "UnknownComposite"; ReplaceFixture(invalid, named);
-            using var registration = Invoke(invalid, "registerAccount", [Custody, new byte[32], named.Hash, UInt160.Zero, UInt160.Zero]);
-            Rejected(registration, "composite profile is not supported");
+            // M-3: composite admission is declared by the manifest
+            // (Extra.smartAccount.compositeProfile); the contract display name
+            // is irrelevant. A composite module without the declaration is
+            // rejected at admission.
+            var invalid = Snapshot(); var named = ModuleFixture(invalid, 149, composite: true);
+            named.Manifest.Name = "UnknownComposite"; named.Manifest.Extra["smartAccount"]["compositeProfile"] = ""; ReplaceFixture(invalid, named);
+            using var registration = Invoke(invalid, "registerAccount", [Custody, new byte[32], named.Hash, UInt160.Zero, UInt160.Zero], signers: [Custody]);
+            Rejected(registration, "declared composite profile is not supported");
         }
 
         [TestMethod]
@@ -172,16 +177,16 @@ namespace Neo.UnitTests.SmartContract.Native
                 var snapshot = Snapshot();
                 using var engine = ApplicationEngine.Create(TriggerType.OnPersist, null, snapshot, Block(1000), Settings);
                 engine.LoadScript(new byte[] { (byte)OpCode.RET });
-                var task = NativeContract.AccountManagement.InitializeAsync(engine, fork);
+                var task = NativeContract.SmartAccount.InitializeAsync(engine, fork);
                 Assert.IsTrue(task.GetAwaiter().IsCompleted);
-                var key = new KeyBuilder(NativeContract.AccountManagement.Id, 0);
+                var key = new KeyBuilder(NativeContract.SmartAccount.Id, 0);
                 if (fork != Hardfork.HF_SmartAccountV1) Assert.IsFalse(engine.SnapshotCache.Contains(key));
                 else
                 {
                     var bytes = engine.SnapshotCache[key].Value;
                     var record = (Array)BinarySerializer.Deserialize(bytes, ExecutionEngineLimits.Default);
                     Assert.AreEqual(2, record.Count); Assert.AreEqual(new BigInteger(2), record[0].GetInteger());
-                    var expected = NativeContract.AccountManagement.GetContractState(Settings, 1).Manifest.Extra["smartAccount"]["profileParameterDigest"].GetString();
+                    var expected = NativeContract.SmartAccount.GetContractState(Settings, 1).Manifest.Extra["smartAccount"]["profileParameterDigest"].GetString();
                     Assert.AreSequenceEqual(Convert.FromHexString(expected), record[1].GetSpan().ToArray());
                     Assert.AreSequenceEqual(BinarySerializer.Serialize(record, 128, 8), bytes.ToArray());
                 }
@@ -197,7 +202,7 @@ namespace Neo.UnitTests.SmartContract.Native
                 var hash = NativeContract.Ledger.CurrentHash(snapshot);
                 ulong expected = NativeContract.Ledger.GetHeader(snapshot, hash).Timestamp;
                 if (removeHeader) snapshot.Delete(new KeyBuilder(NativeContract.Ledger.Id, 5).Add(hash));
-                using var engine = InvokeItems(snapshot, "proposeRecoveryAddress", new Array([id.ToArray(), Next.ToArray()]), ledgerTime: true);
+                using var engine = InvokeItems(snapshot, "proposeRecoveryAddress", new Array([id.ToArray(), Next.ToArray()]), ledgerTime: true, signers: [Custody, Next]);
                 if (removeHeader) Rejected(engine, "known ledger timestamp");
                 else
                 {
@@ -230,7 +235,7 @@ namespace Neo.UnitTests.SmartContract.Native
                 Rejected(direct, "exact proxy script");
             using var script = new ScriptBuilder();
             script.EmitPush(1).Emit(OpCode.PACK).EmitPush(CallFlags.ReadOnly).EmitPush("isAccountAuthorized")
-                .EmitPush(NativeContract.AccountManagement.Hash).EmitSysCall(ApplicationEngine.System_Contract_Call).Emit(OpCode.RET);
+                .EmitPush(NativeContract.SmartAccount.Hash).EmitSysCall(ApplicationEngine.System_Contract_Call).Emit(OpCode.RET);
             var target = TestUtils.GetContract(script.ToArray(), TestUtils.CreateManifest("query", ContractParameterType.Boolean, ContractParameterType.Hash160));
             snapshot.AddContract(target.Hash, target);
             using (var ordinary = Invoke(snapshot, "query", [id], target: target.Hash))
@@ -275,7 +280,7 @@ namespace Neo.UnitTests.SmartContract.Native
             var snapshot = Snapshot(); var id = Register(snapshot);
             foreach (string method in new[] { "getModuleDependencies", "getPendingModuleCall", "cancelModuleCall" })
                 using (var engine = Invoke(snapshot, method, [id, "unknown"])) Rejected(engine, "Unknown SmartAccount module type");
-            var key = new StorageKey { Id = NativeContract.AccountManagement.Id, Key = SmartAccountProtocol.GetNonceKey(id, 0) };
+            var key = new StorageKey { Id = NativeContract.SmartAccount.Id, Key = SmartAccountProtocol.GetNonceKey(id, 0) };
             foreach (BigInteger bad in new[] { BigInteger.MinusOne, SmartAccountProtocol.ExhaustedSequence + 1 })
             {
                 snapshot.Delete(key); snapshot.Add(key, new StorageItem(bad));
@@ -334,7 +339,7 @@ namespace Neo.UnitTests.SmartContract.Native
             var leaf = ModuleFixture(snapshot, 144); var id = RegisterWithModules(snapshot, root);
             var rootBinding = ((Array)Success(snapshot, "getAccount", [id]))[5];
             var leafBinding = new Array([leaf.Hash.ToArray(), SmartAccountModulePolicy.GetCodeHash(leaf).ToArray()]);
-            var key = new KeyBuilder(NativeContract.AccountManagement.Id, 0x40).Add(id).Add((byte)0);
+            var key = new KeyBuilder(NativeContract.SmartAccount.Id, 0x40).Add(id).Add((byte)0);
             var valid = new Array([rootBinding, new Array([leafBinding]), new Array([leaf.Hash.ToArray()])]);
             Action<Array>[] changes = [
                 r => r[0] = new Struct((Array)r[0]),
@@ -363,7 +368,7 @@ namespace Neo.UnitTests.SmartContract.Native
             snapshot.Delete(key); snapshot.Add(key, new StorageItem(canonical.Concat(new byte[] { 0 }).ToArray()));
             using (var trailing = Invoke(snapshot, "getModuleDependencies", [id, "verifier"])) Rejected(trailing, "record must be canonical");
             var empty = Snapshot(); var emptyId = Register(empty);
-            empty.Add(new KeyBuilder(NativeContract.AccountManagement.Id, 0x40).Add(emptyId).Add((byte)0), new StorageItem(canonical));
+            empty.Add(new KeyBuilder(NativeContract.SmartAccount.Id, 0x40).Add(emptyId).Add((byte)0), new StorageItem(canonical));
             using var stale = Invoke(empty, "getModuleDependencies", [emptyId, "verifier"]); Rejected(stale, "stale root");
         }
     }

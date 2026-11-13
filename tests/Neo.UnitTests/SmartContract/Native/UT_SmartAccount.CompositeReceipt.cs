@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2026 The Neo Project.
 //
-// UT_AccountManagement.CompositeReceipt.cs file belongs to the neo project and is free
+// UT_SmartAccount.CompositeReceipt.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -26,7 +26,7 @@ using Boolean = Neo.VM.Types.Boolean;
 
 namespace Neo.UnitTests.SmartContract.Native
 {
-    public partial class UT_AccountManagement
+    public partial class UT_SmartAccount
     {
         private static void EmitReceipt(ScriptBuilder script, StackItem receipt) =>
             script.EmitDynamicCall(NativeContract.StdLib.Hash, "deserialize", BinarySerializer.Serialize(receipt, 1024, 32));

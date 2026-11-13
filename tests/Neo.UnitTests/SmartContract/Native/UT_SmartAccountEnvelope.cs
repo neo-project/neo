@@ -30,8 +30,8 @@ namespace Neo.UnitTests.SmartContract.Native
     [TestClass]
     public class UT_SmartAccountEnvelope
     {
-        private static readonly UInt160 Account = UInt160.Parse("0x3e25330008563c55fe2853e07868b36ca00020ac");
-        private static readonly UInt160 Service = UInt160.Parse("0xd9421d07adf206e9dc4be746a02e8e087fa61741");
+        private static readonly UInt160 Account = UInt160.Parse("0x2168f4b52e13e1400a4cc93228f4c302d122b4b7");
+        private static readonly UInt160 Service = UInt160.Parse("0x398dc3f0227d7efac5533ed5ce9937390c158084");
         private static Array Operation(BigInteger nonce = default) => new([
             Service.ToArray(), "ping", new Array(), nonce, BigInteger.Zero, ByteString.Empty
         ]);
@@ -46,8 +46,7 @@ namespace Neo.UnitTests.SmartContract.Native
         }
 
         private static byte[] WithPrefix(byte[] prefix) => [(byte)OpCode.PUSH0, (byte)OpCode.PUSH0, .. prefix, .. Tail(Account)];
-        private static byte[] Prefix() => Convert.FromHexString("0c001010c20c0470696e670c144117a67f088e2ea046e74bdce906f2ad071d42d916c0");
-
+        private static byte[] Prefix() => Convert.FromHexString("0c001010c20c0470696e670c148480150c393799ced53e53c5fa7e7d22f0c38d3916c0");
         private static byte[] Serialized(StackItem item) => BinarySerializer.Serialize(item, Transaction.MaxTransactionSize, Transaction.MaxTransactionSize);
 
         [TestMethod]
@@ -295,8 +294,8 @@ namespace Neo.UnitTests.SmartContract.Native
             var expectedEpoch = engine.ResultStack.Pop().GetInteger();
             var expectedConfiguration = engine.ResultStack.Pop().GetInteger();
             var parsed = SmartAccountEnvelope.Parse(Account, script);
-            Assert.AreEqual(new BigInteger(parsed.ExpectedAuthorityEpoch), expectedEpoch);
-            Assert.AreEqual(new BigInteger(parsed.ExpectedConfigurationNonce), expectedConfiguration);
+            Assert.AreEqual(expectedEpoch, new BigInteger(parsed.ExpectedAuthorityEpoch));
+            Assert.AreEqual(expectedConfiguration, new BigInteger(parsed.ExpectedConfigurationNonce));
             StackItem reconstructed = batch ? new Array(Enumerable.Range(0, parsed.Count).Select(parsed.GetOperation)) : parsed.GetOperation(0);
             Assert.AreSequenceEqual(Serialized(expected), Serialized(reconstructed));
         }

@@ -1,6 +1,6 @@
 // Copyright (C) 2015-2026 The Neo Project.
 //
-// UT_AccountManagement.ThresholdRecovery.cs file belongs to the neo project and is free
+// UT_SmartAccount.ThresholdRecovery.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
@@ -27,7 +27,7 @@ using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace Neo.UnitTests.SmartContract.Native
 {
-    public partial class UT_AccountManagement
+    public partial class UT_SmartAccount
     {
         private sealed record ThresholdWallet(byte[] Script, KeyPair[] Keys,
             WitnessScope Scope = WitnessScope.CustomContracts)
@@ -49,7 +49,7 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.AreEqual(wallets.Length, wallets.Select(wallet => wallet.Account).Distinct().Count());
             using var script = new ScriptBuilder();
             Push(script, args);
-            script.EmitPush(CallFlags.All).EmitPush(method).EmitPush(NativeContract.AccountManagement.Hash)
+            script.EmitPush(CallFlags.All).EmitPush(method).EmitPush(NativeContract.SmartAccount.Hash)
                 .EmitSysCall(ApplicationEngine.System_Contract_Call);
             var transaction = new Transaction
             {
@@ -62,7 +62,7 @@ namespace Neo.UnitTests.SmartContract.Native
                     Account = wallet.Account,
                     Scopes = wallet.Scope,
                     AllowedContracts = wallet.Scope == WitnessScope.CustomContracts
-                        ? [NativeContract.AccountManagement.Hash] : []
+                        ? [NativeContract.SmartAccount.Hash] : []
                 }).ToArray(),
                 Attributes = [],
                 Witnesses = wallets.Select(wallet => new Witness
@@ -141,12 +141,17 @@ namespace Neo.UnitTests.SmartContract.Native
             var oldCustody = new ThresholdWallet(Contract.CreateMultiSigRedeemScript(2,
                 members.Take(2).Select(key => key.PublicKey).ToArray()), members.Take(2).ToArray());
             byte[] guardianScript = Contract.CreateMultiSigRedeemScript(2, members.Select(key => key.PublicKey).ToArray());
+            // The 2-of-3 guardian multisig accepts exactly two signatures, so
+            // the registration witness uses one surviving quorum, not all keys.
+            var guardian = new ThresholdWallet(guardianScript, members.Take(2).ToArray());
             var balance = snapshot.GetAndChange(NativeContract.GAS.CreateStorageKey(20, payer.Account),
                 () => new StorageItem(new AccountState()));
             balance.GetInteroperable<AccountState>().Balance = 10000 * NativeContract.GAS.Factor;
             ulong time = NativeContract.Ledger.GetHeader(snapshot, NativeContract.Ledger.CurrentHash(snapshot)).Timestamp + 10_000;
+            // The admission fix requires the newly introduced nonzero authorities
+            // (old custody and the guardian quorum) to witness the registration.
             var registration = ThresholdTransaction(snapshot, "registerAccount",
-                [oldCustody.Account, new byte[32], UInt160.Zero, UInt160.Zero, guardianScript.ToScriptHash()], payer, oldCustody);
+                [oldCustody.Account, new byte[32], UInt160.Zero, UInt160.Zero, guardianScript.ToScriptHash()], payer, oldCustody, guardian);
             var id = new UInt160(ThresholdSuccess(snapshot, registration, time, "AccountCreated").GetSpan());
             return (snapshot, id, payer, oldCustody, members, time);
         }
@@ -171,8 +176,11 @@ namespace Neo.UnitTests.SmartContract.Native
             ThresholdSuccess(snapshot, freeze, time, "AccountFrozen");
             Assert.AreEqual(SmartAccountStatus.Frozen, ReadAccountState(snapshot, id).Status);
 
+            // The admission fix requires the newly proposed custody (newCustody)
+            // to witness the transition; it shares the payer account, so it
+            // replaces the payer signer instead of duplicating the account.
             ThresholdSuccess(snapshot, ThresholdTransaction(snapshot, "proposeRecovery", [id, newCustody.Account],
-                payer, guardian), time, "RecoveryProposed");
+                newCustody, guardian), time, "RecoveryProposed");
             byte[] pending = ReadAccountState(snapshot, id).Serialize();
             var recovery = ThresholdTransaction(snapshot, "executeRecovery", [id], payer);
             using (var early = ThresholdApplication(snapshot, recovery, time + SmartAccountState.CustodyRecoveryDelayMs - 1))

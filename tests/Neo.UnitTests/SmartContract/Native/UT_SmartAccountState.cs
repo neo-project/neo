@@ -100,7 +100,6 @@ namespace Neo.UnitTests.SmartContract.Native
             Assert.ThrowsExactly<ArgumentNullException>(() => new SmartAccountModuleBinding(Address(1), null));
             Assert.ThrowsExactly<ArgumentNullException>(() => SmartAccountState.Deserialize(null, Fresh().Serialize()));
             Assert.ThrowsExactly<ArgumentNullException>(() => SmartAccountState.Create(123, Address(1), new byte[32], null, null, null, true));
-            // A hash value of zero is not a missing binding when the contract is nonzero.
             _ = new SmartAccountModuleBinding(Address(3), UInt256.Zero);
         }
 
