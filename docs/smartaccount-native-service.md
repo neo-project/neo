@@ -7,13 +7,13 @@
 > past receipts below. Current normative rules are in
 > [recovery and authority revocation](smartaccount-recovery-epoch.md).
 
-# Native AccountManagement service integration
+# Native SmartAccount service integration
 
 ## Purpose and release boundary
 
 Implement the native SmartAccount profile on the master-n3 integration checkout,
 not as an ordinary deployed proxy service. The service has the deterministic
-AccountManagement hash, follows TemporaryStorage in native registration, and
+SmartAccount hash, follows TemporaryStorage in native registration, and
 requires the independently configured HF_SmartAccountV1 activation. Omission
 means disabled. No public-chain configuration is changed.
 
@@ -80,7 +80,7 @@ A registered proxy's CheckWitnessInternal path must enforce a current authorized
 target frame before any existing fast-path or scope success. Existing Neo witness
 rules are additionally required; the grant never creates a witness. Legacy
 unregistered addresses are unchanged except for the service identity itself.
-After activation, `CheckWitness(AccountManagement.Hash)` is always false: the
+After activation, `CheckWitness(SmartAccount.Hash)` is always false: the
 permissionless dispatcher is not a user principal, including when it is the
 immediate caller. Before activation the existing witness behavior is unchanged.
 Custody and nonzero recovery addresses must not be native contract hashes; this
@@ -137,7 +137,7 @@ No-block invocations use the authoritative ledger timestamp and must fail if it
 is unavailable. These runtime tests do not replace the private-chain lifecycle
 matrix, complete VM refinement, or independent review.
 
-- No configured hardfork: AccountManagement has no callable ABI or state.
+- No configured hardfork: SmartAccount has no callable ABI or state.
 - Register a custody-authorized empty-module account: deterministic accountId,
   proxy index, Active state, authority epoch zero and configuration nonce zero.
 - Propose and activate recovery-address rotation: immature confirmation faults;
@@ -220,3 +220,29 @@ This validation turn changed build/validation tooling and documentation, not
 production C# or protocol parameters. Build-tool failure and interruption controls
 fail closed; 72 script tests and 4 document tests pass. All work
 remains uncommitted; no public network was used.
+
+## Authority-transition semantics (audited corners)
+
+The audited authority corners of the converged ABI 2 service are:
+
+- Freeze without recovery is structurally unavailable. `freeze` requires the
+  configured recovery witness, and an account registered with a zero recovery
+  address can never be frozen — there is no one to authorize that transition.
+  `unfreeze` then requires only the custody witness for such accounts. The
+  registration API exposes the recovery address explicitly so operators can see
+  this trade-off at registration time; the normative statement lives in the
+  profile draft, section 7.4.
+- `executeRecovery` is permissionless by design. After the custody recovery
+  delay matures, any relayer may submit the execution; the old custody never
+  needs to cooperate. Safety comes from the recovery address witness at proposal
+  time, the delay window, and the full authority revocation executed at maturity,
+  not from an execution-time permission gate.
+- The fee model is provisional. Every native ABI method currently declares the
+  same flat base CPU fee (32768 units before the execution-fee factor); a
+  differentiated per-method schedule remains the tracked "openGate" fee-model
+  TODO and may be revisited before activation. Fees are not covered by the
+  profile parameter digest, and clients must read them from the manifest.
+- The activation-time profile record (ABI version plus parameter digest) is
+  stored under storage key `0x00` and intentionally has no ABI getter; external
+  consumers close the identity loop through the raw `getstorage` readback that
+  the neo-os-aa service validator performs after activation.

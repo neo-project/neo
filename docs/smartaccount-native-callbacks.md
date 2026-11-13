@@ -2,7 +2,7 @@
 
 ## Runtime integration requirement
 
-Native AccountManagement must invoke verifier, hook and maintenance callbacks
+Native SmartAccount must invoke verifier, hook and maintenance callbacks
 with explicit flags and independently bounded gas. The existing
 `CallFromNativeContractAsync` path selects All and creates no child budget;
 inheriting an existing budget is not sufficient to originate a verifier cap.
@@ -48,7 +48,7 @@ GAS native callbacks, ancestor budgets, fee whitelists, continuation ordering,
 and storage/notification rollback. Shared syscall tests must remain green.
 Existing unbounded native-call methods are unchanged; no public ABI, native
 contract registration, network activation height or deployed artifact is added
-by this engine bridge alone. A complete AccountManagement implementation must
+by this engine bridge alone. A complete SmartAccount implementation must
 still use this bridge for every protocol callback and undergo private-chain
 activation and lifecycle verification.
 
@@ -70,7 +70,7 @@ still uses the returning child's original fee policy and bounded budget.
 
 ## Remaining service integration requirements
 
-The bridge alone is not AccountManagement. The current integration now includes
+The bridge alone is not SmartAccount. The current integration now includes
 the registered native service, activation/profile storage, delayed configuration
 and the core-owned cleanup roster. Their normative interfaces and canonical
 records are specified in the companion native draft. Native service testing and
@@ -105,7 +105,7 @@ repository's `scripts/neoexpress_activation_validate.py` accepts a local runner
 assembly directory, creates only disposable private chains and independently
 checks the activation regression and exact live height boundary. Its receipt
 does not certify invocation of this internal helper: that is covered by engine
-tests, including real GAS native continuations, until AccountManagement itself
+tests, including real GAS native continuations, until SmartAccount itself
 is integrated.
 
 ## Raw dispatch and inherited-budget continuation

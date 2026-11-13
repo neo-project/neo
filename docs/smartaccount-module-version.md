@@ -1,6 +1,6 @@
 # Native module version admission
 
-AccountManagement ABI 2 changes recovery from custody rotation to complete
+SmartAccount ABI 2 changes recovery from custody rotation to complete
 authorization revocation. A module that stores account configuration must use
 the current `getAuthorityEpoch(accountId)` in its storage namespace. Reinstalling
 an old module must not restore pre-recovery keys or policy state.

@@ -2,7 +2,7 @@
 
 `System.Contract.CallWithGasLimit(contractHash, method, callFlags, gasLimit, args)`
 is available only when `HF_SmartAccountV1` is explicitly activated. This is a
-resource-control prerequisite, not an implementation of native AccountManagement.
+resource-control prerequisite, not an implementation of native SmartAccount.
 
 ## Resource invariant
 

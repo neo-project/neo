@@ -7,7 +7,7 @@ manifest marker. A recursively sorted JSON description alone is ambiguous for
 Unicode escaping, negative zero and exponent notation. This component fixes the
 encoding and validates the lifecycle ABI before any discovery callback.
 
-This is an internal native-service dependency, not a registered AccountManagement
+This is an internal native-service dependency, not a registered SmartAccount
 service. It does not establish plugin honesty, key independence, orphan-free
 cleanup, or whole-program refinement. Activation, custody authorization, storage,
 configuration delays, execution and cleanup orchestration remain service work.

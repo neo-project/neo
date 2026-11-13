@@ -132,7 +132,7 @@ intents, the exhausted UInt64 epoch, and native-witness fallback after verifier
 removal. Node tests compare exact bytes, not only deserialized field values.
 Private NeoExpress checks execute their typed VM initializers, serialize them
 through StdLib, and independently deserialize/serialize each stored value.
-These RPC simulations do not call or activate native AccountManagement.
+These RPC simulations do not call or activate native SmartAccount.
 
 The companion protocol repository's `NativeLifecycle.v` proves authority-guard
 and epoch-invalidation properties in an abstract model, with semantic mutations

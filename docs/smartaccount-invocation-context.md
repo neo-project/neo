@@ -12,7 +12,7 @@ authority from an earlier suspended invocation of that same contract.
 `SmartAccountInvocationContext` supplies engine-local locks and scoped grants.
 It is used through `ApplicationEngine.GetState` by the native service, never
 serialized into ledger storage. It does not establish a witness, validate code
-identity, admit plugins or register AccountManagement. Those obligations remain
+identity, admit plugins or register SmartAccount. Those obligations remain
 with the complete native service.
 
 ## Scope and internal API
@@ -31,7 +31,7 @@ Hooks cannot receive Validation; verifiers cannot receive PreExecute.
 Only execution phases may delegate to the supplied validated leaf roster.
 Verifier rosters contain at most ten children and hook rosters at most eight.
 Zero, self, duplicate and native child identities are rejected. Authorization
-requires the queried module to be the actual caller of AccountManagement and
+requires the queried module to be the actual caller of SmartAccount and
 either the anchored root itself or a roster child called directly by that root.
 Unregistered children, grandchildren, recursive root calls and LoadScript
 contexts do not acquire a grant. Configuration and cleanup use individual
@@ -39,7 +39,7 @@ direct grants for each child, not a root-wide delegation.
 
 `EnterTarget(accountId, target, context)` grants only the exact loaded target
 invocation. It is not a module grant. `IsTargetAuthorized` is for a query into
-AccountManagement; `IsWitnessAuthorized` examines the currently executing
+SmartAccount; `IsWitnessAuthorized` examines the currently executing
 target directly. Neither grants authority to arbitrary target descendants,
 even if a transaction signer has Global scope. They are additional constraints,
 not replacements for the real transaction witness and scope checks. The native

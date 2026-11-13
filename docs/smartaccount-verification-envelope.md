@@ -4,7 +4,7 @@
 
 The account proxy must not authorize arbitrary transaction scripts. Before
 any verifier is called, the native service must decode exactly one canonical
-`executeUserOp` or `executeUserOps` call to `AccountManagement` for that account.
+`executeUserOp` or `executeUserOps` call to `SmartAccount` for that account.
 `SmartAccountEnvelope` implements this state-independent boundary. It never
 executes input bytecode, invokes a contract, or accesses storage.
 
@@ -29,7 +29,7 @@ PUSH 4
 PACK
 PUSH All
 PUSH "executeUserOp" or "executeUserOps"
-PUSH AccountManagement.Hash
+PUSH SmartAccount.Hash
 SYSCALL System.Contract.Call
 ```
 

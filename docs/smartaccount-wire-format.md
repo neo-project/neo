@@ -16,7 +16,7 @@ and foundation PR #243. Neither identifier is a NEP number.
 ## Inputs, outputs, and errors
 
 All hash parameters use Neo wire byte order. The native service identity is
-`Helper.GetContractHash(UInt160.Zero, 0, "AccountManagement")`. Account creation
+`Helper.GetContractHash(UInt160.Zero, 0, "SmartAccount")`. Account creation
 uses the profile/version domain, network magic in little-endian order, service
 hash, nonzero custody hash, and exactly 32 salt bytes. The account address is
 the hash of a canonical `verify(accountId)` dynamic call using `ReadOnly`.
