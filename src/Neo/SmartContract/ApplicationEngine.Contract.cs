@@ -134,7 +134,7 @@ namespace Neo.SmartContract
             NativeContract? contract = NativeContract.GetContract(CurrentScriptHash!);
             if (contract is null)
                 throw new InvalidOperationException("It is not allowed to use \"System.Contract.CallNative\" directly.");
-            if (!contract.IsActive(ProtocolSettings, GetPersistingIndex()))
+            if (!contract.IsActive(ProtocolSettings, SnapshotCache, GetPersistingIndex()))
                 throw new InvalidOperationException($"The native contract {contract.Name} is not active.");
             contract.Invoke(this, version);
         }
@@ -218,7 +218,7 @@ namespace Neo.SmartContract
                     throw new InvalidOperationException();
                 foreach (NativeContract contract in NativeContract.Contracts)
                 {
-                    if (contract.IsActive(ProtocolSettings, PersistingBlock!.Index))
+                    if (contract.IsActive(ProtocolSettings, SnapshotCache, PersistingBlock!.Index))
                         await contract.OnPersistAsync(this);
                 }
             }
@@ -240,7 +240,7 @@ namespace Neo.SmartContract
                     throw new InvalidOperationException();
                 foreach (NativeContract contract in NativeContract.Contracts)
                 {
-                    if (contract.IsActive(ProtocolSettings, PersistingBlock!.Index))
+                    if (contract.IsActive(ProtocolSettings, SnapshotCache, PersistingBlock!.Index))
                         await contract.PostPersistAsync(this);
                 }
             }

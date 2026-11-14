@@ -41,7 +41,7 @@ namespace Neo.UnitTests.SmartContract.Native
                 Hardforks = TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_Huyao, 100)
             };
             var parameterCount = method == "onNEP17Payment" ? 3 : 4;
-            var descriptor = NativeContract.Treasury.GetContractState(settings, index).Manifest.Abi.GetMethod(method, parameterCount);
+            var descriptor = NativeContract.Treasury.GetContractState(settings, snapshot, index).Manifest.Abi.GetMethod(method, parameterCount);
             Assert.IsNotNull(descriptor);
             Assert.AreEqual("from", descriptor.Parameters[0].Name);
             Assert.AreEqual(ContractParameterType.Hash160, descriptor.Parameters[0].Type);
