@@ -82,10 +82,21 @@ namespace Neo.Network.P2P.Payloads
         /// </summary>
         public required TransactionAttribute[] Attributes { get; set { field = value; _attributesCache = null; _hash = null; _size = 0; } }
 
+        private Script? _script;
+
         /// <summary>
         /// The script of the transaction.
         /// </summary>
-        public ReadOnlyMemory<byte> Script { get; set { field = value; _hash = null; _size = 0; } }
+        public Script Script
+        {
+            get => _script ??= Neo.VM.Script.Empty;
+            set
+            {
+                _script = value ?? throw new ArgumentNullException(nameof(value));
+                _hash = null;
+                _size = 0;
+            }
+        }
 
         public required Witness[] Witnesses { get; set { field = value; _size = 0; } }
 
@@ -204,7 +215,7 @@ namespace Neo.Network.P2P.Payloads
             ValidUntilBlock = reader.ReadUInt32();
             Signers = DeserializeSigners(ref reader, MaxTransactionAttributes);
             Attributes = DeserializeAttributes(ref reader, MaxTransactionAttributes - Signers.Length);
-            Script = reader.ReadVarMemory(ushort.MaxValue);
+            Script = new Script(reader.ReadVarMemory(ushort.MaxValue));
             if (Script.Length == 0) throw new FormatException("Script in Transaction is empty");
         }
 
@@ -273,7 +284,7 @@ namespace Neo.Network.P2P.Payloads
             writer.Write(ValidUntilBlock);
             writer.Write(Signers);
             writer.Write(Attributes);
-            writer.WriteVarBytes(Script.Span);
+            writer.WriteVarBytes(Script);
         }
 
         /// <summary>
@@ -294,7 +305,7 @@ namespace Neo.Network.P2P.Payloads
             json["validuntilblock"] = ValidUntilBlock;
             json["signers"] = Signers.Select(p => p.ToJson()).ToArray();
             json["attributes"] = Attributes.Select(p => p.ToJson()).ToArray();
-            json["script"] = Convert.ToBase64String(Script.Span);
+            json["script"] = Convert.ToBase64String(((ReadOnlyMemory<byte>)Script).Span);
             json["witnesses"] = Witnesses.Select(p => p.ToJson()).ToArray();
             return json;
         }
@@ -375,13 +386,17 @@ namespace Neo.Network.P2P.Payloads
         public virtual VerifyResult VerifyStateIndependent(ProtocolSettings settings)
         {
             if (Size > MaxTransactionSize) return VerifyResult.OverSize;
-            try
+            if (!Script.IsStrictMode)
             {
-                _ = new Script(Script, true);
-            }
-            catch (Exception)
-            {
-                return VerifyResult.InvalidScript;
+                try
+                {
+                    // Strict validation does not change the bytes, so preserve the cached hash and size.
+                    _script = new Script(Script, true);
+                }
+                catch (Exception)
+                {
+                    return VerifyResult.InvalidScript;
+                }
             }
             UInt160[] hashes = GetScriptHashesForVerifying(null!);
             for (int i = 0; i < hashes.Length; i++)
