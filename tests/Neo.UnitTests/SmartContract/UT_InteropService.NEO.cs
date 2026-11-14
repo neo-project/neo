@@ -81,6 +81,40 @@ namespace Neo.UnitTests.SmartContract
         }
 
         [TestMethod]
+        public void TestCrypto_CheckMultiSig_ValidatesAllKeysFromIara()
+        {
+            var tx = TestUtils.GetTransaction(UInt160.Zero);
+            var message = tx.GetSignData(TestProtocolSettings.Default.Network);
+            var key1 = new KeyPair(Enumerable.Repeat((byte)0x01, 32).ToArray());
+            var key2 = new KeyPair(Enumerable.Repeat((byte)0x02, 32).ToArray());
+            var pubkey1 = key1.PublicKey.EncodePoint(true);
+            var pubkey2 = key2.PublicKey.EncodePoint(true);
+            var invalidPubkey = new byte[] { 0xff, 0x00, 0x11 };
+            var offCurvePubkey = new byte[65];
+            offCurvePubkey[0] = 0x04;
+            var signature1 = Crypto.Sign(message, key1);
+            var signature2 = Crypto.Sign(message, key2);
+
+            var beforeIara = TestProtocolSettings.Default with
+            {
+                Hardforks = TestProtocolSettings.Default.Hardforks.SetItem(Hardfork.HF_Iara, uint.MaxValue)
+            };
+            using var oldEngine = ApplicationEngine.Create(TriggerType.Application, tx, _snapshotCache.CloneCache(), settings: beforeIara);
+            Assert.IsFalse(oldEngine.IsHardforkEnabled(Hardfork.HF_Iara));
+            Assert.IsTrue(oldEngine.CheckMultisig([pubkey1, pubkey2, invalidPubkey], [signature1, signature2]));
+            Assert.IsFalse(oldEngine.CheckMultisig([pubkey1, pubkey2, invalidPubkey], [new byte[64], new byte[64]]));
+
+            using var engine = ApplicationEngine.Create(TriggerType.Application, tx, _snapshotCache.CloneCache(), settings: TestProtocolSettings.Default);
+            Assert.IsTrue(engine.IsHardforkEnabled(Hardfork.HF_Iara));
+            Assert.IsTrue(engine.CheckMultisig([pubkey1, pubkey2], [signature1, signature2]));
+            Assert.IsFalse(engine.CheckMultisig([pubkey1, pubkey2], [signature2, signature1]));
+            Assert.ThrowsExactly<FormatException>(() => _ = engine.CheckMultisig([pubkey1, pubkey2, invalidPubkey], [signature1, signature2]));
+            Assert.ThrowsExactly<FormatException>(() => _ = engine.CheckMultisig([pubkey1, invalidPubkey, pubkey2], [signature1, signature2]));
+            Assert.ThrowsExactly<FormatException>(() => _ = engine.CheckMultisig([pubkey1, pubkey2, offCurvePubkey], [signature1, signature2]));
+            Assert.ThrowsExactly<FormatException>(() => _ = engine.CheckMultisig([pubkey1, pubkey2, invalidPubkey], [new byte[64], new byte[64]]));
+        }
+
+        [TestMethod]
         public void TestContract_Create()
         {
             var snapshotCache = TestBlockchain.GetTestSnapshotCache();
