@@ -16,12 +16,90 @@ using Neo.SmartContract.Native;
 using Neo.UnitTests.Extensions;
 using Neo.VM;
 using System;
+using System.Globalization;
 using System.Numerics;
+using System.Text;
 
 namespace Neo.UnitTests.SmartContract
 {
     public partial class UT_ApplicationEngine
     {
+        [TestMethod]
+        [DataRow(OpCode.NEWARRAY0, "The index of VMArray is out of range, -1/[0, 0).")]
+        [DataRow(OpCode.NEWMAP, "Key -1 not found in Map.")]
+        public void TestCatchableErrorTextIsCultureInvariant(OpCode collection, string expected)
+        {
+            var previous = CultureInfo.CurrentCulture;
+            try
+            {
+                CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo("sv-SE");
+                using var script = new ScriptBuilder();
+                script.Emit(OpCode.TRY, new byte[] { 6, 0 });
+                script.Emit(collection);
+                script.Emit(OpCode.PUSHM1);
+                script.Emit(OpCode.PICKITEM);
+                script.Emit(OpCode.RET);
+
+                var settings = ProtocolSettings.Default with
+                {
+                    Hardforks = ProtocolSettings.Default.Hardforks
+                        .SetItem(Hardfork.HF_Gorgon, 10u)
+                        .SetItem(Hardfork.HF_Huyao, 20u)
+                };
+                // Before Gorgon, PICKITEM is implemented by ApplicationEngine.
+                var engine = Execute(script.ToArray(), settings, index: 5u);
+                Assert.AreEqual(VMState.HALT, engine.State);
+                Assert.AreEqual(expected, Encoding.UTF8.GetString(engine.ResultStack.Peek().GetSpan()));
+            }
+            finally
+            {
+                CultureInfo.CurrentCulture = previous;
+            }
+        }
+
+        [TestMethod]
+        [DataRow(5u, false, "The index of VMArray is out of range, -1/[0, 0).")]
+        [DataRow(15u, false, "The index of VMArray is out of range, -1/[0, 0).")]
+        [DataRow(5u, true, "The index of Buffer is out of range, -1/[0, 0).")]
+        [DataRow(15u, true, "The index of Buffer is out of range, -1/[0, 0).")]
+        public void TestSetItemCaughtErrorTextIsCultureInvariant(uint index, bool buffer, string expected)
+        {
+            var previous = CultureInfo.CurrentCulture;
+            try
+            {
+                CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo("sv-SE");
+                using var script = new ScriptBuilder();
+                script.Emit(OpCode.TRY, new byte[] { (byte)(buffer ? 8 : 7), 0 });
+                if (buffer)
+                {
+                    script.Emit(OpCode.PUSH0);
+                    script.Emit(OpCode.NEWBUFFER);
+                }
+                else
+                {
+                    script.Emit(OpCode.NEWARRAY0);
+                }
+                script.Emit(OpCode.PUSHM1);
+                script.Emit(OpCode.PUSH1);
+                script.Emit(OpCode.SETITEM);
+                script.Emit(OpCode.RET);
+
+                var settings = ProtocolSettings.Default with
+                {
+                    Hardforks = ProtocolSettings.Default.Hardforks
+                        .SetItem(Hardfork.HF_Gorgon, 10u)
+                        .SetItem(Hardfork.HF_Huyao, 20u)
+                };
+                var engine = Execute(script.ToArray(), settings, index);
+                Assert.AreEqual(VMState.HALT, engine.State);
+                Assert.AreEqual(expected, Encoding.UTF8.GetString(engine.ResultStack.Peek().GetSpan()));
+            }
+            finally
+            {
+                CultureInfo.CurrentCulture = previous;
+            }
+        }
+
         [TestMethod]
         public void TestSHR_SHL_WithDifferentHF()
         {
