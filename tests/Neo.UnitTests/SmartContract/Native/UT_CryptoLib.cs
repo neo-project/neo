@@ -104,6 +104,23 @@ namespace Neo.UnitTests.SmartContract.Native
         }
 
         [TestMethod]
+        public void TestG2Identity()
+        {
+            byte[] identity = new byte[96];
+            identity[0] = 0xc0;
+
+            var snapshotCache = TestBlockchain.GetTestSnapshotCache();
+            using ScriptBuilder script = new();
+            script.EmitDynamicCall(NativeContract.CryptoLib.Hash, "bls12381Deserialize", identity);
+
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache,
+                settings: TestProtocolSettings.Default);
+            engine.LoadScript(script.ToArray());
+            Assert.AreEqual(VMState.HALT, engine.Execute());
+            Assert.AreSequenceEqual(identity, engine.ResultStack.Pop().GetInterface<G2Affine>().ToCompressed());
+        }
+
+        [TestMethod]
         public void TestInvalidSize()
         {
             var snapshotCache = TestBlockchain.GetTestSnapshotCache();

@@ -70,6 +70,35 @@ namespace Neo.UnitTests.SmartContract.Native
         }
 
         [TestMethod]
+        public void Bls12381Serialize_Deserialize_G2Identity_RoundTrip()
+        {
+            byte[] identity = new byte[96];
+            identity[0] = 0xc0;
+
+            var original = new InteropInterface(G2Affine.Identity);
+            byte[] encoded = CryptoLib.Bls12381Serialize(original);
+            Assert.AreSequenceEqual(identity, encoded);
+
+            var restored = CryptoLib.Bls12381Deserialize(encoded);
+            Assert.IsTrue(CryptoLib.Bls12381Equal(original, restored));
+        }
+
+        [TestMethod]
+        public void Bls12381Deserialize_NoncanonicalG2Identity_Throws()
+        {
+            byte[] identity = new byte[96];
+            identity[0] = 0xc0;
+
+            byte[] nonzeroX = (byte[])identity.Clone();
+            nonzeroX[^1] = 1;
+            Assert.Throws<Exception>(() => CryptoLib.Bls12381Deserialize(nonzeroX));
+
+            byte[] sortFlag = (byte[])identity.Clone();
+            sortFlag[0] = 0xe0;
+            Assert.Throws<Exception>(() => CryptoLib.Bls12381Deserialize(sortFlag));
+        }
+
+        [TestMethod]
         public void Bls12381Add_G1_ReturnsExpectedSum()
         {
             var a = CryptoLib.Bls12381Deserialize(G1);
