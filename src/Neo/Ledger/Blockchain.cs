@@ -273,11 +273,11 @@ namespace Neo.Ledger
                     if (blockToPersist.Index + 99 >= headerHeight)
                         _system.LocalNode.Tell(new LocalNode.RelayDirectly(blockToPersist));
                 }
-                if (_blockCacheUnverified.TryGetValue(currentHeight + 1, out var unverifiedBlocks))
+                var nextIndex = blocksToPersistList[^1].Index + 1;
+                if (_blockCacheUnverified.Remove(nextIndex, out var unverifiedBlocks))
                 {
                     foreach (var unverifiedBlock in unverifiedBlocks.Blocks)
                         Self.Tell(unverifiedBlock, ActorRefs.NoSender);
-                    _blockCacheUnverified.Remove(block.Index + 1);
                 }
             }
             else
@@ -448,6 +448,9 @@ namespace Neo.Ledger
                     }
                     else
                     {
+                        // A committee-signed unknown hardfork must halt the node, not just FAULT the tx.
+                        if (UnknownHardforkException.IsInstance(engine.FaultException))
+                            throw engine.FaultException!;
                         clonedSnapshot = snapshot.CloneCache();
                     }
 
