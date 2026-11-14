@@ -31,7 +31,7 @@ namespace Neo.SmartContract.Native
     {
         private class NativeContractsCache
         {
-            public record CacheEntry(Dictionary<int, ContractMethodMetadata> Methods, byte[] Script);
+            public record CacheEntry(Dictionary<int, ContractMethodMetadata> Methods, Script Script);
 
             internal Dictionary<int, CacheEntry> NativeContracts { get; set; } = new();
 
@@ -205,7 +205,7 @@ namespace Neo.SmartContract.Native
             Dictionary<int, ContractMethodMetadata> methods = new();
 
             // Reflection to get the ContractMethods
-            byte[] script;
+            Script script;
             using (ScriptBuilder sb = new())
             {
                 foreach (ContractMethodMetadata method in _methodDescriptors.Where(u => IsActive(u, hfChecker, settings, snapshot, blockHeight)))
@@ -216,7 +216,7 @@ namespace Neo.SmartContract.Native
                     sb.EmitSysCall(ApplicationEngine.System_Contract_CallNative);
                     sb.Emit(OpCode.RET);
                 }
-                script = sb.ToArray();
+                script = new Script(sb.ToArray(), true);
             }
 
             return new NativeContractsCache.CacheEntry(methods, script);

@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Neo.IO;
+using Neo.VM;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -96,6 +97,17 @@ namespace Neo.Extensions
         {
             writer.WriteVarInt(value.Length);
             writer.Write(value);
+        }
+
+        /// <summary>
+        /// Writes a <see cref="Script"/> as variable-length bytes into a <see cref="BinaryWriter"/>.
+        /// </summary>
+        /// <param name="writer">The <see cref="BinaryWriter"/> for writing data.</param>
+        /// <param name="script">The script to be written.</param>
+        public static void WriteVarBytes(this BinaryWriter writer, Script script)
+        {
+            ArgumentNullException.ThrowIfNull(script);
+            writer.WriteVarBytes(((ReadOnlyMemory<byte>)script).Span);
         }
 
         /// <summary>

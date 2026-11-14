@@ -111,6 +111,15 @@ namespace Neo.UnitTests.SmartContract.Native
         }
 
         [TestMethod]
+        public void ContractState_ReusesGeneratedScript()
+        {
+            var state = NativeContract.NEO.GetContractState(TestProtocolSettings.Default, _snapshotCache, 0);
+            Assert.AreSame(state.Nef.Script, state.Script);
+            using var engine = new ExecutionEngine();
+            Assert.AreSame(state.Script, engine.LoadScript(state.Script).Script);
+        }
+
+        [TestMethod]
         public void TestIsInitializeBlock()
         {
             string json = UT_ProtocolSettings.CreateHFSettings("\"HF_Cockatrice\": 20,\n\"HF_Domovoi\": 30,\n\"HF_Echidna\": 40");
