@@ -82,7 +82,8 @@ namespace Neo.Ledger
         /// </summary>
         /// <param name="Inventory">The <see cref="IInventory"/> that is relayed.</param>
         /// <param name="Result">The result.</param>
-        public record RelayResult(IInventory Inventory, VerifyResult Result);
+        /// <param name="Source">The actor that submitted the inventory.</param>
+        public record RelayResult(IInventory Inventory, VerifyResult Result, IActorRef? Source = null);
 
         internal record Initialize;
         private class UnverifiedBlocksList
@@ -226,6 +227,12 @@ namespace Neo.Ledger
             var headerHeight = _system.HeaderCache.Last?.Index ?? currentHeight;
             if (block.Index <= currentHeight)
                 return VerifyResult.AlreadyExists;
+            // Check the received body here because blocks with cached or unavailable
+            // headers bypass Block.Verify before they can be added to a block cache.
+            // Witnesses can change the transaction size without changing the block hash.
+            foreach (var transaction in block.Transactions)
+                if (transaction.Size > Transaction.MaxTransactionSize)
+                    return VerifyResult.OverSize;
             if (block.Index - 1 > headerHeight)
             {
                 AddUnverifiedBlockToCache(block);
@@ -239,8 +246,8 @@ namespace Neo.Ledger
             else
             {
                 var header = _system.HeaderCache[block.Index];
-                if (header == null || !blockHash.Equals(header.Hash))
-                    return VerifyResult.Invalid;
+                if (header == null) return VerifyResult.Invalid;
+                if (!blockHash.Equals(header.Hash)) return VerifyResult.InvalidHash;
             }
             _blockCache.TryAdd(blockHash, block);
             if (block.Index == currentHeight + 1)
@@ -549,7 +556,7 @@ namespace Neo.Ledger
 
         private void SendRelayResult(IInventory inventory, VerifyResult result)
         {
-            RelayResult rr = new(inventory, result);
+            RelayResult rr = new(inventory, result, Sender);
             Sender.Tell(rr);
 
             if (rr.Inventory is ExtensiblePayload && result != VerifyResult.Succeed)
