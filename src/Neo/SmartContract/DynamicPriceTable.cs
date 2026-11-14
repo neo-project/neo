@@ -10,7 +10,9 @@
 // modifications are permitted.
 
 using Neo.VM;
+using System;
 using System.Runtime.CompilerServices;
+using System.Threading;
 
 namespace Neo.SmartContract
 {
@@ -26,8 +28,9 @@ namespace Neo.SmartContract
         /// <returns>The price coefficient for the opcode.</returns>
         public delegate long PriceFunc(RunStats stats);
 
-        private readonly PriceFunc?[] Table = new PriceFunc?[byte.MaxValue + 1];
-
+        private PriceFunc?[] _table;
+        private readonly object _sync = new();
+        private bool _shared;
         /// <summary>
         /// Gets or sets the price calculator for the specified opcode.
         /// </summary>
@@ -35,19 +38,51 @@ namespace Neo.SmartContract
         public PriceFunc? this[OpCode opCode]
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => Table[(byte)opCode];
+            get => Volatile.Read(ref _table)[(byte)opCode];
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            set => Table[(byte)opCode] = value;
+            set
+            {
+                lock (_sync)
+                {
+                    if (_shared)
+                    {
+                        _table = (PriceFunc?[])_table.Clone();
+                        _shared = false;
+                    }
+                    _table[(byte)opCode] = value;
+                }
+            }
         }
 
         /// <summary>
         /// Creates a copy of this table, so mutating the copy does not affect the original.
         /// </summary>
+        /// <remarks>
+        /// The clone shares the backing array until it is modified. A write replaces the
+        /// writer's array after copying it, so cloning and reading can safely observe either
+        /// the previous or the updated table. Mutations on one table are serialized.
+        /// </remarks>
         public DynamicPriceTable Clone()
         {
-            var clone = new DynamicPriceTable();
-            Table.CopyTo(clone.Table, 0);
-            return clone;
+            lock (_sync)
+            {
+                _shared = true;
+                return new DynamicPriceTable(_table);
+            }
+        }
+
+        /// <summary>
+        /// Creates an empty price table.
+        /// </summary>
+        public DynamicPriceTable()
+        {
+            _table = new PriceFunc?[byte.MaxValue + 1];
+        }
+
+        private DynamicPriceTable(PriceFunc?[] table)
+        {
+            _table = table;
+            _shared = true;
         }
     }
 }
