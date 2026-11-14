@@ -309,8 +309,8 @@ namespace Neo.Extensions.Tests
         [TestMethod]
         public void TestGetBitLength()
         {
-            // Big Number (net standard didn't work)
-            Assert.ThrowsExactly<OverflowException>(() => VerifyGetBitLength(BigInteger.One << 32 << int.MaxValue, 2147483680));
+            // Big Number (bit length exceeds int.MaxValue)
+            VerifyGetBitLength(BigInteger.One << 32 << int.MaxValue, 2147483680);
 
             // Trivial cases
             //                     sign bit|shortest two's complement

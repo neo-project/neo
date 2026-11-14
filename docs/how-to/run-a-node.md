@@ -19,7 +19,7 @@ You should get a `neo>` prompt. Run `show state`. Height will climb as peers sen
 
 ## Option B — compile from source (verified against current tree)
 
-Prerequisites: Git, **.NET 10 SDK**.
+Prerequisites: Git, **.NET 11 SDK**.
 
 **Linux packages** (for LevelDB; names vary):
 
