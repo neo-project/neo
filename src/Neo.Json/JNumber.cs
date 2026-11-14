@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using System.Globalization;
+using System.Numerics;
 using System.Text.Json;
 
 namespace Neo.Json
@@ -38,10 +39,25 @@ namespace Neo.Json
         /// Initializes a new instance of the <see cref="JNumber"/> class with the specified value.
         /// </summary>
         /// <param name="value">The value of the JSON token.</param>
-        public JNumber(double value = 0)
+        /// <param name="checkMinMax">Whether to enforce the safe integer range.</param>
+        public JNumber(double value = 0, bool checkMinMax = false)
         {
             if (!double.IsFinite(value)) throw new FormatException($"value is not finite: {value}");
+            if (checkMinMax && (value < MIN_SAFE_INTEGER || value > MAX_SAFE_INTEGER))
+                throw new FormatException("JSON number is outside the safe integer range");
             Value = value;
+        }
+
+        /// <summary>
+        /// Initializes a JSON number from an integer in the safe range.
+        /// </summary>
+        /// <param name="value">The integer value.</param>
+        public JNumber(BigInteger value)
+        {
+            if (value < MIN_SAFE_INTEGER || value > MAX_SAFE_INTEGER)
+                throw new FormatException("JSON number is outside the safe integer range");
+            Value = (double)value;
+            if (!double.IsFinite(Value)) throw new FormatException($"value is not finite: {Value}");
         }
 
         /// <summary>
@@ -121,6 +137,11 @@ namespace Neo.Json
         }
 
         public static implicit operator JNumber(long value)
+        {
+            return new JNumber(value);
+        }
+
+        public static implicit operator JNumber(BigInteger value)
         {
             return new JNumber(value);
         }
