@@ -224,7 +224,7 @@ namespace Neo.UnitTests.Network.P2P
             Assert.IsFalse(copy.Flags.HasFlag(MessageFlags.Compressed));
             Assert.AreEqual(MessageCommand.Transaction, copy.Command);
             Assert.IsInstanceOfType<Transaction>(copy.Payload);
-            Assert.HasCount(100, ((Transaction)copy.Payload).Script.Span.ToArray());
+            Assert.AreEqual(100, ((Transaction)copy.Payload).Script.Length);
         }
 
         [TestMethod]
