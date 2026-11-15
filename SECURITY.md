@@ -29,6 +29,7 @@ Only vulnerabilities with a demonstrable security impact on Neo N3 are eligible 
 - Theoretical vulnerabilities, speculative attacks, and findings without a reproducible security impact are not eligible for rewards.
 - Code quality issues, best-practice recommendations, and feature requests.
 - Issues requiring non-default configurations or optional plugins (such as RPC plugin) are automatically classified as Informational or Low severity, unless they also affect a default configuration.
+- P2P flooding attacks.
 - Economic, governance, consensus-majority, and Sybil attacks that do not exploit an underlying vulnerability in Neo N3.
 - Differences between the official C# implementation and alternatives, such as neo-go, are classified as informational and are not eligible for rewards.
 - Exposed credentials, API keys, or secrets without evidence of an active security impact.

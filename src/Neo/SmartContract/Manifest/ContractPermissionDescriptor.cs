@@ -14,6 +14,7 @@ using Neo.Extensions;
 using Neo.Json;
 using Neo.VM.Types;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 
 namespace Neo.SmartContract.Manifest
@@ -115,7 +116,8 @@ namespace Neo.SmartContract.Manifest
         {
             if (other is null) return false;
             if (this == other) return true;
-            if (IsWildcard == other.IsWildcard) return true;
+            // Equal wildcard status does not make two concrete hashes or groups equal.
+            if (IsWildcard || other.IsWildcard) return IsWildcard && other.IsWildcard;
             if (IsHash) return Hash.Equals(other.Hash);
             if (IsGroup) return Group.Equals(other.Group);
             return false;
@@ -162,5 +164,27 @@ namespace Neo.SmartContract.Manifest
         {
             return Hash?.ToArray() ?? Group?.EncodePoint(true);
         }
+    }
+
+    /// <summary>
+    /// Preserves the descriptor equality used by manifest duplicate checks before HF_Huyao.
+    /// </summary>
+    internal sealed class LegacyContractPermissionDescriptorComparer : IEqualityComparer<ContractPermissionDescriptor>
+    {
+        public static readonly LegacyContractPermissionDescriptorComparer Instance = new();
+
+        private LegacyContractPermissionDescriptorComparer() { }
+
+        public bool Equals(ContractPermissionDescriptor? x, ContractPermissionDescriptor? y)
+        {
+            if (ReferenceEquals(x, y)) return true;
+            if (x is null || y is null) return false;
+            if (x.IsWildcard == y.IsWildcard) return true;
+            if (x.IsHash) return x.Hash.Equals(y.Hash);
+            if (x.IsGroup) return x.Group.Equals(y.Group);
+            return false;
+        }
+
+        public int GetHashCode(ContractPermissionDescriptor obj) => obj.GetHashCode();
     }
 }

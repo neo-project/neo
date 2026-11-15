@@ -215,12 +215,12 @@ namespace Neo.UnitTests.SmartContract
             BigInteger execFeeFactor = 305001;
 
             // Before Huyao: (8.000 * 2 + 0 + 32768.000) * 30.5001 = 999915.2784000, rounded up.
-            // Since Huyao: (1.685 * 2 + 0 + 32768.000) * 30.5001 = 999530.0621370, rounded up.
-            Assert.AreEqual(huyao ? 999531 : 999916, SignatureContractCost(settings, 1, execFeeFactor));
+            // Since Huyao: (1.685 * 2 + 0 + 232.6967) * 30.5001 = 71075.5115337, rounded up.
+            Assert.AreEqual(huyao ? 71076 : 999916, SignatureContractCost(settings, 1, execFeeFactor));
             // Before Huyao: (8.000 * 5 + 1.000 * 2 + 0 + 32768.000 * 3) * 30.5001 = 2999562.8346000, rounded up.
-            // Since Huyao: (1.685 * 5 + 2.187 * 2 + 0 + 32768.000 * 3) * 30.5001 = 2998672.2011799, rounded up.
+            // Since Huyao: (1.685 * 5 + 2.187 * 2 + 0 + 232.6967 * 3) * 30.5001 = 213308.54937, rounded up.
             var multisig = CreateMultiSigScript(2, 3);
-            Assert.AreEqual(huyao ? 2998673 : 2999563, CalculateMultiSigCost(settings, 1, execFeeFactor, multisig));
+            Assert.AreEqual(huyao ? 213309 : 2999563, CalculateMultiSigCost(settings, 1, execFeeFactor, multisig));
             if (!huyao)
             {
                 // An integer factor gives the same result as multiplying the legacy prices by it.

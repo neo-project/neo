@@ -273,11 +273,11 @@ namespace Neo.Ledger
                     if (blockToPersist.Index + 99 >= headerHeight)
                         _system.LocalNode.Tell(new LocalNode.RelayDirectly(blockToPersist));
                 }
-                if (_blockCacheUnverified.TryGetValue(currentHeight + 1, out var unverifiedBlocks))
+                var nextIndex = blocksToPersistList[^1].Index + 1;
+                if (_blockCacheUnverified.Remove(nextIndex, out var unverifiedBlocks))
                 {
                     foreach (var unverifiedBlock in unverifiedBlocks.Blocks)
                         Self.Tell(unverifiedBlock, ActorRefs.NoSender);
-                    _blockCacheUnverified.Remove(block.Index + 1);
                 }
             }
             else
@@ -431,19 +431,26 @@ namespace Neo.Ledger
                 }
 
                 var clonedSnapshot = snapshot.CloneCache();
-                // Warning: Do not write into variable snapshot directly. Write into variable clonedSnapshot and commit instead.
+                var persistTransactionVMState = _system.Settings.IsHardforkEnabled(Hardfork.HF_Huyao, block.Index);
+                // Apply transaction execution changes through clonedSnapshot so they can be
+                // discarded on FAULT. Persist the final VM state directly in snapshot.
                 foreach (var transactionState in transactionStates)
                 {
                     var tx = transactionState.Transaction!;
                     using var engine = ApplicationEngine.Create(TriggerType.Application, tx, clonedSnapshot, block, _system.Settings, tx.SystemFee);
                     engine.LoadScript(tx.Script);
                     transactionState.State = engine.Execute();
+                    if (persistTransactionVMState)
+                        NativeContract.Ledger.UpdateTransactionVMState(snapshot, tx.Hash, transactionState.State);
                     if (transactionState.State == VMState.HALT)
                     {
                         clonedSnapshot.Commit();
                     }
                     else
                     {
+                        // A committee-signed unknown hardfork must halt the node, not just FAULT the tx.
+                        if (UnknownHardforkException.IsInstance(engine.FaultException))
+                            throw engine.FaultException!;
                         clonedSnapshot = snapshot.CloneCache();
                     }
 

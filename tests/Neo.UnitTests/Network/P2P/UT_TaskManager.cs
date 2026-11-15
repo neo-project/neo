@@ -555,12 +555,12 @@ namespace Neo.UnitTests.Network.P2P
             var block = CreateBlock(currentHeight + 1);
 
             // No InvTasks/IndexTasks entry: the block is unsolicited but still in-window.
-            peer.Send(taskManager, block);
+            taskManager.Receive(block, peer.Ref);
 
             Assert.IsTrue(session.ReceivedBlockHashes.ContainsKey(block.Index),
                 "The unsolicited in-window block must be tracked by hash.");
 
-            peer.Send(taskManager, new Blockchain.RelayResult(block, VerifyResult.Invalid));
+            taskManager.Receive(new Blockchain.RelayResult(block, VerifyResult.Invalid), peer.Ref);
 
             peer.FishForMessage(m => m is Tcp.Abort, TimeSpan.FromSeconds(3), cancellationToken: CancellationToken.None);
 
@@ -579,11 +579,13 @@ namespace Neo.UnitTests.Network.P2P
 
             var block = CreateBlock(currentHeight + 1);
             session.IndexTasks.Add(block.Index, TimeProvider.Current.UtcNow);
-            peer.Send(taskManager, block);
+            // Receive runs the actor on this thread. peer.Send/Tell can return before the
+            // mailbox records the hash, which failed this assert on the macOS CI runner.
+            taskManager.Receive(block, peer.Ref);
 
             Assert.IsTrue(session.ReceivedBlockHashes.ContainsKey(block.Index));
 
-            peer.Send(taskManager, new Blockchain.RelayResult(block, VerifyResult.Invalid));
+            taskManager.Receive(new Blockchain.RelayResult(block, VerifyResult.Invalid), peer.Ref);
 
             peer.FishForMessage(m => m is Tcp.Abort, TimeSpan.FromSeconds(3), cancellationToken: CancellationToken.None);
 
@@ -602,11 +604,11 @@ namespace Neo.UnitTests.Network.P2P
 
             var block = CreateBlock(currentHeight + 1);
             session.IndexTasks.Add(block.Index, TimeProvider.Current.UtcNow);
-            peer.Send(taskManager, block);
+            taskManager.Receive(block, peer.Ref);
 
             Assert.IsTrue(session.ReceivedBlockHashes.ContainsKey(block.Index));
 
-            peer.Send(taskManager, new Blockchain.PersistCompleted(block));
+            taskManager.Receive(new Blockchain.PersistCompleted(block), peer.Ref);
 
             Assert.IsEmpty(session.ReceivedBlockHashes, "The tracked hash must be removed once the height is persisted.");
 
@@ -625,7 +627,7 @@ namespace Neo.UnitTests.Network.P2P
 
             var receivedBlock = CreateBlock(currentHeight + 1, timestamp: 1);
             session.IndexTasks.Add(receivedBlock.Index, TimeProvider.Current.UtcNow);
-            peer.Send(taskManager, receivedBlock);
+            taskManager.Receive(receivedBlock, peer.Ref);
 
             Assert.IsTrue(session.ReceivedBlockHashes.ContainsKey(receivedBlock.Index));
 
@@ -633,7 +635,7 @@ namespace Neo.UnitTests.Network.P2P
             var persistedBlock = CreateBlock(currentHeight + 1, timestamp: 2);
             Assert.AreNotEqual(receivedBlock.Hash, persistedBlock.Hash);
 
-            peer.Send(taskManager, new Blockchain.PersistCompleted(persistedBlock));
+            taskManager.Receive(new Blockchain.PersistCompleted(persistedBlock), peer.Ref);
 
             peer.FishForMessage(m => m is Tcp.Abort, TimeSpan.FromSeconds(3), cancellationToken: CancellationToken.None);
 
@@ -1188,6 +1190,136 @@ namespace Neo.UnitTests.Network.P2P
             taskManager.Tell(Activator.CreateInstance(timerType, true)!);
         }
 
+        private static GetBlockByIndexPayload ExpectBlockRequest(Akka.TestKit.TestProbe peer, uint indexStart)
+            => (GetBlockByIndexPayload)peer.FishForMessage<Message>(
+                m => m.Command == MessageCommand.GetBlockByIndex && ((GetBlockByIndexPayload)m.Payload!).IndexStart == indexStart,
+                TimeSpan.FromSeconds(3), cancellationToken: CancellationToken.None).Payload!;
+
+        private static void ExpireIndexTasks(TaskSession session)
+        {
+            foreach (var key in session.IndexTasks.Keys.ToArray())
+                session.IndexTasks[key] = TimeProvider.Current.UtcNow.AddMinutes(-5);
+        }
+
+        // X holds [h+1, h+4] and never answers, Q holds [h+5, h+150] and delivers all of it.
+        private (Akka.TestKit.TestProbe x, Akka.TestKit.TestProbe q) SetupGapScenario(Akka.TestKit.TestActorRef<TaskManager> taskManager, uint height)
+        {
+            GetGlobalInvTasks(taskManager)[UInt256.Zero] = 3; // Isolate index scheduling from header requests.
+            var x = RegisterPeer(taskManager, height + 4);
+            Assert.AreEqual(4, ExpectBlockRequest(x, height + 1).Count);
+            var q = RegisterPeer(taskManager, height + 150);
+            Assert.AreEqual(146, ExpectBlockRequest(q, height + 5).Count);
+
+            for (uint i = 5; i <= 150; i++)
+                q.Send(taskManager, CreateBlock(height + i));
+
+            ExpireIndexTasks(GetSessions(taskManager)[x.Ref]);
+            return (x, q);
+        }
+
+        [TestMethod]
+        public void RequestTasks_DoesNotRequestAgainHeightsAlreadyReceivedFromSamePeer()
+        {
+            using var neoSystem = TestBlockchain.GetSystem();
+            var height = NativeContract.Ledger.CurrentIndex(neoSystem.StoreView);
+            var taskManager = ActorOfAsTestActorRef(() => new TaskManager(neoSystem));
+            var (x, q) = SetupGapScenario(taskManager, height);
+
+            SendTimer(taskManager);
+
+            var retry = ExpectBlockRequest(q, height + 1);
+            Assert.AreEqual(4, retry.Count, "Only the missing gap must be requested.");
+            var qSession = GetSessions(taskManager)[q.Ref];
+            Assert.AreSequenceEqual(
+                new[] { height + 1, height + 2, height + 3, height + 4 },
+                qSession.IndexTasks.Keys.Order().ToArray());
+            Sys.Stop(taskManager);
+        }
+
+        [TestMethod]
+        public void PersistCompleted_RemovesStaleIndexTasksWithoutTimeoutPenalty()
+        {
+            using var neoSystem = TestBlockchain.GetSystem();
+            var height = NativeContract.Ledger.CurrentIndex(neoSystem.StoreView);
+            var taskManager = ActorOfAsTestActorRef(() => new TaskManager(neoSystem));
+            var peer = RegisterPeer(taskManager, height);
+            var session = GetSessions(taskManager)[peer.Ref];
+            var global = GetGlobalIndexTasks(taskManager);
+
+            for (uint i = 1; i <= 100; i++)
+            {
+                session.IndexTasks[height + i] = TimeProvider.Current.UtcNow;
+                global[height + i] = 1;
+            }
+            session.ReceivedBlockHashes[height + 30] = CreateBlock(height + 30).Hash;
+            Assert.IsTrue(session.HasTooManyTasks);
+
+            peer.Send(taskManager, new Blockchain.PersistCompleted(CreateBlock(height + 60)));
+
+            Assert.IsFalse(session.HasTooManyTasks);
+            Assert.AreEqual(40, session.IndexTasks.Count);
+            Assert.IsTrue(session.IndexTasks.Keys.All(k => k > height + 60));
+            Assert.AreEqual(40, global.Count);
+            Assert.IsTrue(global.Keys.All(k => k > height + 60));
+            Assert.AreEqual(0, session.ReceivedBlockHashes.Count);
+            Assert.AreEqual(0u, session.BlockTaskTimeouts);
+            Sys.Stop(taskManager);
+        }
+
+        [TestMethod]
+        public void GapScenario_HonestPeerIsNotPenalizedAndKeepsSyncing()
+        {
+            using var neoSystem = TestBlockchain.GetSystem();
+            var height = NativeContract.Ledger.CurrentIndex(neoSystem.StoreView);
+            var taskManager = ActorOfAsTestActorRef(() => new TaskManager(neoSystem));
+            var (x, q) = SetupGapScenario(taskManager, height);
+            var sessions = GetSessions(taskManager);
+
+            SendTimer(taskManager);
+            Assert.AreEqual(4, ExpectBlockRequest(q, height + 1).Count);
+            Assert.AreEqual(4u, sessions[x.Ref].BlockTaskTimeouts);
+
+            for (uint i = 1; i <= 4; i++)
+                q.Send(taskManager, CreateBlock(height + i));
+            q.Send(taskManager, new TaskManager.Update(height + 160));
+            q.Send(taskManager, new Blockchain.PersistCompleted(CreateBlock(height + 150)));
+
+            Assert.AreEqual(10, ExpectBlockRequest(q, height + 151).Count);
+            Assert.AreEqual(0u, sessions[q.Ref].BlockTaskTimeouts);
+            Assert.AreEqual(4u, sessions[x.Ref].BlockTaskTimeouts);
+            Assert.IsFalse(sessions[q.Ref].HasTooManyTasks);
+            Sys.Stop(taskManager);
+        }
+
+        [TestMethod]
+        public void PersistCompleted_KeepsGlobalIndexTasksConsistentAcrossPeers()
+        {
+            using var neoSystem = TestBlockchain.GetSystem();
+            var height = NativeContract.Ledger.CurrentIndex(neoSystem.StoreView);
+            var taskManager = ActorOfAsTestActorRef(() => new TaskManager(neoSystem));
+            var first = RegisterPeer(taskManager, height);
+            var second = RegisterPeer(taskManager, height);
+            var sessions = GetSessions(taskManager);
+            var global = GetGlobalIndexTasks(taskManager);
+            var now = TimeProvider.Current.UtcNow;
+
+            sessions[first.Ref].IndexTasks[height + 1] = now;
+            sessions[second.Ref].IndexTasks[height + 1] = now;
+            sessions[second.Ref].IndexTasks[height + 5] = now;
+            global[height + 1] = 2;
+            global[height + 5] = 1;
+
+            first.Send(taskManager, new Blockchain.PersistCompleted(CreateBlock(height + 1)));
+
+            Assert.IsFalse(global.ContainsKey(height + 1), "Both references must be released exactly once.");
+            Assert.AreEqual(1, global[height + 5]);
+            Assert.AreEqual(0, sessions[first.Ref].IndexTasks.Count);
+            Assert.AreSequenceEqual(new[] { height + 5 }, sessions[second.Ref].IndexTasks.Keys.ToArray());
+            Assert.AreEqual(0u, sessions[first.Ref].BlockTaskTimeouts);
+            Assert.AreEqual(0u, sessions[second.Ref].BlockTaskTimeouts);
+            Sys.Stop(taskManager);
+        }
+
         private static Header[] CreateHeaders(uint firstIndex, int count)
             => [.. Enumerable.Range(0, count).Select(i => CreateBlock(firstIndex + (uint)i).Header)];
 
@@ -1319,6 +1451,104 @@ namespace Neo.UnitTests.Network.P2P
             Sys.Stop(peer2.Ref);
             AwaitNoHeaderRefs(taskManager);
 
+            Sys.Stop(taskManager);
+        }
+
+        [TestMethod]
+        public void ExpiredIndexTask_IsReassignedToAnotherEligiblePeer()
+        {
+            using var neoSystem = TestBlockchain.GetSystem();
+            var index = NativeContract.Ledger.CurrentIndex(neoSystem.StoreView) + 1;
+            var taskManager = ActorOfAsTestActorRef(() => new TaskManager(neoSystem));
+            GetGlobalInvTasks(taskManager)[UInt256.Zero] = 3; // Isolate index scheduling from header requests.
+
+            var withholdingPeer = RegisterPeer(taskManager, index);
+            var firstRequest = withholdingPeer.FishForMessage<Message>(
+                m => m.Command == MessageCommand.GetBlockByIndex,
+                TimeSpan.FromSeconds(3), cancellationToken: CancellationToken.None);
+            Assert.AreEqual(index, ((GetBlockByIndexPayload)firstRequest.Payload!).IndexStart);
+
+            var honestPeer = RegisterPeer(taskManager, index);
+            Assert.IsFalse(GetSessions(taskManager)[honestPeer.Ref].IndexTasks.ContainsKey(index));
+
+            GetSessions(taskManager)[withholdingPeer.Ref].IndexTasks[index] = TimeProvider.Current.UtcNow.AddMinutes(-2);
+            SendTimer(taskManager);
+
+            var retry = honestPeer.FishForMessage<Message>(
+                m => m.Command == MessageCommand.GetBlockByIndex,
+                TimeSpan.FromSeconds(3), cancellationToken: CancellationToken.None);
+            Assert.AreEqual(index, ((GetBlockByIndexPayload)retry.Payload!).IndexStart);
+            Assert.IsFalse(GetSessions(taskManager)[withholdingPeer.Ref].IndexTasks.ContainsKey(index));
+            Assert.IsTrue(GetSessions(taskManager)[honestPeer.Ref].IndexTasks.ContainsKey(index));
+            Assert.AreEqual(1, GetGlobalIndexTasks(taskManager)[index]);
+            Assert.AreEqual(1u, GetSessions(taskManager)[withholdingPeer.Ref].BlockTaskTimeouts);
+            Assert.AreEqual(0u, GetSessions(taskManager)[honestPeer.Ref].BlockTaskTimeouts);
+            withholdingPeer.ExpectNoMsg(TimeSpan.FromMilliseconds(100), CancellationToken.None);
+            SendTimer(taskManager);
+            Assert.AreEqual(1u, GetSessions(taskManager)[withholdingPeer.Ref].BlockTaskTimeouts);
+            Sys.Stop(taskManager);
+        }
+
+        [TestMethod]
+        public void ExpiredIndexTask_RetriesFormerOwnerWhenNoOtherPeerCanServeIt()
+        {
+            using var neoSystem = TestBlockchain.GetSystem();
+            var index = NativeContract.Ledger.CurrentIndex(neoSystem.StoreView) + 1;
+            var taskManager = ActorOfAsTestActorRef(() => new TaskManager(neoSystem));
+            GetGlobalInvTasks(taskManager)[UInt256.Zero] = 3;
+
+            var peer = RegisterPeer(taskManager, index);
+            peer.FishForMessage<Message>(
+                m => m.Command == MessageCommand.GetBlockByIndex,
+                TimeSpan.FromSeconds(3), cancellationToken: CancellationToken.None);
+            GetSessions(taskManager)[peer.Ref].IndexTasks[index] = TimeProvider.Current.UtcNow.AddMinutes(-2);
+
+            SendTimer(taskManager);
+
+            var retry = peer.FishForMessage<Message>(
+                m => m.Command == MessageCommand.GetBlockByIndex,
+                TimeSpan.FromSeconds(3), cancellationToken: CancellationToken.None);
+            Assert.AreEqual(index, ((GetBlockByIndexPayload)retry.Payload!).IndexStart);
+            Assert.IsTrue(GetSessions(taskManager)[peer.Ref].IndexTasks.ContainsKey(index));
+            Assert.AreEqual(1, GetGlobalIndexTasks(taskManager)[index]);
+            Assert.AreEqual(1u, GetSessions(taskManager)[peer.Ref].BlockTaskTimeouts);
+            Sys.Stop(taskManager);
+        }
+
+        [TestMethod]
+        public void ExpiredIndexTasks_PreferPeerWithoutTimedOutRequests()
+        {
+            using var neoSystem = TestBlockchain.GetSystem();
+            var index = NativeContract.Ledger.CurrentIndex(neoSystem.StoreView) + 1;
+            var taskManager = ActorOfAsTestActorRef(() => new TaskManager(neoSystem));
+            GetGlobalInvTasks(taskManager)[UInt256.Zero] = 3;
+
+            var firstOwner = RegisterPeer(taskManager, index);
+            var secondOwner = RegisterPeer(taskManager, index + 1);
+            var honestPeer = RegisterPeer(taskManager, index + 1);
+            firstOwner.FishForMessage<Message>(
+                m => m.Command == MessageCommand.GetBlockByIndex,
+                TimeSpan.FromSeconds(3), cancellationToken: CancellationToken.None);
+            secondOwner.FishForMessage<Message>(
+                m => m.Command == MessageCommand.GetBlockByIndex,
+                TimeSpan.FromSeconds(3), cancellationToken: CancellationToken.None);
+
+            GetSessions(taskManager)[firstOwner.Ref].IndexTasks[index] = TimeProvider.Current.UtcNow.AddMinutes(-2);
+            GetSessions(taskManager)[secondOwner.Ref].IndexTasks[index + 1] = TimeProvider.Current.UtcNow.AddMinutes(-2);
+            SendTimer(taskManager);
+
+            var request = honestPeer.FishForMessage<Message>(
+                m => m.Command == MessageCommand.GetBlockByIndex,
+                TimeSpan.FromSeconds(3), cancellationToken: CancellationToken.None);
+            var payload = (GetBlockByIndexPayload)request.Payload!;
+            Assert.AreEqual(index, payload.IndexStart);
+            Assert.AreEqual(2, payload.Count);
+            Assert.IsTrue(GetSessions(taskManager)[honestPeer.Ref].IndexTasks.ContainsKey(index));
+            Assert.IsTrue(GetSessions(taskManager)[honestPeer.Ref].IndexTasks.ContainsKey(index + 1));
+            Assert.IsFalse(GetSessions(taskManager)[firstOwner.Ref].IndexTasks.ContainsKey(index));
+            Assert.IsFalse(GetSessions(taskManager)[secondOwner.Ref].IndexTasks.ContainsKey(index + 1));
+            Assert.AreEqual(1u, GetSessions(taskManager)[firstOwner.Ref].BlockTaskTimeouts);
+            Assert.AreEqual(1u, GetSessions(taskManager)[secondOwner.Ref].BlockTaskTimeouts);
             Sys.Stop(taskManager);
         }
 

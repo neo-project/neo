@@ -400,8 +400,6 @@ namespace Neo.Ledger
         /// <returns>True if transaction fits the pool, otherwise false.</returns>
         private bool CheckConflicts(Transaction tx, out List<PoolItem> conflictsList)
         {
-            var payer = GetPayer(tx, out var isSponsored);
-            UInt160 author = isSponsored ? payer.Secondary! : payer.Primary;
             conflictsList = new();
             long conflictsFeeSum = 0;
             // Step 1: check if `tx` was in Conflicts attributes of unsorted transactions.
@@ -410,7 +408,7 @@ namespace Neo.Ledger
                 foreach (var hash in conflicting)
                 {
                     var unsortedTx = _unsortedTransactions[hash];
-                    if (ContainsAccount(unsortedTx.Tx.Signers, author))
+                    if (HasCommonSigner(tx.Signers, unsortedTx.Tx.Signers))
                         conflictsFeeSum += unsortedTx.Tx.NetworkFee;
                     conflictsList.Add(unsortedTx);
                 }
