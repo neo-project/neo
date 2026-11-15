@@ -14,6 +14,7 @@ using Neo.Json;
 using Neo.VM;
 using Neo.VM.Types;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Array = Neo.VM.Types.Array;
 
@@ -109,7 +110,9 @@ namespace Neo.SmartContract.Manifest
         /// </summary>
         /// <param name="json">The manifest represented by a JSON object.</param>
         /// <returns>The converted manifest.</returns>
-        public static ContractManifest FromJson(JObject json)
+        public static ContractManifest FromJson(JObject json) => FromJson(json, null);
+
+        private static ContractManifest FromJson(JObject json, IEqualityComparer<ContractPermissionDescriptor>? descriptorComparer)
         {
             ContractManifest manifest = new()
             {
@@ -130,8 +133,8 @@ namespace Neo.SmartContract.Manifest
             if (manifest.SupportedStandards.Any(string.IsNullOrEmpty))
                 throw new FormatException("SupportedStandards in ContractManifest has empty string");
             _ = manifest.SupportedStandards.ToDictionary(p => p);
-            _ = manifest.Permissions.ToDictionary(p => p.Contract);
-            _ = manifest.Trusts.ToDictionary(p => p);
+            _ = manifest.Permissions.ToDictionary(p => p.Contract, descriptorComparer);
+            _ = manifest.Trusts.ToDictionary(p => p, descriptorComparer);
             return manifest;
         }
 
@@ -140,11 +143,13 @@ namespace Neo.SmartContract.Manifest
         /// </summary>
         /// <param name="json">The byte array containing JSON data.</param>
         /// <returns>The parsed manifest.</returns>
-        public static ContractManifest Parse(ReadOnlySpan<byte> json)
+        public static ContractManifest Parse(ReadOnlySpan<byte> json) => Parse(json, null);
+
+        internal static ContractManifest Parse(ReadOnlySpan<byte> json, IEqualityComparer<ContractPermissionDescriptor>? descriptorComparer)
         {
             if (json.Length > MaxLength)
                 throw new ArgumentException($"JSON content length {json.Length} exceeds maximum allowed size of {MaxLength} bytes", nameof(json));
-            return FromJson((JObject)JToken.Parse(json)!);
+            return FromJson((JObject)JToken.Parse(json)!, descriptorComparer);
         }
 
         /// <summary>

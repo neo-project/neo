@@ -17,6 +17,7 @@ using Neo.Wallets;
 using System;
 using System.IO;
 using System.Security.Cryptography;
+using ECCurve = Neo.Cryptography.ECC.ECCurve;
 
 namespace Neo.UnitTests.SmartContract.Manifest
 {
@@ -70,10 +71,16 @@ namespace Neo.UnitTests.SmartContract.Manifest
             var descriptor2 = ContractPermissionDescriptor.Create(LedgerContract.NEO.Hash);
 
             Assert.AreNotEqual(descriptor1, descriptor2);
+            Assert.AreEqual(descriptor1, ContractPermissionDescriptor.CreateWildcard());
 
             var descriptor3 = ContractPermissionDescriptor.Create(LedgerContract.NEO.Hash);
 
             Assert.AreEqual(descriptor2, descriptor3);
+            Assert.AreNotEqual(descriptor2, ContractPermissionDescriptor.Create(UInt160.Zero));
+
+            var group = ContractPermissionDescriptor.Create(ECCurve.Secp256r1.G);
+            Assert.AreNotEqual(descriptor2, group);
+            Assert.AreEqual(group, ContractPermissionDescriptor.Create(ECCurve.Secp256r1.G));
         }
     }
 }
