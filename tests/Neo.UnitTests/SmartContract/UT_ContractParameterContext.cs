@@ -88,7 +88,7 @@ namespace Neo.UnitTests.SmartContract
             """ + TestProtocolSettings.Default.Network + "}";
             var ret = ContractParametersContext.Parse(json, snapshotCache);
             Assert.AreEqual("0x1bd5c777ec35768892bd3daab60fb7a1cb905066", ret.ScriptHashes[0].ToString());
-            Assert.AreEqual(new byte[] { 18 }.ToHexString(), ((Transaction)ret.Verifiable).Script.Span.ToHexString());
+            Assert.IsTrue(((Transaction)ret.Verifiable).Script.SequenceEqual(new byte[] { 18 }));
         }
 
         [TestMethod]
