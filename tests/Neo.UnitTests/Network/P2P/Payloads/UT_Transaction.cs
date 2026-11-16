@@ -49,7 +49,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         [TestMethod]
         public void Script_Get()
         {
-            Assert.IsTrue(_uut.Script.IsEmpty);
+            Assert.AreEqual(0, _uut.Script.Length);
         }
 
         [TestMethod]
@@ -135,12 +135,58 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         {
             byte[] val = TestUtils.GetByteArray(32, 0x42);
             _uut.Script = val;
-            var span = _uut.Script.Span;
-            Assert.AreEqual(32, span.Length);
-            for (int i = 0; i < val.Length; i++)
+            Assert.AreEqual(32, _uut.Script.Length);
+            Assert.IsTrue(_uut.Script.SequenceEqual(val));
+        }
+
+        [TestMethod]
+        public void Script_DeserializesNonStrictAndReusesStrictInstance()
+        {
+            var original = new Transaction
             {
-                Assert.AreEqual(val[i], span[i]);
-            }
+                Signers = [new() { Account = UInt160.Zero }],
+                Attributes = [],
+                Script = new byte[] { (byte)OpCode.PUSH1 },
+                Witnesses = [Witness.Empty]
+            };
+            byte[] serialized = original.ToArray();
+            var tx = serialized.AsSerializable<Transaction>();
+            Assert.IsFalse(tx.Script.IsStrictMode);
+
+            var nonStrictScript = tx.Script;
+            var hash = tx.Hash;
+            int size = tx.Size;
+            Assert.AreEqual(VerifyResult.Succeed, tx.VerifyStateIndependent(TestProtocolSettings.Default));
+            Assert.IsTrue(tx.Script.IsStrictMode);
+            Assert.AreNotSame(nonStrictScript, tx.Script);
+            Assert.AreSame(hash, tx.Hash);
+            Assert.AreEqual(size, tx.Size);
+            Assert.AreSequenceEqual(serialized, tx.ToArray());
+
+            var strictScript = tx.Script;
+            Assert.AreEqual(VerifyResult.Succeed, tx.VerifyStateIndependent(TestProtocolSettings.Default));
+            Assert.AreSame(strictScript, tx.Script);
+            using var engine = new ExecutionEngine();
+            Assert.AreSame(strictScript, engine.LoadScript(tx.Script).Script);
+        }
+
+        [TestMethod]
+        public void Script_InvalidStrictValidationKeepsOriginal()
+        {
+            var tx = new Transaction
+            {
+                Signers = [new() { Account = UInt160.Zero }],
+                Attributes = [],
+                Script = new byte[] { (byte)OpCode.PUSHDATA1 },
+                Witnesses = [Witness.Empty]
+            };
+            var script = tx.Script;
+            var hash = tx.Hash;
+
+            Assert.AreEqual(VerifyResult.InvalidScript, tx.VerifyStateIndependent(TestProtocolSettings.Default));
+            Assert.AreSame(script, tx.Script);
+            Assert.IsFalse(tx.Script.IsStrictMode);
+            Assert.AreSame(hash, tx.Hash);
         }
 
         [TestMethod]
@@ -966,7 +1012,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
                     Rules = [],
                 }
             }, tx2.Signers);
-            Assert.IsTrue(tx2.Script.Span.SequenceEqual([(byte)OpCode.PUSH1]));
+            Assert.IsTrue(tx2.Script.SequenceEqual([(byte)OpCode.PUSH1]));
             Assert.IsTrue(tx2.Witnesses[0].InvocationScript.Span.IsEmpty);
             Assert.IsTrue(tx2.Witnesses[0].VerificationScript.Span.IsEmpty);
         }
