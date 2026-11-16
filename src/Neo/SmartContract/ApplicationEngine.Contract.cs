@@ -179,9 +179,9 @@ namespace Neo.SmartContract
         [InteropPrice(Hardfork.HF_Huyao, CreateMultisigAccountBasePrice)]
         internal protected UInt160 CreateMultisigAccount(int m, byte[][] pubKeys)
         {
+            ECPoint[] points = DecodePublicKeys(pubKeys);
             if (!IsHardforkEnabled(Hardfork.HF_Huyao))
             {
-                ECPoint[] points = DecodePublicKeys(pubKeys);
                 // In the unit of datoshi, 1 datoshi = 1e-8 GAS
                 BigInteger fee = IsHardforkEnabled(Hardfork.HF_Aspidochelone)
                     ? CheckSigPrice * pubKeys.Length
@@ -190,8 +190,8 @@ namespace Neo.SmartContract
                 return Contract.CreateMultiSigRedeemScript(m, points).ToScriptHash();
             }
 
-            AddFemtoGas(CreateMultisigAccountPricePerKey * pubKeys.Length * _execFeeFactor, false);
-            return Contract.CreateMultiSigRedeemScript(m, DecodePublicKeys(pubKeys)).ToScriptHash();
+            AddFemtoGas(CreateMultisigAccountPricePerKey * points.Length * _execFeeFactor, false);
+            return Contract.CreateMultiSigRedeemScript(m, points).ToScriptHash();
         }
 
         private static ECPoint[] DecodePublicKeys(byte[][] pubKeys)
