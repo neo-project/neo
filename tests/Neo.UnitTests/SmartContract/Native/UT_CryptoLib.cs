@@ -18,6 +18,7 @@ using Neo.Json;
 using Neo.Ledger;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
+using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
@@ -104,20 +105,26 @@ namespace Neo.UnitTests.SmartContract.Native
         }
 
         [TestMethod]
-        public void TestG2Identity()
+        [DataRow(false)]
+        [DataRow(true)]
+        public void TestG2Identity(bool iara)
         {
             byte[] identity = new byte[96];
             identity[0] = 0xc0;
 
             var snapshotCache = TestBlockchain.GetTestSnapshotCache();
+            if (iara)
+                snapshotCache.Add(StorageKey.Create(NativeContract.Policy.Id, 25, Encoding.UTF8.GetBytes("Iara")),
+                    new StorageItem(0u));
             using ScriptBuilder script = new();
             script.EmitDynamicCall(NativeContract.CryptoLib.Hash, "bls12381Deserialize", identity);
 
             using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache,
                 settings: TestProtocolSettings.Default);
             engine.LoadScript(script.ToArray());
-            Assert.AreEqual(VMState.HALT, engine.Execute());
-            Assert.AreSequenceEqual(identity, engine.ResultStack.Pop().GetInterface<G2Affine>().ToCompressed());
+            Assert.AreEqual(iara ? VMState.HALT : VMState.FAULT, engine.Execute());
+            if (iara)
+                Assert.AreSequenceEqual(identity, engine.ResultStack.Pop().GetInterface<G2Affine>().ToCompressed());
         }
 
         [TestMethod]
