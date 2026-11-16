@@ -448,6 +448,9 @@ namespace Neo.Ledger
                     }
                     else
                     {
+                        // A committee-signed unknown hardfork must halt the node, not just FAULT the tx.
+                        if (UnknownHardforkException.IsInstance(engine.FaultException))
+                            throw engine.FaultException!;
                         clonedSnapshot = snapshot.CloneCache();
                     }
 

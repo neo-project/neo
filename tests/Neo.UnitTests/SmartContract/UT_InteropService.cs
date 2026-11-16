@@ -385,7 +385,7 @@ namespace Neo.UnitTests.SmartContract
             var message = "hello";
             engine.Log += LogEvent;
             engine.RuntimeLog(Encoding.UTF8.GetBytes(message));
-            Assert.AreEqual(new byte[] { 0x01, 0x02, 0x03 }.ToHexString(), ((Transaction)engine.ScriptContainer).Script.Span.ToHexString());
+            Assert.IsTrue(((Transaction)engine.ScriptContainer).Script.SequenceEqual(new byte[] { 0x01, 0x02, 0x03 }));
             engine.Log -= LogEvent;
         }
 
