@@ -12,15 +12,30 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography.BLS12_381;
 using Neo.Extensions;
+using Neo.Persistence;
+using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM.Types;
 using System;
+using System.Text;
 
 namespace Neo.UnitTests.SmartContract.Native
 {
     [TestClass]
     public class UT_CryptoLib_BLS_Coverage
     {
+        private ApplicationEngine _engine;
+
+        [TestInitialize]
+        public void Initialize()
+        {
+            _engine = ApplicationEngine.Create(TriggerType.Application, null,
+                TestBlockchain.GetTestSnapshotCache(), settings: TestProtocolSettings.Default);
+        }
+
+        [TestCleanup]
+        public void Cleanup() => _engine.Dispose();
+
         private static readonly byte[] G1 = (
             "97f1d3a73197d7942695638c4fa9ac0fc3688c4f9774b905a14e3a3f171bac586c55e83ff97a1aeffb3af00adb22c6bb"
         ).HexToBytes();
@@ -33,7 +48,7 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void Bls12381Deserialize_InvalidLength_Throws()
         {
-            Assert.ThrowsExactly<ArgumentException>(() => CryptoLib.Bls12381Deserialize([1, 2, 3]));
+            Assert.ThrowsExactly<ArgumentException>(() => CryptoLib.Bls12381Deserialize(_engine, [1, 2, 3]));
         }
 
         [TestMethod]
@@ -46,32 +61,34 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void Bls12381Equal_TypeMismatch_Throws()
         {
-            var g1 = CryptoLib.Bls12381Deserialize(G1);
-            var g2 = CryptoLib.Bls12381Deserialize(G2);
+            var g1 = CryptoLib.Bls12381Deserialize(_engine, G1);
+            var g2 = CryptoLib.Bls12381Deserialize(_engine, G2);
             Assert.ThrowsExactly<ArgumentException>(() => CryptoLib.Bls12381Equal(g1, g2));
         }
 
         [TestMethod]
         public void Bls12381Equal_SameG1_True()
         {
-            var a = CryptoLib.Bls12381Deserialize(G1);
-            var b = CryptoLib.Bls12381Deserialize(G1);
+            var a = CryptoLib.Bls12381Deserialize(_engine, G1);
+            var b = CryptoLib.Bls12381Deserialize(_engine, G1);
             Assert.IsTrue(CryptoLib.Bls12381Equal(a, b));
         }
 
         [TestMethod]
         public void Bls12381Serialize_Deserialize_G1_RoundTrip()
         {
-            var original = CryptoLib.Bls12381Deserialize(G1);
+            var original = CryptoLib.Bls12381Deserialize(_engine, G1);
             var bytes = CryptoLib.Bls12381Serialize(original);
             Assert.AreEqual(48, bytes.Length);
-            var restored = CryptoLib.Bls12381Deserialize(bytes);
+            var restored = CryptoLib.Bls12381Deserialize(_engine, bytes);
             Assert.IsTrue(CryptoLib.Bls12381Equal(original, restored));
         }
 
         [TestMethod]
         public void Bls12381Serialize_Deserialize_G2Identity_RoundTrip()
         {
+            _engine.SnapshotCache.Add(StorageKey.Create(NativeContract.Policy.Id, 25, Encoding.UTF8.GetBytes("Iara")),
+                new StorageItem(0u));
             byte[] identity = new byte[96];
             identity[0] = 0xc0;
 
@@ -79,7 +96,7 @@ namespace Neo.UnitTests.SmartContract.Native
             byte[] encoded = CryptoLib.Bls12381Serialize(original);
             Assert.AreSequenceEqual(identity, encoded);
 
-            var restored = CryptoLib.Bls12381Deserialize(encoded);
+            var restored = CryptoLib.Bls12381Deserialize(_engine, encoded);
             Assert.IsTrue(CryptoLib.Bls12381Equal(original, restored));
         }
 
@@ -91,18 +108,18 @@ namespace Neo.UnitTests.SmartContract.Native
 
             byte[] nonzeroX = (byte[])identity.Clone();
             nonzeroX[^1] = 1;
-            Assert.Throws<Exception>(() => CryptoLib.Bls12381Deserialize(nonzeroX));
+            Assert.Throws<Exception>(() => CryptoLib.Bls12381Deserialize(_engine, nonzeroX));
 
             byte[] sortFlag = (byte[])identity.Clone();
             sortFlag[0] = 0xe0;
-            Assert.Throws<Exception>(() => CryptoLib.Bls12381Deserialize(sortFlag));
+            Assert.Throws<Exception>(() => CryptoLib.Bls12381Deserialize(_engine, sortFlag));
         }
 
         [TestMethod]
         public void Bls12381Add_G1_ReturnsExpectedSum()
         {
-            var a = CryptoLib.Bls12381Deserialize(G1);
-            var b = CryptoLib.Bls12381Deserialize(G1);
+            var a = CryptoLib.Bls12381Deserialize(_engine, G1);
+            var b = CryptoLib.Bls12381Deserialize(_engine, G1);
             var sum = CryptoLib.Bls12381Add(a, b);
 
             var affine = a.GetInterface<G1Affine>();
@@ -115,15 +132,15 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         public void Bls12381Add_TypeMismatch_Throws()
         {
-            var g1 = CryptoLib.Bls12381Deserialize(G1);
-            var g2 = CryptoLib.Bls12381Deserialize(G2);
+            var g1 = CryptoLib.Bls12381Deserialize(_engine, G1);
+            var g2 = CryptoLib.Bls12381Deserialize(_engine, G2);
             Assert.ThrowsExactly<ArgumentException>(() => CryptoLib.Bls12381Add(g1, g2));
         }
 
         [TestMethod]
         public void Bls12381Serialize_G1Projective_Works()
         {
-            var affine = CryptoLib.Bls12381Deserialize(G1).GetInterface<G1Affine>();
+            var affine = CryptoLib.Bls12381Deserialize(_engine, G1).GetInterface<G1Affine>();
             var projective = new InteropInterface(new G1Projective(affine));
             var bytes = CryptoLib.Bls12381Serialize(projective);
             Assert.AreEqual(48, bytes.Length);
