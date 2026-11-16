@@ -219,13 +219,14 @@ namespace Neo.Ledger
             return true;
         }
 
-        private void RemoveUnverifiedBlocksFromCache(uint index, bool restartTasks = false)
+        private UnverifiedBlocksList? RemoveUnverifiedBlocksFromCache(uint index, bool restartTasks = false)
         {
-            if (!_blockCacheUnverified.Remove(index, out var list)) return;
+            if (!_blockCacheUnverified.Remove(index, out var list)) return null;
             if (restartTasks)
                 RestartUnverifiedBlocks(list);
             _unverifiedBlockCount -= list.Blocks.Count;
             _unverifiedBlockCacheSize -= list.Blocks.Sum(p => (long)p.Size);
+            return list;
         }
 
         private void OnFillMemoryPool(IEnumerable<Transaction> transactions)
@@ -332,11 +333,11 @@ namespace Neo.Ledger
                     if (blockToPersist.Index + 99 >= headerHeight)
                         _system.LocalNode.Tell(new LocalNode.RelayDirectly(blockToPersist));
                 }
-                if (_blockCacheUnverified.TryGetValue(currentHeight + 1, out var unverifiedBlocks))
+                var nextIndex = blocksToPersistList[^1].Index + 1;
+                if (RemoveUnverifiedBlocksFromCache(nextIndex) is { } unverifiedBlocks)
                 {
                     foreach (var unverifiedBlock in unverifiedBlocks.Blocks)
                         Self.Tell(unverifiedBlock, ActorRefs.NoSender);
-                    RemoveUnverifiedBlocksFromCache(block.Index + 1);
                 }
             }
             else
@@ -507,6 +508,9 @@ namespace Neo.Ledger
                     }
                     else
                     {
+                        // A committee-signed unknown hardfork must halt the node, not just FAULT the tx.
+                        if (UnknownHardforkException.IsInstance(engine.FaultException))
+                            throw engine.FaultException!;
                         clonedSnapshot = snapshot.CloneCache();
                     }
 

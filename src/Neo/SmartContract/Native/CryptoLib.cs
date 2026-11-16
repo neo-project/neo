@@ -142,7 +142,7 @@ namespace Neo.SmartContract.Native
                 var ch = s_curves[curveHash];
                 return Crypto.VerifySignatureV0(message, signature, pubkey, ch.Curve, ch.HashAlgorithm);
             }
-            catch (ArgumentException)
+            catch
             {
                 return false;
             }
@@ -159,7 +159,7 @@ namespace Neo.SmartContract.Native
             {
                 return Crypto.VerifySignatureV0(message, signature, pubkey, s_curves[curve].Curve);
             }
-            catch (ArgumentException)
+            catch
             {
                 return false;
             }
