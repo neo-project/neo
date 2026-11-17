@@ -14,8 +14,10 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Reflection;
 using System.Threading;
 
 namespace Neo.UnitTests.Network.P2P
@@ -63,20 +65,60 @@ namespace Neo.UnitTests.Network.P2P
 
             var rejected = new[]
             {
-                "127.0.0.2", "10.0.0.9", "172.16.0.1", "192.168.1.5",
+                "127.0.0.2", "10.0.0.9", "100.64.0.0", "100.127.255.255",
+                "::ffff:100.64.1.2",
+                "172.16.0.1", "192.168.1.5",
                 "169.254.1.1", "0.0.0.0", "::1", "::", "fe80::1",
                 "fc00::1", "::ffff:127.0.0.1"
             }.Select(address => new IPEndPoint(IPAddress.Parse(address), 20333)).ToArray();
             var publicPeer = new IPEndPoint(IPAddress.Parse("203.0.113.10"), 20333);
             var publicV6Peer = new IPEndPoint(IPAddress.Parse("2606:4700:4700::1111"), 20333);
-            sender.Send(localNode, new Peer.Peers(rejected.Concat([publicPeer, publicV6Peer])));
+            var adjacentPeers = new[] { "100.63.255.255", "100.128.0.0" }
+                .Select(address => new IPEndPoint(IPAddress.Parse(address), 20333)).ToArray();
+            sender.Send(localNode, new Peer.Peers(rejected.Concat([publicPeer, publicV6Peer]).Concat(adjacentPeers)));
 
             sender.Send(localNode, new LocalNode.GetInstance());
             var local = sender.ExpectMsg<LocalNode>(TimeSpan.FromSeconds(3), cancellationToken: CancellationToken.None);
             var unconnected = local.GetUnconnectedPeers();
             Assert.IsTrue(unconnected.Contains(publicPeer));
             Assert.IsTrue(unconnected.Contains(publicV6Peer));
+            Assert.IsTrue(adjacentPeers.All(unconnected.Contains));
             Assert.IsFalse(rejected.Any(unconnected.Contains));
+        }
+
+        [TestMethod]
+        [DoNotParallelize]
+        public void Peers_Message_RejectsOwnPublicAddress()
+        {
+            var localAddresses = (HashSet<IPAddress>)typeof(Peer)
+                .GetField("s_localAddresses", BindingFlags.Static | BindingFlags.NonPublic)!.GetValue(null)!;
+            var ownAddress = IPAddress.Parse("203.0.113.77");
+            Assert.IsTrue(localAddresses.Add(ownAddress));
+            try
+            {
+                var system = TestBlockchain.GetSystem();
+                var localNode = ActorOf(LocalNode.Props(system));
+                var sender = CreateTestProbe();
+                sender.Send(localNode, new ChannelsConfig
+                {
+                    MinDesiredConnections = 0,
+                    MaxConnections = 10,
+                    MaxConnectionsPerAddress = 3
+                });
+
+                var ownPeer = new IPEndPoint(ownAddress, 20333);
+                var otherPeer = new IPEndPoint(IPAddress.Parse("203.0.113.78"), 20333);
+                sender.Send(localNode, new Peer.Peers([ownPeer, otherPeer]));
+                sender.Send(localNode, new LocalNode.GetInstance());
+                var local = sender.ExpectMsg<LocalNode>(TimeSpan.FromSeconds(3), cancellationToken: CancellationToken.None);
+                var unconnected = local.GetUnconnectedPeers();
+                Assert.IsFalse(unconnected.Contains(ownPeer));
+                Assert.IsTrue(unconnected.Contains(otherPeer));
+            }
+            finally
+            {
+                localAddresses.Remove(ownAddress);
+            }
         }
 
         [TestMethod]

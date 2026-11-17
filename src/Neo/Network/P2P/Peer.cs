@@ -157,7 +157,7 @@ namespace Neo.Network.P2P
         private static bool IsIntranetAddress(IPAddress address)
         {
             address = address.UnMap();
-            if (IPAddress.IsLoopback(address) || address.Equals(IPAddress.IPv6Any))
+            if (s_localAddresses.Contains(address) || IPAddress.IsLoopback(address) || address.Equals(IPAddress.IPv6Any))
                 return true;
 
             if (address.AddressFamily == AddressFamily.InterNetworkV6)
@@ -170,6 +170,7 @@ namespace Neo.Network.P2P
             uint value = BinaryPrimitives.ReadUInt32BigEndian(address.GetAddressBytes());
             return (value & 0xff000000) == 0x00000000 ||
                    (value & 0xff000000) == 0x0a000000 ||
+                   (value & 0xffc00000) == 0x64400000 ||
                    (value & 0xfff00000) == 0xac100000 ||
                    (value & 0xffff0000) == 0xc0a80000 ||
                    (value & 0xffff0000) == 0xa9fe0000;
