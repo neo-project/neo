@@ -92,7 +92,7 @@ namespace Neo.SmartContract
         /// <param name="method">The method of the contract to be called.</param>
         /// <param name="callFlags">The <see cref="CallFlags"/> to be used to call the contract.</param>
         /// <param name="args">The arguments to be used.</param>
-        [InteropPrice(Hardfork.HF_Huyao, 0)]
+        [InteropPrice(Hardfork.HF_Huyao, ContractCallPrice)]
         protected internal void CallContract(UInt160 contractHash, string method, CallFlags callFlags, Array args)
         {
             if ((callFlags & ~CallFlags.All) != 0)
@@ -116,11 +116,9 @@ namespace Neo.SmartContract
         {
             if (!IsHardforkEnabled(Hardfork.HF_Huyao)) return;
 
-            var price = ContractCallPrice;
             // A missing contract lookup or a non-native contract may require a disk read.
             if (contract is null || contract.Id >= 0)
-                price += ReadFromDiskPrice;
-            AddFemtoGas(price * _execFeeFactor, false);
+                AddFemtoGas(ReadFromDiskPrice * _execFeeFactor, false);
         }
 
         /// <summary>
@@ -178,11 +176,12 @@ namespace Neo.SmartContract
         /// <param name="m">The number of correct signatures that need to be provided in order for the verification to pass.</param>
         /// <param name="pubKeys">The public keys of the account.</param>
         /// <returns>The hash of the account.</returns>
+        [InteropPrice(Hardfork.HF_Huyao, CreateMultisigAccountBasePrice)]
         internal protected UInt160 CreateMultisigAccount(int m, byte[][] pubKeys)
         {
+            ECPoint[] points = DecodePublicKeys(pubKeys);
             if (!IsHardforkEnabled(Hardfork.HF_Huyao))
             {
-                ECPoint[] points = DecodePublicKeys(pubKeys);
                 // In the unit of datoshi, 1 datoshi = 1e-8 GAS
                 BigInteger fee = IsHardforkEnabled(Hardfork.HF_Aspidochelone)
                     ? CheckSigPrice * pubKeys.Length
@@ -191,11 +190,8 @@ namespace Neo.SmartContract
                 return Contract.CreateMultiSigRedeemScript(m, points).ToScriptHash();
             }
 
-            if (m < 1)
-                throw new ArgumentOutOfRangeException(nameof(m));
-            var price = CreateMultisigAccountPricePerKey * pubKeys.Length + CreateMultisigAccountBasePrice;
-            AddFemtoGas(price * _execFeeFactor, false);
-            return Contract.CreateMultiSigRedeemScript(m, DecodePublicKeys(pubKeys)).ToScriptHash();
+            AddFemtoGas(CreateMultisigAccountPricePerKey * points.Length * _execFeeFactor, false);
+            return Contract.CreateMultiSigRedeemScript(m, points).ToScriptHash();
         }
 
         private static ECPoint[] DecodePublicKeys(byte[][] pubKeys)

@@ -61,7 +61,7 @@ namespace Neo.SmartContract
         /// Gets the element in the collection at the current position of the iterator.
         /// </summary>
         /// <param name="iterator">The iterator to be used.</param>
-        [InteropPrice(Hardfork.HF_Huyao, 0)]
+        [InteropPrice(Hardfork.HF_Huyao, IteratorValueBasePrice)]
         internal protected void IteratorValue(IIterator iterator)
         {
             var value = iterator.Value(out var bytes);
@@ -69,7 +69,7 @@ namespace Neo.SmartContract
             Push(value);
             if (IsHardforkEnabled(Hardfork.HF_Huyao))
             {
-                var price = IteratorValuePricePerRef * (ReferenceCounter.Count - refs) + IteratorValuePricePerByte * bytes + IteratorValueBasePrice;
+                var price = IteratorValuePricePerRef * (ReferenceCounter.Count - refs) + IteratorValuePricePerByte * bytes;
                 AddFemtoGas(price * _execFeeFactor, false);
             }
         }
