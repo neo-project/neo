@@ -9,7 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using Newtonsoft.Json;
+using System.Text.Json;
 
 namespace Neo.Json.UnitTests
 {
@@ -71,8 +71,8 @@ namespace Neo.Json.UnitTests
         [TestMethod]
         public void TestSerializationAndDeserialization()
         {
-            string serialized = JsonConvert.SerializeObject(jTrue);
-            var deserialized = JsonConvert.DeserializeObject<JBoolean>(serialized);
+            string serialized = JsonSerializer.Serialize(jTrue);
+            var deserialized = JsonSerializer.Deserialize<JBoolean>(serialized);
             Assert.AreEqual(jTrue, deserialized);
         }
 

@@ -11,7 +11,7 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <WarningLevel>4</WarningLevel>
     <AnalysisLevel>latest</AnalysisLevel>
-    <MSTestVersion>4.3.2</MSTestVersion>
+    <MSTestVersion>4.5.3</MSTestVersion>
     <MSTestAnalysisMode>Recommended</MSTestAnalysisMode>
   </PropertyGroup>
 
@@ -21,6 +21,6 @@
 
   <ItemGroup>
     <!-- Always reference so VSTest can resolve the "junit" logger (not only on CI). -->
-    <PackageReference Include="JunitXml.TestLogger" Version="8.0.0" />
+    <PackageReference Include="JunitXml.TestLogger" Version="8.1.0" />
   </ItemGroup>
 </Project>
