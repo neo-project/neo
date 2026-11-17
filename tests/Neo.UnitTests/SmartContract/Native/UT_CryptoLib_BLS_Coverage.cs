@@ -117,7 +117,7 @@ namespace Neo.UnitTests.SmartContract.Native
         }
 
         [TestMethod]
-        public void Bls12381Deserialize_Gt_ValidatesSubgroupFromJackalope()
+        public void Bls12381Deserialize_Gt_ValidatesSubgroupFromIara()
         {
             byte[] zero = new byte[576];
             byte[] orderTwo = new Gt(-Fp12.One).ToArray();
@@ -130,9 +130,6 @@ namespace Neo.UnitTests.SmartContract.Native
 
             _engine.SnapshotCache.Add(StorageKey.Create(NativeContract.Policy.Id, 25, Encoding.UTF8.GetBytes("Iara")),
                 new StorageItem(0u));
-            _engine.SnapshotCache.Add(StorageKey.Create(NativeContract.Policy.Id, 25, Encoding.UTF8.GetBytes("Jackalope")),
-                new StorageItem(0u));
-
             Assert.ThrowsExactly<FormatException>(() => CryptoLib.Bls12381Deserialize(_engine, zero));
             Assert.ThrowsExactly<FormatException>(() => CryptoLib.Bls12381Deserialize(_engine, orderTwo));
             Assert.ThrowsExactly<FormatException>(() => CryptoLib.Bls12381Deserialize(_engine, outsideSubgroup));
@@ -149,14 +146,12 @@ namespace Neo.UnitTests.SmartContract.Native
         [TestMethod]
         [DataRow(false)]
         [DataRow(true)]
-        public void Bls12381Deserialize_Gt_NativeCallRespectsJackalope(bool jackalope)
+        public void Bls12381Deserialize_Gt_NativeCallRespectsIara(bool iara)
         {
             var snapshotCache = TestBlockchain.GetTestSnapshotCache();
-            if (jackalope)
+            if (iara)
             {
                 snapshotCache.Add(StorageKey.Create(NativeContract.Policy.Id, 25, Encoding.UTF8.GetBytes("Iara")),
-                    new StorageItem(0u));
-                snapshotCache.Add(StorageKey.Create(NativeContract.Policy.Id, 25, Encoding.UTF8.GetBytes("Jackalope")),
                     new StorageItem(0u));
             }
 
@@ -166,7 +161,7 @@ namespace Neo.UnitTests.SmartContract.Native
                 settings: TestProtocolSettings.Default);
             engine.LoadScript(script.ToArray());
 
-            Assert.AreEqual(jackalope ? VMState.FAULT : VMState.HALT, engine.Execute());
+            Assert.AreEqual(iara ? VMState.FAULT : VMState.HALT, engine.Execute());
         }
 
         [TestMethod]

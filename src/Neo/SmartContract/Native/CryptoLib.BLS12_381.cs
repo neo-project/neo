@@ -60,13 +60,13 @@ namespace Neo.SmartContract.Native
         private static Gt DeserializeGt(ApplicationEngine engine, byte[] data)
         {
             Gt gt = Gt.FromBytes(data);
-            if (!engine.IsHardforkEnabled(Hardfork.HF_Jackalope))
+            if (!engine.IsHardforkEnabled(Hardfork.HF_Iara))
                 return gt;
 
             // The subgroup check costs roughly one Gt scalar multiplication.
             engine.AddFee((1 << 21) * engine.ExecFeePicoFactor, false);
 
-            // Gt.FromBytes only validates the Fp12 encoding. Starting with Jackalope,
+            // Gt.FromBytes only validates the Fp12 encoding. Starting with Iara,
             // require membership in the order-r target group as well.
             ReadOnlySpan<byte> order =
             [
