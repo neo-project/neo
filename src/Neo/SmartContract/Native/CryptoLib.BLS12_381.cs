@@ -39,15 +39,19 @@ namespace Neo.SmartContract.Native
         /// <summary>
         /// Deserialize a bls12381 point.
         /// </summary>
+        /// <param name="engine">The application engine.</param>
         /// <param name="data">The point as byte array.</param>
         /// <returns></returns>
         [ContractMethod(CpuFee = 1 << 19)]
-        public static InteropInterface Bls12381Deserialize(byte[] data)
+        public static InteropInterface Bls12381Deserialize(ApplicationEngine engine, byte[] data)
         {
             return data.Length switch
             {
                 48 => new InteropInterface(G1Affine.FromCompressed(data)),
-                96 => new InteropInterface(G2Affine.FromCompressed(data)),
+                // Handle the canonical G2 identity from Iara onwards.
+                96 => engine.IsHardforkEnabled(Hardfork.HF_Iara) && data[0] == 0xc0 && data.AsSpan(1).IndexOfAnyExcept((byte)0) < 0
+                    ? new InteropInterface(G2Affine.Identity)
+                    : new InteropInterface(G2Affine.FromCompressed(data)),
                 576 => new InteropInterface(Gt.FromBytes(data)),
                 _ => throw new ArgumentException("Invalid BLS12-381 point length"),
             };
