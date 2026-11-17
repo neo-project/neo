@@ -49,6 +49,37 @@ namespace Neo.UnitTests.Network.P2P
         }
 
         [TestMethod]
+        public void Peers_Message_RejectsPrivateAndLoopbackAddresses()
+        {
+            var system = TestBlockchain.GetSystem();
+            var localNode = ActorOf(LocalNode.Props(system));
+            var sender = CreateTestProbe();
+            sender.Send(localNode, new ChannelsConfig
+            {
+                MinDesiredConnections = 0,
+                MaxConnections = 10,
+                MaxConnectionsPerAddress = 3
+            });
+
+            var rejected = new[]
+            {
+                "127.0.0.2", "10.0.0.9", "172.16.0.1", "192.168.1.5",
+                "169.254.1.1", "0.0.0.0", "::1", "::", "fe80::1",
+                "fc00::1", "::ffff:127.0.0.1"
+            }.Select(address => new IPEndPoint(IPAddress.Parse(address), 20333)).ToArray();
+            var publicPeer = new IPEndPoint(IPAddress.Parse("203.0.113.10"), 20333);
+            var publicV6Peer = new IPEndPoint(IPAddress.Parse("2606:4700:4700::1111"), 20333);
+            sender.Send(localNode, new Peer.Peers(rejected.Concat([publicPeer, publicV6Peer])));
+
+            sender.Send(localNode, new LocalNode.GetInstance());
+            var local = sender.ExpectMsg<LocalNode>(TimeSpan.FromSeconds(3), cancellationToken: CancellationToken.None);
+            var unconnected = local.GetUnconnectedPeers();
+            Assert.IsTrue(unconnected.Contains(publicPeer));
+            Assert.IsTrue(unconnected.Contains(publicV6Peer));
+            Assert.IsFalse(rejected.Any(unconnected.Contains));
+        }
+
+        [TestMethod]
         public void Relay_Directly_Message_DoesNotFault()
         {
             var system = TestBlockchain.GetSystem();

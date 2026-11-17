@@ -20,6 +20,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Net;
 using System.Net.NetworkInformation;
+using System.Net.Sockets;
 
 namespace Neo.Network.P2P
 {
@@ -155,10 +156,20 @@ namespace Neo.Network.P2P
 
         private static bool IsIntranetAddress(IPAddress address)
         {
-            byte[] data = address.MapToIPv4().GetAddressBytes();
-            uint value = BinaryPrimitives.ReadUInt32BigEndian(data);
-            return (value & 0xff000000) == 0x0a000000 ||
-                   (value & 0xff000000) == 0x7f000000 ||
+            address = address.UnMap();
+            if (IPAddress.IsLoopback(address) || address.Equals(IPAddress.IPv6Any))
+                return true;
+
+            if (address.AddressFamily == AddressFamily.InterNetworkV6)
+            {
+                var bytes = address.GetAddressBytes();
+                return address.IsIPv6LinkLocal || address.IsIPv6SiteLocal ||
+                       (bytes[0] & 0xfe) == 0xfc;
+            }
+
+            uint value = BinaryPrimitives.ReadUInt32BigEndian(address.GetAddressBytes());
+            return (value & 0xff000000) == 0x00000000 ||
+                   (value & 0xff000000) == 0x0a000000 ||
                    (value & 0xfff00000) == 0xac100000 ||
                    (value & 0xffff0000) == 0xc0a80000 ||
                    (value & 0xffff0000) == 0xa9fe0000;
@@ -194,7 +205,8 @@ namespace Neo.Network.P2P
                         Stash.Stash();
                         return;
                     }
-                    AddPeers(peers.EndPoints);
+                    // Peers learned through Addr must not direct outbound connections into our network.
+                    AddPeers(peers.EndPoints.Where(p => !IsIntranetAddress(p.Address)));
                     break;
 
                 case Connect connect:
