@@ -459,17 +459,13 @@ namespace Neo.SmartContract
             }
         }
 
-        private static void SetItem_Before606(ExecutionEngine engine, Instruction instruction, ref RunStats runStats)
+        private static void SetItem_Before606(ExecutionEngine engine, Instruction instruction, ref RunStats _)
         {
-            var r1 = engine.ReferenceCounter.Count;
             var value = engine.Pop();
-            var nClonedItems = 0;
-            var r2 = engine.ReferenceCounter.Count;
             if (value is Struct s)
             {
-                value = s.Clone(engine.Limits, out nClonedItems);
+                value = s.Clone(engine.Limits, out var _);
             }
-            var r3 = engine.ReferenceCounter.Count;
             var key = engine.Pop<PrimitiveType>();
             var x = engine.Pop();
             switch (x)
@@ -479,10 +475,7 @@ namespace Neo.SmartContract
                         var index = key.GetInteger();
                         if (index < 0 || index >= array.Count)
                         {
-                            var r4 = engine.ReferenceCounter.Count;
-                            engine.JumpTable.ExecuteThrow(engine, FormattableString.Invariant($"The index of {nameof(VMArray)} is out of range, {index}/[0, {array.Count})."), out int refsDelta);
-                            runStats.CollectRefDelta((r1 - r2) + (r3 - r2) + (r3 - r4) + refsDelta);
-                            runStats.CollectClonedItems(nClonedItems);
+                            engine.JumpTable.ExecuteThrow(engine, FormattableString.Invariant($"The index of {nameof(VMArray)} is out of range, {index}/[0, {array.Count})."), out int _);
                             return;
                         }
                         var i = (int)index;
@@ -515,10 +508,7 @@ namespace Neo.SmartContract
                         var index = key.GetInteger();
                         if (index < 0 || index >= buffer.Size)
                         {
-                            var r4 = engine.ReferenceCounter.Count;
-                            engine.JumpTable.ExecuteThrow(engine, FormattableString.Invariant($"The index of {nameof(Buffer)} is out of range, {index}/[0, {buffer.Size})."), out int refsDelta);
-                            runStats.CollectRefDelta((r1 - r2) + (r3 - r2) + (r3 - r4) + refsDelta);
-                            runStats.CollectClonedItems(nClonedItems);
+                            engine.JumpTable.ExecuteThrow(engine, FormattableString.Invariant($"The index of {nameof(Buffer)} is out of range, {index}/[0, {buffer.Size})."), out int _);
                             return;
                         }
                         if (value is not PrimitiveType p)
@@ -532,8 +522,6 @@ namespace Neo.SmartContract
                 default:
                     throw new InvalidOperationException($"Invalid type for {instruction.OpCode}: {x.Type}");
             }
-            runStats.CollectRefDelta((r1 - r2) + (r3 - r2) + (r3 - engine.ReferenceCounter.Count));
-            runStats.CollectClonedItems(nClonedItems);
         }
 
         private static void PickItem_Before543(ExecutionEngine engine, Instruction instruction, ref RunStats _)
