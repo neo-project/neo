@@ -277,6 +277,8 @@ namespace Neo.SmartContract
         {
             if ((callFlags & ~CallFlags.All) != 0)
                 throw new ArgumentOutOfRangeException(nameof(callFlags), $"Invalid call flags: {callFlags}");
+            if (IsHardforkEnabled(Hardfork.HF_Iara) && CurrentContext!.GetState<ExecutionContextState>().IsDynamicCall)
+                throw new InvalidOperationException("System.Runtime.LoadScript cannot be called from a dynamic call.");
             if (IsHardforkEnabled(Hardfork.HF_Huyao))
                 AddFemtoGas(LoadScriptPricePerByte * script.Length * _execFeeFactor, false);
             ExecutionContextState state = CurrentContext!.GetState<ExecutionContextState>();
