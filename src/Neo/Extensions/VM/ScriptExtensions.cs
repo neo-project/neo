@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Neo.VM;
+using System;
 
 namespace Neo.Extensions
 {
@@ -24,6 +25,16 @@ namespace Neo.Extensions
         {
             var length = script.Length;
             return length.GetVarSize() + length;
+        }
+
+        /// <summary>
+        /// Converts the script bytes to a base64 string.
+        /// </summary>
+        /// <param name="script">The script to encode.</param>
+        /// <returns>The base64-encoded script bytes.</returns>
+        public static string ToBase64String(this Script script)
+        {
+            return Convert.ToBase64String(((ReadOnlyMemory<byte>)script).Span);
         }
     }
 }
