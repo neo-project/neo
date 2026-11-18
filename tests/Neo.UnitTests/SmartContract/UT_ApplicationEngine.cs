@@ -20,6 +20,7 @@ using Neo.VM;
 using System;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Text;
 using Array = Neo.VM.Types.Array;
 using Boolean = Neo.VM.Types.Boolean;
 
@@ -29,6 +30,34 @@ namespace Neo.UnitTests.SmartContract
     public partial class UT_ApplicationEngine
     {
         private string eventName = null;
+
+        [TestMethod]
+        [DataRow(false)]
+        [DataRow(true)]
+        public void TestInvocationStackLimitFromIara(bool iaraEnabled)
+        {
+            var snapshot = TestBlockchain.GetTestSnapshotCache().CloneCache();
+            if (iaraEnabled)
+                snapshot.Add(StorageKey.Create(NativeContract.Policy.Id, 25, Encoding.UTF8.GetBytes("Iara")), new StorageItem(0u));
+
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestProtocolSettings.Default);
+            Assert.AreEqual(iaraEnabled, engine.IsHardforkEnabled(Hardfork.HF_Iara));
+            var context = engine.LoadScript(new byte[] { (byte)OpCode.RET });
+            for (int i = 1; i < byte.MaxValue; i++)
+                engine.LoadContext(context.Clone());
+
+            Assert.AreEqual(byte.MaxValue, engine.InvocationStack.Count);
+            if (iaraEnabled)
+            {
+                Assert.ThrowsExactly<InvalidOperationException>(() => engine.LoadContext(context.Clone()));
+                Assert.AreEqual(byte.MaxValue, engine.InvocationStack.Count);
+            }
+            else
+            {
+                engine.LoadContext(context.Clone());
+                Assert.AreEqual(byte.MaxValue + 1, engine.InvocationStack.Count);
+            }
+        }
 
         [TestMethod]
         [DataRow(Hardfork.HF_Echidna, true)]

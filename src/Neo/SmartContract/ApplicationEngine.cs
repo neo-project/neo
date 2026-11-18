@@ -47,6 +47,8 @@ namespace Neo.SmartContract
         /// </summary>
         public const long TestModeGas = 20_00000000;
 
+        private const uint MaxInvocationStackSizeAfterIara = byte.MaxValue;
+
         public delegate void OnInstanceHandlerEvent(ApplicationEngine engine);
         public delegate void OnLogEvent(ApplicationEngine engine, LogEventArgs args);
         public delegate void OnNotifyEvent(ApplicationEngine engine, NotifyEventArgs args);
@@ -989,6 +991,9 @@ namespace Neo.SmartContract
 
         public override void LoadContext(ExecutionContext context)
         {
+            if (IsHardforkEnabled(Hardfork.HF_Iara) && InvocationStack.Count >= MaxInvocationStackSizeAfterIara)
+                throw new InvalidOperationException($"MaxInvocationStackSize exceed: {InvocationStack.Count}");
+
             // Set default execution context state
             var state = context.GetState<ExecutionContextState>();
             state.ScriptHash ??= ((ReadOnlyMemory<byte>)context.Script).Span.ToScriptHash();
