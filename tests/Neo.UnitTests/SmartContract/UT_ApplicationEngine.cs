@@ -42,21 +42,15 @@ namespace Neo.UnitTests.SmartContract
 
             using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: TestProtocolSettings.Default);
             Assert.AreEqual(iaraEnabled, engine.IsHardforkEnabled(Hardfork.HF_Iara));
+            uint limit = iaraEnabled ? byte.MaxValue : 1024u;
+            Assert.AreEqual(limit, engine.Limits.MaxInvocationStackSize);
             var context = engine.LoadScript(new byte[] { (byte)OpCode.RET });
-            for (int i = 1; i < byte.MaxValue; i++)
+            for (int i = 1; i < limit; i++)
                 engine.LoadContext(context.Clone());
 
-            Assert.AreEqual(byte.MaxValue, engine.InvocationStack.Count);
-            if (iaraEnabled)
-            {
-                Assert.ThrowsExactly<InvalidOperationException>(() => engine.LoadContext(context.Clone()));
-                Assert.AreEqual(byte.MaxValue, engine.InvocationStack.Count);
-            }
-            else
-            {
-                engine.LoadContext(context.Clone());
-                Assert.AreEqual(byte.MaxValue + 1, engine.InvocationStack.Count);
-            }
+            Assert.AreEqual((int)limit, engine.InvocationStack.Count);
+            Assert.ThrowsExactly<InvalidOperationException>(() => engine.LoadContext(context.Clone()));
+            Assert.AreEqual((int)limit, engine.InvocationStack.Count);
         }
 
         [TestMethod]
