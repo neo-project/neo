@@ -38,6 +38,15 @@ namespace Neo.UnitTests.SmartContract
         }
 
         [TestMethod]
+        public void Script_ToBase64String_EncodesBytes()
+        {
+            byte[] bytes = [(byte)OpCode.PUSH1, (byte)OpCode.RET];
+            Script script = new(bytes);
+
+            Assert.AreEqual(Convert.ToBase64String(bytes), script.ToBase64String());
+        }
+
+        [TestMethod]
         public void TestDeserialize()
         {
             byte[] wrongMagic = { 0x00, 0x00, 0x00, 0x00 };

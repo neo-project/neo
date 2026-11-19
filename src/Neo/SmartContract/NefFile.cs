@@ -166,7 +166,7 @@ namespace Neo.SmartContract
                 ["compiler"] = Compiler,
                 ["source"] = Source,
                 ["tokens"] = new JArray(Tokens.Select(p => p.ToJson())),
-                ["script"] = Convert.ToBase64String(((ReadOnlyMemory<byte>)Script).Span),
+                ["script"] = Script.ToBase64String(),
                 ["checksum"] = CheckSum
             };
         }
