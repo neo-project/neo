@@ -233,6 +233,72 @@ namespace Neo.UnitTests.SmartContract
         }
 
         [TestMethod]
+        [DataRow(5u, VMState.HALT)]
+        [DataRow(15u, VMState.HALT)]
+        [DataRow(30u, VMState.FAULT)]
+        public void TestSETITEM_SelfReferenceBeforeHuyao(uint index, VMState expectedState)
+        {
+            using var sb = new ScriptBuilder();
+            for (var i = 0; i < 3; i++)
+            {
+                sb.EmitPush(1000);
+                sb.Emit(OpCode.NEWARRAY);
+                sb.Emit(OpCode.PUSH0);
+                sb.Emit(OpCode.OVER);
+                sb.Emit(OpCode.SETITEM);
+            }
+
+            var settings = ProtocolSettings.Default with
+            {
+                Hardforks = ProtocolSettings.Default.Hardforks
+                    .SetItem(Hardfork.HF_Gorgon, 10u)
+                    .SetItem(Hardfork.HF_Huyao, 20u)
+            };
+
+            using var engine = Execute(sb.ToArray(), settings, index);
+            Assert.AreEqual(expectedState, engine.State);
+            if (expectedState == VMState.FAULT)
+            {
+                Assert.IsNotNull(engine.FaultException);
+                Assert.Contains("MaxStackSize exceed", engine.FaultException.Message);
+            }
+        }
+
+        [TestMethod]
+        [DataRow(15u, VMState.FAULT)]
+        [DataRow(30u, VMState.HALT)]
+        public void TestSETITEM_MapSelfReferenceBeforeHuyao(uint index, VMState expectedState)
+        {
+            using var sb = new ScriptBuilder();
+            for (var i = 0; i < 683; i++)
+            {
+                sb.Emit(OpCode.NEWMAP);
+                sb.Emit(OpCode.DUP);
+                sb.Emit(OpCode.PUSH0);
+                sb.Emit(OpCode.OVER);
+                sb.Emit(OpCode.SETITEM);
+                sb.Emit(OpCode.PUSH0);
+                sb.Emit(OpCode.OVER);
+                sb.Emit(OpCode.SETITEM);
+            }
+
+            var settings = ProtocolSettings.Default with
+            {
+                Hardforks = ProtocolSettings.Default.Hardforks
+                    .SetItem(Hardfork.HF_Gorgon, 10u)
+                    .SetItem(Hardfork.HF_Huyao, 20u)
+            };
+
+            using var engine = Execute(sb.ToArray(), settings, index);
+            Assert.AreEqual(expectedState, engine.State);
+            if (expectedState == VMState.FAULT)
+            {
+                Assert.IsNotNull(engine.FaultException);
+                Assert.Contains("MaxStackSize exceed", engine.FaultException.Message);
+            }
+        }
+
+        [TestMethod]
         // Before Huyao: (1 << 15) * 30 = 983040 datoshi.
         [DataRow(false, "native", 983040L)]
         [DataRow(false, "contract", 983040L)]
