@@ -185,6 +185,50 @@ namespace Neo.UnitTests.SmartContract
         }
 
         [TestMethod]
+        public void TestRollOnEmptyStackBeforeAndAfterHuyao()
+        {
+            var settings = ProtocolSettings.Default with
+            {
+                Hardforks = ProtocolSettings.Default.Hardforks
+                    .SetItem(Hardfork.HF_Gorgon, 10u)
+                    .SetItem(Hardfork.HF_Huyao, 20u)
+            };
+
+            // The depth is the only stack item, leaving an empty stack after it is popped.
+            byte[][] zeroDepthScripts =
+            [
+                [(byte)OpCode.PUSH0, (byte)OpCode.ROLL],
+                [(byte)OpCode.PUSHDATA1, 1, 0, (byte)OpCode.ROLL]
+            ];
+
+            foreach (var script in zeroDepthScripts)
+            {
+                foreach (uint index in new uint[] { 5, 15, 19 })
+                {
+                    using var engine = Execute(script, settings, index);
+                    Assert.AreEqual(VMState.HALT, engine.State, $"Expected HALT at index={index}.");
+                    Assert.AreEqual(0, engine.ResultStack.Count);
+                }
+
+                ExecuteAndAssertFault<ArgumentOutOfRangeException>(script, settings, index: 20u);
+            }
+
+            // Other ROLL depths retain the VM behavior on either side of the fork.
+            var validScript = new byte[] { (byte)OpCode.PUSH1, (byte)OpCode.PUSH0, (byte)OpCode.ROLL };
+            foreach (uint index in new uint[] { 19, 20 })
+            {
+                using var engine = Execute(validScript, settings, index);
+                Assert.AreEqual(VMState.HALT, engine.State);
+                Assert.AreEqual(1, engine.ResultStack.Count);
+                Assert.AreEqual(1, (int)engine.ResultStack.Peek().GetInteger());
+            }
+
+            var invalidScript = new byte[] { (byte)OpCode.PUSH1, (byte)OpCode.ROLL };
+            ExecuteAndAssertFault<ArgumentOutOfRangeException>(invalidScript, settings, index: 19u);
+            ExecuteAndAssertFault<ArgumentOutOfRangeException>(invalidScript, settings, index: 20u);
+        }
+
+        [TestMethod]
         public void TestSETITEM_WithDifferentHF()
         {
             using var sb = new ScriptBuilder();
