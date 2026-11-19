@@ -68,7 +68,11 @@ namespace Neo.SmartContract
         /// <summary>
         /// The script of the contract.
         /// </summary>
-        public ReadOnlyMemory<byte> Script { get; set; }
+        public Script Script
+        {
+            get => field ??= Script.Empty;
+            set => field = value ?? throw new ArgumentNullException(nameof(value));
+        }
 
         /// <summary>
         /// The checksum of the nef file.
@@ -109,7 +113,7 @@ namespace Neo.SmartContract
             writer.Write((byte)0);
             writer.Write(Tokens);
             writer.Write((short)0);
-            writer.WriteVarBytes(Script.Span);
+            writer.WriteVarBytes(Script);
             writer.Write(CheckSum);
         }
 
@@ -130,7 +134,7 @@ namespace Neo.SmartContract
             if (reader.ReadByte() != 0) throw new FormatException("Reserved bytes must be 0");
             Tokens = reader.ReadSerializableArray<MethodToken>(128);
             if (reader.ReadUInt16() != 0) throw new FormatException("Reserved bytes must be 0");
-            Script = reader.ReadVarMemory((int)ExecutionEngineLimits.Default.MaxItemSize);
+            Script = new Script(reader.ReadVarMemory((int)ExecutionEngineLimits.Default.MaxItemSize));
             if (Script.Length == 0) throw new ArgumentException("Script cannot be empty.");
             CheckSum = reader.ReadUInt32();
             if (verify)
@@ -162,7 +166,7 @@ namespace Neo.SmartContract
                 ["compiler"] = Compiler,
                 ["source"] = Source,
                 ["tokens"] = new JArray(Tokens.Select(p => p.ToJson())),
-                ["script"] = Convert.ToBase64String(Script.Span),
+                ["script"] = Convert.ToBase64String(((ReadOnlyMemory<byte>)Script).Span),
                 ["checksum"] = CheckSum
             };
         }

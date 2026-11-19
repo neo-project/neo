@@ -13,6 +13,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
 using Neo.IO;
 using Neo.SmartContract;
+using Neo.VM;
 using System;
 using System.IO;
 using System.Runtime.CompilerServices;
@@ -90,7 +91,7 @@ namespace Neo.UnitTests.SmartContract
             var newFile1 = data.AsSerializable<NefFile>();
             Assert.AreEqual(file.Compiler, newFile1.Compiler);
             Assert.AreEqual(file.CheckSum, newFile1.CheckSum);
-            Assert.IsTrue(newFile1.Script.Span.SequenceEqual(file.Script.Span));
+            Assert.IsTrue(((ReadOnlyMemory<byte>)newFile1.Script).Span.SequenceEqual(((ReadOnlyMemory<byte>)file.Script).Span));
         }
 
         [TestMethod]
@@ -116,7 +117,22 @@ namespace Neo.UnitTests.SmartContract
             file = data.AsSerializable<NefFile>();
 
             Assert.AreEqual("".PadLeft(32, ' '), file.Compiler);
-            Assert.AreSequenceEqual(new byte[] { 0x01, 0x02, 0x03 }, file.Script.ToArray());
+            Assert.AreSequenceEqual(new byte[] { 0x01, 0x02, 0x03 }, ((ReadOnlyMemory<byte>)file.Script).ToArray());
+        }
+
+        [TestMethod]
+        public void Script_RoundTripReusesInstance()
+        {
+            file.Script = new byte[] { (byte)OpCode.PUSH1 };
+            file.CheckSum = NefFile.ComputeChecksum(file);
+            byte[] serialized = file.ToArray();
+            var parsed = serialized.AsSerializable<NefFile>();
+            var script = parsed.Script;
+
+            Assert.AreSame(script, parsed.Script);
+            Assert.AreSequenceEqual(serialized, parsed.ToArray());
+            using var engine = new ExecutionEngine();
+            Assert.AreSame(script, engine.LoadScript(parsed.Script).Script);
         }
 
         [TestMethod]

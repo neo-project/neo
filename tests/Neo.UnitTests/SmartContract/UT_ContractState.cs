@@ -55,6 +55,13 @@ namespace Neo.UnitTests.SmartContract
         }
 
         [TestMethod]
+        public void Script_UsesNefInstance()
+        {
+            Assert.AreSame(contract.Nef.Script, contract.Script);
+            Assert.AreSame(contract.Script, contract.Script);
+        }
+
+        [TestMethod]
         public void TestClone()
         {
             var clone = ((IInteroperable)contract).Clone() as ContractState;
@@ -79,7 +86,7 @@ namespace Neo.UnitTests.SmartContract
             IInteroperable newContract = (ContractState)RuntimeHelpers.GetUninitializedObject(typeof(ContractState));
             newContract.FromStackItem(contract.ToStackItem());
             Assert.AreEqual(contract.Manifest.ToJson().ToString(), ((ContractState)newContract).Manifest.ToJson().ToString());
-            Assert.IsTrue(((ContractState)newContract).Script.Span.SequenceEqual(contract.Script.Span));
+            Assert.IsTrue(((ReadOnlyMemory<byte>)((ContractState)newContract).Script).Span.SequenceEqual(((ReadOnlyMemory<byte>)contract.Script).Span));
         }
 
         [TestMethod]
