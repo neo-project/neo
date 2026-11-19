@@ -100,6 +100,27 @@ namespace Neo.UnitTests.SmartContract
         }
 
         [TestMethod]
+        public void CreateMultisigAccount_ChargesBeforeDecodingPublicKeys()
+        {
+            using var engine = TestEngineRunner.CreateWithScript(_snapshot, new byte[] { (byte)OpCode.NOP }, gas: 0);
+
+            var exception = Assert.ThrowsExactly<InvalidOperationException>(() =>
+                engine.CreateMultisigAccount(1, [new byte[] { 0x00 }]));
+
+            Assert.AreEqual("Insufficient GAS.", exception.Message);
+        }
+
+        [TestMethod]
+        public void CreateMultisigAccount_RejectsInvalidParametersBeforeDecodingPublicKeys()
+        {
+            using var engine = TestEngineRunner.CreateWithScript(_snapshot, new byte[] { (byte)OpCode.NOP });
+            byte[][] keys = new byte[1025][];
+
+            Assert.ThrowsExactly<ArgumentException>(() => engine.CreateMultisigAccount(1, keys));
+            Assert.ThrowsExactly<ArgumentException>(() => engine.CreateMultisigAccount(0, [new byte[] { 0x00 }]));
+        }
+
+        [TestMethod]
         public void NativeOnPersist_WrongTrigger_Faults()
         {
             using var engine = TestEngineRunner.Create(_snapshot, trigger: TriggerType.Application);
