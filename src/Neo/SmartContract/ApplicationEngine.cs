@@ -364,8 +364,22 @@ namespace Neo.SmartContract
 
             // Before https://github.com/neo-project/neo-vm/pull/606
             table[OpCode.SETITEM] = SetItem_Before606;
+            // Before https://github.com/neo-project/neo-vm/pull/575
+            table[OpCode.ROLL] = Roll_Before575;
 
             return table;
+        }
+
+        private static void Roll_Before575(ExecutionEngine engine, Instruction instruction, ref RunStats runStats)
+        {
+            var stack = engine.CurrentContext!.EvaluationStack;
+            if (stack.Count == 1 && stack.Peek().GetInteger().IsZero)
+            {
+                engine.Pop();
+                return;
+            }
+
+            DefaultJumpTable.Roll(engine, instruction, ref runStats);
         }
 
         private static void Remove_Before543(ExecutionEngine engine, Instruction instruction, ref RunStats runStats)
