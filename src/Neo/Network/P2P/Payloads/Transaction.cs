@@ -305,7 +305,7 @@ namespace Neo.Network.P2P.Payloads
             json["validuntilblock"] = ValidUntilBlock;
             json["signers"] = Signers.Select(p => p.ToJson()).ToArray();
             json["attributes"] = Attributes.Select(p => p.ToJson()).ToArray();
-            json["script"] = Convert.ToBase64String(((ReadOnlyMemory<byte>)Script).Span);
+            json["script"] = Script.ToBase64String();
             json["witnesses"] = Witnesses.Select(p => p.ToJson()).ToArray();
             return json;
         }
