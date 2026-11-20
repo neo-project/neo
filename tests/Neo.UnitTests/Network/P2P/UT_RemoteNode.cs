@@ -16,6 +16,7 @@ using Neo.Extensions;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Capabilities;
 using Neo.Network.P2P.Payloads;
+using System;
 using System.Net;
 using System.Threading;
 
@@ -92,6 +93,51 @@ namespace Neo.UnitTests.Network.P2P
 
             //Verack
             Assert.HasCount(3, verackMessage.Data);
+        }
+
+        [TestMethod]
+        public void RemoteNode_Test_TelemetrySubscriberException_DoesNotPreventSending()
+        {
+            static void ThrowingSubscriber(NeoSystem _, Message __)
+            {
+                throw new InvalidOperationException("Telemetry subscriber failed");
+            }
+
+            var connectionTestProbe = CreateTestProbe();
+            var remoteNodeActor = ActorOfAsTestActorRef(() =>
+                new RemoteNode(_system,
+                    new LocalNode(_system),
+                    connectionTestProbe,
+                    new IPEndPoint(IPAddress.Parse("192.168.1.2"), 8080), new IPEndPoint(IPAddress.Parse("192.168.1.1"), 8080), new ChannelsConfig()));
+
+            var msg = Message.Create(MessageCommand.Version, new VersionPayload()
+            {
+                UserAgent = "Unit Test".PadLeft(1024, '0'),
+                Nonce = 1,
+                Network = TestProtocolSettings.Default.Network,
+                Timestamp = 5,
+                Version = 6,
+                Capabilities =
+                [
+                    new ServerCapability(NodeCapabilityType.TcpServer, 25)
+                ]
+            });
+
+            RemoteNode.MessageSent += ThrowingSubscriber;
+            try
+            {
+                var testProbe = CreateTestProbe();
+                testProbe.Send(remoteNodeActor, new Tcp.Received((ByteString)msg.ToArray()));
+
+                // The Verack is still written even though the subscriber threw while the node
+                // was sending it.
+                var verackMessage = connectionTestProbe.ExpectMsg<Tcp.Write>(cancellationToken: CancellationToken.None);
+                Assert.HasCount(3, verackMessage.Data);
+            }
+            finally
+            {
+                RemoteNode.MessageSent -= ThrowingSubscriber;
+            }
         }
     }
 }

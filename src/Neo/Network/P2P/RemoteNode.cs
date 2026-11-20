@@ -62,6 +62,7 @@ namespace Neo.Network.P2P
         private bool _ack = true;
         private uint _lastHeightSent = 0;
         private readonly ConnectionDirection _connectionDirection;
+        private bool _connectedNotified;
         private bool _disconnectNotified;
 
         /// <summary>
@@ -108,7 +109,6 @@ namespace Neo.Network.P2P
             localNode.RemoteNodes.TryAdd(Self, this);
             var listenPort = config.Tcp?.Port;
             _connectionDirection = listenPort.HasValue && local.Port == listenPort.Value ? ConnectionDirection.Inbound : ConnectionDirection.Outbound;
-            NotifyConnectionChanged(true, ConnectionChangeReason.Connected);
         }
 
         /// <summary>
@@ -178,7 +178,7 @@ namespace Neo.Network.P2P
             switch (message)
             {
                 case Close:
-                    NotifyConnectionChanged(false, ConnectionChangeReason.Closed);
+                    NotifyDisconnected(ConnectionChangeReason.Closed);
                     break;
                 case Timer _:
                     OnTimer();
@@ -229,6 +229,7 @@ namespace Neo.Network.P2P
 
         private void OnStartProtocol()
         {
+            NotifyConnected();
             SendMessage(Message.Create(MessageCommand.Version, VersionPayload.Create(_system.Settings.Network, LocalNode.Nonce, LocalNode.UserAgent, _localNode.GetNodeCapabilities())));
         }
 
@@ -239,7 +240,7 @@ namespace Neo.Network.P2P
             {
                 _knownHashes.Clear();
                 _sentHashes.Clear();
-                NotifyConnectionChanged(false, ConnectionChangeReason.Stopped);
+                NotifyDisconnected(ConnectionChangeReason.Stopped);
             }
             base.PostStop();
         }
@@ -254,30 +255,42 @@ namespace Neo.Network.P2P
             _ack = false;
             // Here it is possible that we dont have the Version message yet,
             // so we need to send the message uncompressed
-            SafeInvoke(() => MessageSent?.Invoke(_system, message));
+            RaiseEvent(() => MessageSent?.Invoke(_system, message), nameof(MessageSent));
             SendData(ByteString.FromBytes(message.ToArray(Version?.AllowCompression ?? false)));
             _sentCommands[(byte)message.Command] = true;
         }
 
-        private void NotifyConnectionChanged(bool connected, ConnectionChangeReason reason)
+        private void NotifyConnected()
         {
-            if (!connected)
-            {
-                if (_disconnectNotified) return;
-                _disconnectNotified = true;
-            }
+            if (_connectedNotified) return;
+            _connectedNotified = true;
 
-            SafeInvoke(() => ConnectionChanged?.Invoke(_system, Remote, _connectionDirection, connected, reason));
+            RaiseEvent(() => ConnectionChanged?.Invoke(_system, Remote, _connectionDirection, true, ConnectionChangeReason.Connected), nameof(ConnectionChanged));
         }
 
-        private static void SafeInvoke(Action action)
+        private void NotifyDisconnected(ConnectionChangeReason reason)
+        {
+            // Only a connection that was reported as connected can be reported as disconnected,
+            // so the two notifications always come in a matching pair.
+            if (!_connectedNotified || _disconnectNotified) return;
+            _disconnectNotified = true;
+
+            RaiseEvent(() => ConnectionChanged?.Invoke(_system, Remote, _connectionDirection, false, reason), nameof(ConnectionChanged));
+        }
+
+        /// <summary>
+        /// Raises a telemetry event. A faulty subscriber must not break the P2P message path, but
+        /// its exception is logged with the name of the event instead of being silently discarded.
+        /// </summary>
+        private static void RaiseEvent(Action raise, string eventName)
         {
             try
             {
-                action();
+                raise();
             }
-            catch
+            catch (Exception ex)
             {
+                Utility.Log($"{nameof(RemoteNode)}:{eventName}", LogLevel.Warning, ex);
             }
         }
 
