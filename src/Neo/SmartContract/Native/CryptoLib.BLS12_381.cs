@@ -52,9 +52,43 @@ namespace Neo.SmartContract.Native
                 96 => engine.IsHardforkEnabled(Hardfork.HF_Iara) && data[0] == 0xc0 && data.AsSpan(1).IndexOfAnyExcept((byte)0) < 0
                     ? new InteropInterface(G2Affine.Identity)
                     : new InteropInterface(G2Affine.FromCompressed(data)),
-                576 => new InteropInterface(Gt.FromBytes(data)),
+                576 => new InteropInterface(DeserializeGt(engine, data)),
                 _ => throw new ArgumentException("Invalid BLS12-381 point length"),
             };
+        }
+
+        private static Gt DeserializeGt(ApplicationEngine engine, byte[] data)
+        {
+            Gt gt = Gt.FromBytes(data);
+            if (!engine.IsHardforkEnabled(Hardfork.HF_Iara))
+                return gt;
+
+            // The subgroup check costs roughly one Gt scalar multiplication.
+            engine.AddFee((1 << 21) * engine.ExecFeePicoFactor, false);
+
+            // Gt.FromBytes only validates the Fp12 encoding. Starting with Iara,
+            // require membership in the order-r target group as well.
+            ReadOnlySpan<byte> order =
+            [
+                0x73, 0xed, 0xa7, 0x53, 0x29, 0x9d, 0x7d, 0x48,
+                0x33, 0x39, 0xd8, 0x08, 0x09, 0xa1, 0xd8, 0x05,
+                0x53, 0xbd, 0xa4, 0x02, 0xff, 0xfe, 0x5b, 0xfe,
+                0xff, 0xff, 0xff, 0xff, 0x00, 0x00, 0x00, 0x01
+            ];
+            Fp12 power = Fp12.One;
+            foreach (byte value in order)
+            {
+                for (int bit = 7; bit >= 0; bit--)
+                {
+                    power = power.Square();
+                    if ((value & (1 << bit)) != 0)
+                        power *= gt.Value;
+                }
+            }
+            if (power != Fp12.One)
+                throw new FormatException("Invalid BLS12-381 Gt element");
+
+            return gt;
         }
 
         /// <summary>
