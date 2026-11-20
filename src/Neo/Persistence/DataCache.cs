@@ -524,10 +524,20 @@ namespace Neo.Persistence
                         p.Key,
                         p.Value.Item
                     ))
-                    .OrderBy(p => p.Key, comparer)
                     .ToArray();
                 cachedKeySet = [.. _dictionary.Keys];
+
+                // StorageKey initializes its serialized bytes lazily. Initialize them under
+                // the lock before comparisons can run concurrently in separate enumerators.
+                foreach (var (key, _) in cached)
+                    _ = key.Length;
             }
+
+            // Sort the captured key/item pairs outside the lock. Dictionary keys are unique,
+            // so an in-place (unstable) sort preserves the existing enumeration order.
+            Array.Sort(cached, comparer == StorageKeyComparer.Default
+                ? CachedEntryComparer.Forward
+                : CachedEntryComparer.Reverse);
 
             // `skip` must be applied to the merged (cached + store) sequence, not to the store
             // alone: tracked entries in `_dictionary` can add or hide store entries, so pushing
@@ -577,6 +587,17 @@ namespace Neo.Persistence
                     c2 = e2.MoveNext();
                     i2 = c2 ? e2.Current : default;
                 }
+            }
+        }
+
+        private sealed class CachedEntryComparer(StorageKeyComparer comparer) : IComparer<(StorageKey Key, StorageItem Value)>
+        {
+            internal static readonly CachedEntryComparer Forward = new(StorageKeyComparer.Default);
+            internal static readonly CachedEntryComparer Reverse = new(StorageKeyComparer.Reverse);
+
+            public int Compare((StorageKey Key, StorageItem Value) x, (StorageKey Key, StorageItem Value) y)
+            {
+                return comparer.Compare(x.Key, y.Key);
             }
         }
 
