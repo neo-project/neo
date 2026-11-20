@@ -96,6 +96,11 @@ namespace Neo.Ledger
         /// <summary>
         /// Indicates that the <see cref="IInventory"/> failed to verify due to other reasons.
         /// </summary>
-        Unknown
+        Unknown,
+
+        /// <summary>
+        /// Indicates that the <see cref="IInventory"/> hash differs from an expected hash.
+        /// </summary>
+        InvalidHash
     }
 }
