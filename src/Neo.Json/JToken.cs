@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using System.Diagnostics.CodeAnalysis;
+using System.Numerics;
 using System.Text.Json;
 using static Neo.Json.Utility;
 
@@ -128,8 +129,9 @@ namespace Neo.Json
         /// </summary>
         /// <param name="value">The byte array that contains the JSON token.</param>
         /// <param name="max_nest">The maximum nesting depth when parsing the JSON token.</param>
+        /// <param name="checkNumbers">Whether to reject numbers outside the safe integer range or underflowing to zero.</param>
         /// <returns>The parsed JSON token.</returns>
-        public static JToken? Parse(ReadOnlySpan<byte> value, int max_nest = 64)
+        public static JToken? Parse(ReadOnlySpan<byte> value, int max_nest = 64, bool checkNumbers = true)
         {
             var reader = new Utf8JsonReader(value, new JsonReaderOptions
             {
@@ -139,7 +141,7 @@ namespace Neo.Json
             });
             try
             {
-                var json = Read(ref reader);
+                var json = Read(ref reader, checkNumbers);
                 if (reader.Read()) throw new FormatException("Read json token failed");
                 return json;
             }
@@ -154,29 +156,88 @@ namespace Neo.Json
         /// </summary>
         /// <param name="value">The <see cref="string"/> that contains the JSON token.</param>
         /// <param name="max_nest">The maximum nesting depth when parsing the JSON token.</param>
+        /// <param name="checkNumbers">Whether to reject numbers outside the safe integer range or underflowing to zero.</param>
         /// <returns>The parsed JSON token.</returns>
-        public static JToken? Parse(string value, int max_nest = 64)
+        public static JToken? Parse(string value, int max_nest = 64, bool checkNumbers = true)
         {
-            return Parse(StrictUTF8.GetBytes(value), max_nest);
+            return Parse(StrictUTF8.GetBytes(value), max_nest, checkNumbers);
         }
 
-        private static JToken? Read(ref Utf8JsonReader reader, bool skipReading = false)
+        private static JToken? Read(ref Utf8JsonReader reader, bool checkNumbers, bool skipReading = false)
         {
             if (!skipReading && !reader.Read()) throw new FormatException("Read json token failed");
             return reader.TokenType switch
             {
                 JsonTokenType.False => false,
                 JsonTokenType.Null => Null,
-                JsonTokenType.Number => reader.GetDouble(),
-                JsonTokenType.StartArray => ReadArray(ref reader),
-                JsonTokenType.StartObject => ReadObject(ref reader),
+                JsonTokenType.Number => ReadNumber(ref reader, checkNumbers),
+                JsonTokenType.StartArray => ReadArray(ref reader, checkNumbers),
+                JsonTokenType.StartObject => ReadObject(ref reader, checkNumbers),
                 JsonTokenType.String => ReadString(ref reader),
                 JsonTokenType.True => true,
                 _ => throw new FormatException($"Unexpected token {reader.TokenType}"),
             };
         }
 
-        private static JArray ReadArray(ref Utf8JsonReader reader)
+        private static JNumber ReadNumber(ref Utf8JsonReader reader, bool checkNumbers)
+        {
+            double value = reader.GetDouble();
+            if (checkNumbers && Math.Abs(value) == JNumber.MAX_SAFE_INTEGER && IsOutsideSafeIntegerRange(reader.ValueSpan))
+                throw new FormatException("JSON number is outside the safe integer range");
+
+            if (checkNumbers && value == 0)
+            {
+                foreach (byte digit in reader.ValueSpan)
+                {
+                    if (digit == (byte)'e' || digit == (byte)'E') break;
+                    if (digit >= (byte)'1' && digit <= (byte)'9')
+                        throw new FormatException("JSON number underflows to zero");
+                }
+            }
+            return new JNumber(value, checkNumbers);
+        }
+
+        private static bool IsOutsideSafeIntegerRange(ReadOnlySpan<byte> number)
+        {
+            int exponentIndex = number.IndexOfAny((byte)'e', (byte)'E');
+            ReadOnlySpan<byte> mantissa = exponentIndex < 0 ? number : number[..exponentIndex];
+            ReadOnlySpan<byte> exponentDigits = exponentIndex < 0 ? [] : number[(exponentIndex + 1)..];
+            bool negativeExponent = !exponentDigits.IsEmpty && exponentDigits[0] == (byte)'-';
+            if (!exponentDigits.IsEmpty && (exponentDigits[0] == (byte)'-' || exponentDigits[0] == (byte)'+'))
+                exponentDigits = exponentDigits[1..];
+
+            long exponent = 0;
+            // A span cannot contain enough digits to offset a larger exponent.
+            foreach (byte digit in exponentDigits)
+                exponent = Math.Min(exponent * 10 + digit - (byte)'0', 10_000_000_000L);
+            if (negativeExponent) exponent = -exponent;
+
+            if (mantissa[0] == (byte)'-') mantissa = mantissa[1..];
+            int point = mantissa.IndexOf((byte)'.');
+            if (point < 0) point = mantissa.Length;
+            int first = 0;
+            while (first < mantissa.Length && (mantissa[first] == (byte)'0' || mantissa[first] == (byte)'.'))
+                first++;
+            if (first == mantissa.Length) return false;
+
+            ReadOnlySpan<byte> limit = "9007199254740991"u8;
+            long integerDigits = point - first + (first > point ? 1 : 0) + exponent;
+            if (integerDigits != limit.Length) return integerDigits > limit.Length;
+
+            // Compare the significant digits exactly, including any fraction beyond double precision.
+            int index = first;
+            foreach (byte boundDigit in limit)
+            {
+                if (index < mantissa.Length && mantissa[index] == (byte)'.') index++;
+                byte digit = index < mantissa.Length ? mantissa[index++] : (byte)'0';
+                if (digit != boundDigit) return digit > boundDigit;
+            }
+            for (; index < mantissa.Length; index++)
+                if (mantissa[index] != (byte)'0' && mantissa[index] != (byte)'.') return true;
+            return false;
+        }
+
+        private static JArray ReadArray(ref Utf8JsonReader reader, bool checkNumbers)
         {
             var array = new JArray();
             while (reader.Read())
@@ -186,14 +247,14 @@ namespace Neo.Json
                     case JsonTokenType.EndArray:
                         return array;
                     default:
-                        array.Add(Read(ref reader, skipReading: true));
+                        array.Add(Read(ref reader, checkNumbers, skipReading: true));
                         break;
                 }
             }
             throw new FormatException("Unterminated array");
         }
 
-        private static JObject ReadObject(ref Utf8JsonReader reader)
+        private static JObject ReadObject(ref Utf8JsonReader reader, bool checkNumbers)
         {
             JObject obj = new();
             while (reader.Read())
@@ -207,7 +268,7 @@ namespace Neo.Json
                         if (obj.Properties.ContainsKey(name))
                             throw new FormatException($"Duplicate property name: {name}");
 
-                        var value = Read(ref reader);
+                        var value = Read(ref reader, checkNumbers);
                         obj.Properties.Add(name, value);
                         break;
                     default:
@@ -300,6 +361,11 @@ namespace Neo.Json
         }
 
         public static implicit operator JToken(double value)
+        {
+            return (JNumber)value;
+        }
+
+        public static implicit operator JToken(BigInteger value)
         {
             return (JNumber)value;
         }

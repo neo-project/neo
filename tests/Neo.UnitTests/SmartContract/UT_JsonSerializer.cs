@@ -92,7 +92,7 @@ namespace Neo.UnitTests.SmartContract
             Assert.AreEqual("[1,-2,3.5]", parsed.ToString());
 
             json = "[200.500000E+005,200.500000e+5,-1.1234e-100,9.05E+28,1e3,10e3,1000e-3]";
-            parsed = JObject.Parse(json);
+            parsed = JToken.Parse(json, checkNumbers: false);
 
             Assert.AreEqual("[20050000,20050000,-1.1234E-100,9.05E+28,1000,10000,1]", parsed.ToString());
 
@@ -249,7 +249,7 @@ namespace Neo.UnitTests.SmartContract
         {
             var snapshot = _snapshotCache.CloneCache();
             ApplicationEngine engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, null, ProtocolSettings.Default);
-            var items = JsonSerializer.Deserialize(engine, JObject.Parse("[true,\"test\",123,9.05E+28]"), ExecutionEngineLimits.Default);
+            var items = JsonSerializer.Deserialize(engine, JToken.Parse("[true,\"test\",123,9.05E+28]", checkNumbers: false), ExecutionEngineLimits.Default);
 
             Assert.IsInstanceOfType(items, typeof(Array));
             Assert.HasCount(4, (Array)items);
