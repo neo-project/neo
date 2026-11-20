@@ -164,7 +164,7 @@ namespace Neo.Network.P2P
         private void OnGetAddrMessageReceived()
         {
             IEnumerable<RemoteNode> peers = _localNode.RemoteNodes.Values
-                .Where(p => p.ListenerTcpPort > 0)
+                .Where(p => p.ListenerTcpPort > 0 && !Peer.IsIntranetAddress(p.Listener.Address))
                 .GroupBy(p => p.Remote.Address, (k, g) => g.First())
                 .OrderBy(p => RandomNumberFactory.NextInt32())
                 .Take(AddrPayload.MaxCountToSend);

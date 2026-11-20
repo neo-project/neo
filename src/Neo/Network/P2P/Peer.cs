@@ -154,7 +154,7 @@ namespace Neo.Network.P2P
             });
         }
 
-        private static bool IsIntranetAddress(IPAddress address)
+        internal static bool IsIntranetAddress(IPAddress address)
         {
             address = address.UnMap();
             if (s_localAddresses.Contains(address) || IPAddress.IsLoopback(address) || address.Equals(IPAddress.IPv6Any))

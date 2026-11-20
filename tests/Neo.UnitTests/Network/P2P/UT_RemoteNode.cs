@@ -71,6 +71,42 @@ namespace Neo.UnitTests.Network.P2P
             (T)typeof(RemoteNode).GetField(name, BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(node)!;
 
         [TestMethod]
+        public void GetAddr_OnlyAdvertisesPublicPeers()
+        {
+            var localNode = ActorOfAsTestActorRef(() => new LocalNode(_system)).UnderlyingActor;
+            var connection = CreateTestProbe();
+            var requester = ActorOfAsTestActorRef(() => new RemoteNode(_system, localNode, connection,
+                new IPEndPoint(IPAddress.Parse("198.51.100.9"), 12345), null, new ChannelsConfig()));
+
+            void AddPeer(string address)
+            {
+                var peer = ActorOfAsTestActorRef(() => new RemoteNode(_system, localNode, CreateTestProbe(),
+                    new IPEndPoint(IPAddress.Parse(address), 12345), null, new ChannelsConfig()));
+                typeof(RemoteNode).GetProperty(nameof(RemoteNode.ListenerTcpPort))!.SetValue(peer.UnderlyingActor, 20333);
+                typeof(RemoteNode).GetProperty(nameof(RemoteNode.Version))!.SetValue(peer.UnderlyingActor, new VersionPayload
+                {
+                    UserAgent = "test",
+                    Timestamp = 5,
+                    Capabilities = [new ServerCapability(NodeCapabilityType.TcpServer, 20333)]
+                });
+            }
+
+            AddPeer("10.1.2.3");
+            AddPeer("172.16.9.9");
+            AddPeer("100.64.1.2");
+            AddPeer("fc00::1");
+            AddPeer("203.0.113.55");
+
+            typeof(RemoteNode).GetMethod("OnGetAddrMessageReceived", BindingFlags.Instance | BindingFlags.NonPublic)!
+                .Invoke(requester.UnderlyingActor, null);
+
+            var reply = Field<Queue<Message>>(requester.UnderlyingActor, "_messageQueueLow")
+                .Single(message => message.Command == MessageCommand.Addr);
+            var addresses = ((AddrPayload)reply.Payload!).AddressList.Select(address => address.Address).ToArray();
+            Assert.AreSequenceEqual(new[] { IPAddress.Parse("203.0.113.55") }, addresses);
+        }
+
+        [TestMethod]
         [DataRow(false)]
         [DataRow(true)]
         public void OutboundQueue_SingletonControlMessagesBypassFullQueue(bool byteLimit)
