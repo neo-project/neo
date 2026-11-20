@@ -15,8 +15,10 @@ using Neo.Extensions;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract;
+using Neo.SmartContract.Native;
 using Neo.VM;
 using System;
+using System.Text;
 using Array = Neo.VM.Types.Array;
 
 namespace Neo.UnitTests.SmartContract
@@ -131,6 +133,29 @@ namespace Neo.UnitTests.SmartContract
             using var engine = TestEngineRunner.CreateWithScript(_snapshot, new byte[] { (byte)OpCode.NOP });
             Assert.ThrowsExactly<ArgumentOutOfRangeException>(() =>
                 engine.RuntimeLoadScript([(byte)OpCode.RET], (CallFlags)0xFF, new Array()));
+        }
+
+        [TestMethod]
+        public void RuntimeLoadScript_AllowsDynamicCallerBeforeIara()
+        {
+            using var engine = TestEngineRunner.CreateWithScript(_snapshot, new byte[] { (byte)OpCode.NOP });
+            Assert.IsFalse(engine.IsHardforkEnabled(Hardfork.HF_Iara));
+            engine.RuntimeLoadScript([(byte)OpCode.RET], CallFlags.ReadOnly, new Array());
+            Assert.IsTrue(engine.CurrentContext!.GetState<ExecutionContextState>().IsDynamicCall);
+            engine.RuntimeLoadScript([(byte)OpCode.RET], CallFlags.ReadOnly, new Array());
+        }
+
+        [TestMethod]
+        public void RuntimeLoadScript_RejectsDynamicCallerFromIara()
+        {
+            var snapshot = _snapshot.CloneCache();
+            snapshot.Add(StorageKey.Create(NativeContract.Policy.Id, 25, Encoding.UTF8.GetBytes("Iara")), new StorageItem(0u));
+            using var engine = TestEngineRunner.CreateWithScript(snapshot, new byte[] { (byte)OpCode.NOP });
+            Assert.IsTrue(engine.IsHardforkEnabled(Hardfork.HF_Iara));
+            engine.RuntimeLoadScript([(byte)OpCode.RET], CallFlags.ReadOnly, new Array());
+            Assert.IsTrue(engine.CurrentContext!.GetState<ExecutionContextState>().IsDynamicCall);
+            Assert.ThrowsExactly<InvalidOperationException>(() =>
+                engine.RuntimeLoadScript([(byte)OpCode.RET], CallFlags.ReadOnly, new Array()));
         }
 
         [TestMethod]
