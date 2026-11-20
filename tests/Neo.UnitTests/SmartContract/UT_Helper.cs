@@ -68,6 +68,15 @@ namespace Neo.UnitTests.SmartContract
         }
 
         [TestMethod]
+        public void Script_ToScriptHash_MatchesBytes()
+        {
+            byte[] bytes = [(byte)OpCode.PUSH1, (byte)OpCode.RET];
+            Script script = new(bytes);
+
+            Assert.AreEqual(bytes.ToScriptHash(), script.ToScriptHash());
+        }
+
+        [TestMethod]
         public void TestIsMultiSigContract()
         {
             var case1 = new byte[]

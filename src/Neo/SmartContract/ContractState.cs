@@ -53,7 +53,7 @@ namespace Neo.SmartContract
         /// <summary>
         /// The script of the contract.
         /// </summary>
-        public ReadOnlyMemory<byte> Script => Nef.Script;
+        public Script Script => Nef.Script;
 
         void IInteroperable.FromReplica(IInteroperable replica)
         {

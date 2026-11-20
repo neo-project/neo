@@ -117,13 +117,15 @@ namespace Neo.UnitTests.SmartContract
         }
 
         [TestMethod]
-        public void IsHardforkEnabled_MatchesProtocolSettings()
+        public void IsHardforkEnabled_MatchesCombinedHardforkRules()
         {
             using var engine = TestEngineRunner.CreateWithScript(_snapshot, Nop);
+            var index = NativeContract.Ledger.CurrentIndex(_snapshot);
             foreach (Hardfork hf in Enum.GetValues<Hardfork>())
             {
+                // Engine uses PolicyContract combined rules (config-managed + on-chain Policy).
                 Assert.AreEqual(
-                    TestProtocolSettings.Default.IsHardforkEnabled(hf, NativeContract.Ledger.CurrentIndex(_snapshot)),
+                    PolicyContract.IsHardforkEnabled(TestProtocolSettings.Default, _snapshot, hf, index),
                     engine.IsHardforkEnabled(hf));
             }
         }

@@ -170,6 +170,16 @@ namespace Neo.SmartContract
         /// Gets the notifications sent by the specified contract during the execution.
         /// </summary>
         public static readonly InteropDescriptor System_Runtime_GetNotifications = Register("System.Runtime.GetNotifications", nameof(GetNotifications), 1 << 12, CallFlags.None);
+        /// <summary>
+        /// The price of System.Runtime.GetNotifications per notification since Huyao hardfork,
+        /// in the unit of 1e-11 GAS.
+        /// </summary>
+        private const long GetNotificationsPricePerNotification = 6926;
+
+        /// <summary>
+        /// The base price of System.Runtime.GetNotifications since Huyao hardfork, in the unit of 1e-11 GAS.
+        /// </summary>
+        private const long GetNotificationsBasePrice = 205000;
 
         /// <summary>
         /// The <see cref="InteropDescriptor"/> of System.Runtime.GasLeft.
@@ -262,17 +272,13 @@ namespace Neo.SmartContract
         /// The implementation of System.Runtime.LoadScript.
         /// Loads a script at rumtime.
         /// </summary>
-        [InteropPrice(Hardfork.HF_Huyao, 0)]
+        [InteropPrice(Hardfork.HF_Huyao, LoadScriptBasePrice)]
         protected internal void RuntimeLoadScript(byte[] script, CallFlags callFlags, Array args)
         {
             if ((callFlags & ~CallFlags.All) != 0)
                 throw new ArgumentOutOfRangeException(nameof(callFlags), $"Invalid call flags: {callFlags}");
             if (IsHardforkEnabled(Hardfork.HF_Huyao))
-            {
-                var price = LoadScriptPricePerByte * script.Length + LoadScriptBasePrice;
-                AddFemtoGas(price * _execFeeFactor, false);
-            }
-
+                AddFemtoGas(LoadScriptPricePerByte * script.Length * _execFeeFactor, false);
             ExecutionContextState state = CurrentContext!.GetState<ExecutionContextState>();
             ExecutionContext context = LoadScript(new Script(script, true), configureState: p =>
             {
@@ -291,13 +297,9 @@ namespace Neo.SmartContract
         /// </summary>
         /// <param name="hashOrPubkey">The hash or public key of the account.</param>
         /// <returns><see langword="true"/> if the account has witnessed the current transaction; otherwise, <see langword="false"/>.</returns>
-        [InteropPrice(Hardfork.HF_Huyao, 0)]
+        [InteropPrice(Hardfork.HF_Huyao, CheckWitnessBasePrice)]
         protected internal bool CheckWitness(byte[] hashOrPubkey)
         {
-            bool huyao = IsHardforkEnabled(Hardfork.HF_Huyao);
-            if (huyao)
-                AddFemtoGas(CheckWitnessBasePrice * _execFeeFactor, false);
-
             UInt160 hash = hashOrPubkey.Length switch
             {
                 20 => new UInt160(hashOrPubkey),
@@ -305,7 +307,7 @@ namespace Neo.SmartContract
                 _ => throw new ArgumentException("Invalid hashOrPubkey length", nameof(hashOrPubkey))
             };
             var result = CheckWitnessInternal(hash, out var rulesCount);
-            if (huyao)
+            if (IsHardforkEnabled(Hardfork.HF_Huyao))
                 AddFemtoGas(CheckWitnessPricePerRule * rulesCount * _execFeeFactor, false);
             return result;
         }
@@ -444,7 +446,7 @@ namespace Neo.SmartContract
         /// </summary>
         /// <param name="eventName">The name of the event.</param>
         /// <param name="state">The arguments of the event.</param>
-        [InteropPrice(Hardfork.HF_Huyao, 0)]
+        [InteropPrice(Hardfork.HF_Huyao, NotifyBasePrice)]
         protected internal void RuntimeNotify(byte[] eventName, Array state)
         {
             if (!IsHardforkEnabled(Hardfork.HF_Basilisk))
@@ -475,10 +477,7 @@ namespace Neo.SmartContract
             BinarySerializer.Serialize(writer, state, MaxNotificationSize, Limits.MaxStackSize);
             SendNotification(CurrentScriptHash!, name, state, out var count);
             if (IsHardforkEnabled(Hardfork.HF_Huyao))
-            {
-                var price = NotifyPricePerItem * count + NotifyBasePrice;
-                AddFemtoGas(price * _execFeeFactor, false);
-            }
+                AddFemtoGas(NotifyPricePerItem * count * _execFeeFactor, false);
         }
 
         protected internal void RuntimeNotifyV1(byte[] eventName, Array state)
@@ -533,6 +532,7 @@ namespace Neo.SmartContract
         /// </summary>
         /// <param name="hash">The hash of the specified contract. It can be set to <see langword="null"/> to get all notifications.</param>
         /// <returns>The notifications sent during the execution.</returns>
+        [InteropPrice(Hardfork.HF_Huyao, GetNotificationsBasePrice)]
         protected internal Array GetNotifications(UInt160? hash)
         {
             IEnumerable<NotifyEventArgs> notifications = Notifications;
@@ -540,6 +540,8 @@ namespace Neo.SmartContract
                 notifications = notifications.Where(p => p.ScriptHash == hash);
             var array = notifications.ToArray();
             if (array.Length > Limits.MaxStackSize) throw new InvalidOperationException();
+            if (IsHardforkEnabled(Hardfork.HF_Huyao))
+                AddFemtoGas(GetNotificationsPricePerNotification * array.Length * _execFeeFactor, false);
             Array notifyArray = new();
             foreach (var notify in array)
             {
@@ -577,14 +579,14 @@ namespace Neo.SmartContract
         /// The implementation of System.Runtime.CurrentSigners.
         /// Pushes the Signers of the current transaction, or null if is not related to a transaction execution.
         /// </summary>
-        [InteropPrice(Hardfork.HF_Huyao, 0)]
+        [InteropPrice(Hardfork.HF_Huyao, CurrentSignersBasePrice)]
         protected internal void RuntimeCurrentSigners()
         {
             var r = ReferenceCounter.Count;
             Push(Convert(GetCurrentSigners()));
             if (IsHardforkEnabled(Hardfork.HF_Huyao))
             {
-                var price = CurrentSignersPricePerRef * (ReferenceCounter.Count - r) + CurrentSignersBasePrice;
+                var price = CurrentSignersPricePerRef * (ReferenceCounter.Count - r);
                 AddFemtoGas(price * _execFeeFactor, false);
             }
         }

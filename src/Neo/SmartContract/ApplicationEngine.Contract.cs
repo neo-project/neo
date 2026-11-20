@@ -28,7 +28,7 @@ namespace Neo.SmartContract
         public static readonly InteropDescriptor System_Contract_Call = Register("System.Contract.Call", nameof(CallContract), 1 << 15, CallFlags.ReadStates | CallFlags.AllowCall);
 
         /// <summary>
-        /// The price of System.Contract.Call since Huyao hardfork, in the unit of 1e-11 GAS.
+        /// The price of System.Contract.Call and CALLT since Huyao hardfork, in the unit of 1e-11 GAS.
         /// </summary>
         private const long ContractCallPrice = 2205000;
 
@@ -92,7 +92,7 @@ namespace Neo.SmartContract
         /// <param name="method">The method of the contract to be called.</param>
         /// <param name="callFlags">The <see cref="CallFlags"/> to be used to call the contract.</param>
         /// <param name="args">The arguments to be used.</param>
-        [InteropPrice(Hardfork.HF_Huyao, 0)]
+        [InteropPrice(Hardfork.HF_Huyao, ContractCallPrice)]
         protected internal void CallContract(UInt160 contractHash, string method, CallFlags callFlags, Array args)
         {
             if ((callFlags & ~CallFlags.All) != 0)
@@ -101,14 +101,7 @@ namespace Neo.SmartContract
                 throw new ArgumentException($"Method name '{method}' cannot start with underscore.", nameof(method));
 
             ContractState? contract = NativeContract.ContractManagement.GetContract(SnapshotCache, contractHash);
-            if (IsHardforkEnabled(Hardfork.HF_Huyao))
-            {
-                var price = ContractCallPrice;
-                // A missing contract lookup or a non-native contract may require a disk read.
-                if (contract is null || contract.Id >= 0)
-                    price += ReadFromDiskPrice;
-                AddFemtoGas(price * _execFeeFactor, false);
-            }
+            AddContractCallFee(contract);
             if (contract is null) throw new InvalidOperationException($"Called Contract Does Not Exist: {contractHash}.{method}");
 
             ContractMethodDescriptor? md = contract.Manifest.Abi.GetMethod(method, args.Count);
@@ -117,6 +110,15 @@ namespace Neo.SmartContract
 
             ExecutionContext context = CallContractInternal(contract, md, callFlags, hasReturnValue, args);
             context.GetState<ExecutionContextState>().IsDynamicCall = true;
+        }
+
+        private void AddContractCallFee(ContractState? contract)
+        {
+            if (!IsHardforkEnabled(Hardfork.HF_Huyao)) return;
+
+            // A missing contract lookup or a non-native contract may require a disk read.
+            if (contract is null || contract.Id >= 0)
+                AddFemtoGas(ReadFromDiskPrice * _execFeeFactor, false);
         }
 
         /// <summary>
@@ -130,7 +132,7 @@ namespace Neo.SmartContract
             NativeContract? contract = NativeContract.GetContract(CurrentScriptHash!);
             if (contract is null)
                 throw new InvalidOperationException("It is not allowed to use \"System.Contract.CallNative\" directly.");
-            if (!contract.IsActive(ProtocolSettings, GetPersistingIndex()))
+            if (!contract.IsActive(ProtocolSettings, SnapshotCache, GetPersistingIndex()))
                 throw new InvalidOperationException($"The native contract {contract.Name} is not active.");
             contract.Invoke(this, version);
         }
@@ -174,24 +176,27 @@ namespace Neo.SmartContract
         /// <param name="m">The number of correct signatures that need to be provided in order for the verification to pass.</param>
         /// <param name="pubKeys">The public keys of the account.</param>
         /// <returns>The hash of the account.</returns>
+        [InteropPrice(Hardfork.HF_Huyao, CreateMultisigAccountBasePrice)]
         internal protected UInt160 CreateMultisigAccount(int m, byte[][] pubKeys)
         {
+            if (!(1 <= m && m <= pubKeys.Length && pubKeys.Length <= 1024))
+                throw new ArgumentException($"Invalid multisig parameters: m={m}, publicKeys.Count={pubKeys.Length}");
+
             if (!IsHardforkEnabled(Hardfork.HF_Huyao))
             {
-                ECPoint[] points = DecodePublicKeys(pubKeys);
                 // In the unit of datoshi, 1 datoshi = 1e-8 GAS
                 BigInteger fee = IsHardforkEnabled(Hardfork.HF_Aspidochelone)
                     ? CheckSigPrice * pubKeys.Length
                     : 1 << 8;
                 AddFee(fee * _execFeeFactor, false);
-                return Contract.CreateMultiSigRedeemScript(m, points).ToScriptHash();
+            }
+            else
+            {
+                AddFemtoGas(CreateMultisigAccountPricePerKey * pubKeys.Length * _execFeeFactor, false);
             }
 
-            if (m < 1)
-                throw new ArgumentOutOfRangeException(nameof(m));
-            var price = CreateMultisigAccountPricePerKey * pubKeys.Length + CreateMultisigAccountBasePrice;
-            AddFemtoGas(price * _execFeeFactor, false);
-            return Contract.CreateMultiSigRedeemScript(m, DecodePublicKeys(pubKeys)).ToScriptHash();
+            ECPoint[] points = DecodePublicKeys(pubKeys);
+            return Contract.CreateMultiSigRedeemScript(m, points).ToScriptHash();
         }
 
         private static ECPoint[] DecodePublicKeys(byte[][] pubKeys)
@@ -214,7 +219,7 @@ namespace Neo.SmartContract
                     throw new InvalidOperationException();
                 foreach (NativeContract contract in NativeContract.Contracts)
                 {
-                    if (contract.IsActive(ProtocolSettings, PersistingBlock!.Index))
+                    if (contract.IsActive(ProtocolSettings, SnapshotCache, PersistingBlock!.Index))
                         await contract.OnPersistAsync(this);
                 }
             }
@@ -236,7 +241,7 @@ namespace Neo.SmartContract
                     throw new InvalidOperationException();
                 foreach (NativeContract contract in NativeContract.Contracts)
                 {
-                    if (contract.IsActive(ProtocolSettings, PersistingBlock!.Index))
+                    if (contract.IsActive(ProtocolSettings, SnapshotCache, PersistingBlock!.Index))
                         await contract.PostPersistAsync(this);
                 }
             }
