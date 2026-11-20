@@ -158,7 +158,7 @@ namespace Neo.Ledger
                     }
                 }
 
-                if (!list.Nodes.Add(Sender))
+                if (list.Nodes.Contains(Sender))
                 {
                     // Same index with different hash
                     Sender.Tell(Tcp.Abort.Instance);
@@ -172,7 +172,7 @@ namespace Neo.Ledger
                 return;
             }
 
-            if (!_blockCacheUnverified.TryGetValue(block.Index, out list))
+            if (list is null)
             {
                 list = new UnverifiedBlocksList();
                 _blockCacheUnverified.Add(block.Index, list);

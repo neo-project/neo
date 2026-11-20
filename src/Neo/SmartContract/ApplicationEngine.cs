@@ -364,8 +364,22 @@ namespace Neo.SmartContract
 
             // Before https://github.com/neo-project/neo-vm/pull/606
             table[OpCode.SETITEM] = SetItem_Before606;
+            // Before https://github.com/neo-project/neo-vm/pull/575
+            table[OpCode.ROLL] = Roll_Before575;
 
             return table;
+        }
+
+        private static void Roll_Before575(ExecutionEngine engine, Instruction instruction, ref RunStats runStats)
+        {
+            var stack = engine.CurrentContext!.EvaluationStack;
+            if (stack.Count == 1 && stack.Peek().GetInteger().IsZero)
+            {
+                engine.Pop();
+                return;
+            }
+
+            DefaultJumpTable.Roll(engine, instruction, ref runStats);
         }
 
         private static void Remove_Before543(ExecutionEngine engine, Instruction instruction, ref RunStats runStats)
@@ -459,19 +473,13 @@ namespace Neo.SmartContract
             }
         }
 
-        private static void SetItem_Before606(ExecutionEngine engine, Instruction instruction, ref RunStats runStats)
+        private static void SetItem_Before606(ExecutionEngine engine, Instruction instruction, ref RunStats _)
         {
-            var value = engine.PopNoRef();
-            var nClonedItems = 0;
-            var (r1, r2) = (engine.ReferenceCounter.Count, engine.ReferenceCounter.Count);
+            var value = engine.Pop();
             if (value is Struct s)
             {
-                engine.ReferenceCounter.RemoveStackReference(value);
-                r2 = engine.ReferenceCounter.Count;
-                value = s.Clone(engine.Limits, out nClonedItems);
-                engine.ReferenceCounter.AddStackReference(value);
+                value = s.Clone(engine.Limits, out var _);
             }
-            var r3 = engine.ReferenceCounter.Count;
             var key = engine.Pop<PrimitiveType>();
             var x = engine.Pop();
             switch (x)
@@ -481,19 +489,15 @@ namespace Neo.SmartContract
                         var index = key.GetInteger();
                         if (index < 0 || index >= array.Count)
                         {
-                            engine.ReferenceCounter.RemoveStackReference(value);
-                            var r4 = engine.ReferenceCounter.Count;
-                            engine.JumpTable.ExecuteThrow(engine, FormattableString.Invariant($"The index of {nameof(VMArray)} is out of range, {index}/[0, {array.Count})."), out int refsDelta);
-                            runStats.CollectRefDelta((r1 - r2) + (r3 - r2) + (r3 - r4) + refsDelta);
-                            runStats.CollectClonedItems(nClonedItems);
+                            engine.JumpTable.ExecuteThrow(engine, FormattableString.Invariant($"The index of {nameof(VMArray)} is out of range, {index}/[0, {array.Count})."), out int _);
                             return;
                         }
                         var i = (int)index;
                         if (array.IsStackReferenced)
                             engine.ReferenceCounter.RemoveStackReference(array[i]);
-                        else
-                            engine.ReferenceCounter.RemoveStackReference(value);
                         array[i] = value;
+                        if (array.IsStackReferenced)
+                            engine.ReferenceCounter.AddStackReference(value);
                         break;
                     }
                 case Map map:
@@ -508,22 +512,17 @@ namespace Neo.SmartContract
                             {
                                 engine.ReferenceCounter.AddStackReference(key);
                             }
+                            engine.ReferenceCounter.AddStackReference(value);
                         }
-                        else
-                            engine.ReferenceCounter.RemoveStackReference(value);
                         map[key] = value;
                         break;
                     }
                 case Buffer buffer:
                     {
-                        engine.ReferenceCounter.RemoveStackReference(value);
                         var index = key.GetInteger();
                         if (index < 0 || index >= buffer.Size)
                         {
-                            var r4 = engine.ReferenceCounter.Count;
-                            engine.JumpTable.ExecuteThrow(engine, FormattableString.Invariant($"The index of {nameof(Buffer)} is out of range, {index}/[0, {buffer.Size})."), out int refsDelta);
-                            runStats.CollectRefDelta((r1 - r2) + (r3 - r2) + (r3 - r4) + refsDelta);
-                            runStats.CollectClonedItems(nClonedItems);
+                            engine.JumpTable.ExecuteThrow(engine, FormattableString.Invariant($"The index of {nameof(Buffer)} is out of range, {index}/[0, {buffer.Size})."), out int _);
                             return;
                         }
                         if (value is not PrimitiveType p)
@@ -537,8 +536,6 @@ namespace Neo.SmartContract
                 default:
                     throw new InvalidOperationException($"Invalid type for {instruction.OpCode}: {x.Type}");
             }
-            runStats.CollectRefDelta((r1 - r2) + (r3 - r2) + (r3 - engine.ReferenceCounter.Count));
-            runStats.CollectClonedItems(nClonedItems);
         }
 
         private static void PickItem_Before543(ExecutionEngine engine, Instruction instruction, ref RunStats _)

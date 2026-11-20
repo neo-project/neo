@@ -185,6 +185,50 @@ namespace Neo.UnitTests.SmartContract
         }
 
         [TestMethod]
+        public void TestRollOnEmptyStackBeforeAndAfterHuyao()
+        {
+            var settings = ProtocolSettings.Default with
+            {
+                Hardforks = ProtocolSettings.Default.Hardforks
+                    .SetItem(Hardfork.HF_Gorgon, 10u)
+                    .SetItem(Hardfork.HF_Huyao, 20u)
+            };
+
+            // The depth is the only stack item, leaving an empty stack after it is popped.
+            byte[][] zeroDepthScripts =
+            [
+                [(byte)OpCode.PUSH0, (byte)OpCode.ROLL],
+                [(byte)OpCode.PUSHDATA1, 1, 0, (byte)OpCode.ROLL]
+            ];
+
+            foreach (var script in zeroDepthScripts)
+            {
+                foreach (uint index in new uint[] { 5, 15, 19 })
+                {
+                    using var engine = Execute(script, settings, index);
+                    Assert.AreEqual(VMState.HALT, engine.State, $"Expected HALT at index={index}.");
+                    Assert.AreEqual(0, engine.ResultStack.Count);
+                }
+
+                ExecuteAndAssertFault<ArgumentOutOfRangeException>(script, settings, index: 20u);
+            }
+
+            // Other ROLL depths retain the VM behavior on either side of the fork.
+            var validScript = new byte[] { (byte)OpCode.PUSH1, (byte)OpCode.PUSH0, (byte)OpCode.ROLL };
+            foreach (uint index in new uint[] { 19, 20 })
+            {
+                using var engine = Execute(validScript, settings, index);
+                Assert.AreEqual(VMState.HALT, engine.State);
+                Assert.AreEqual(1, engine.ResultStack.Count);
+                Assert.AreEqual(1, (int)engine.ResultStack.Peek().GetInteger());
+            }
+
+            var invalidScript = new byte[] { (byte)OpCode.PUSH1, (byte)OpCode.ROLL };
+            ExecuteAndAssertFault<ArgumentOutOfRangeException>(invalidScript, settings, index: 19u);
+            ExecuteAndAssertFault<ArgumentOutOfRangeException>(invalidScript, settings, index: 20u);
+        }
+
+        [TestMethod]
         public void TestSETITEM_WithDifferentHF()
         {
             using var sb = new ScriptBuilder();
@@ -233,6 +277,72 @@ namespace Neo.UnitTests.SmartContract
         }
 
         [TestMethod]
+        [DataRow(5u, VMState.HALT)]
+        [DataRow(15u, VMState.HALT)]
+        [DataRow(30u, VMState.FAULT)]
+        public void TestSETITEM_SelfReferenceBeforeHuyao(uint index, VMState expectedState)
+        {
+            using var sb = new ScriptBuilder();
+            for (var i = 0; i < 3; i++)
+            {
+                sb.EmitPush(1000);
+                sb.Emit(OpCode.NEWARRAY);
+                sb.Emit(OpCode.PUSH0);
+                sb.Emit(OpCode.OVER);
+                sb.Emit(OpCode.SETITEM);
+            }
+
+            var settings = ProtocolSettings.Default with
+            {
+                Hardforks = ProtocolSettings.Default.Hardforks
+                    .SetItem(Hardfork.HF_Gorgon, 10u)
+                    .SetItem(Hardfork.HF_Huyao, 20u)
+            };
+
+            using var engine = Execute(sb.ToArray(), settings, index);
+            Assert.AreEqual(expectedState, engine.State);
+            if (expectedState == VMState.FAULT)
+            {
+                Assert.IsNotNull(engine.FaultException);
+                Assert.Contains("MaxStackSize exceed", engine.FaultException.Message);
+            }
+        }
+
+        [TestMethod]
+        [DataRow(15u, VMState.FAULT)]
+        [DataRow(30u, VMState.HALT)]
+        public void TestSETITEM_MapSelfReferenceBeforeHuyao(uint index, VMState expectedState)
+        {
+            using var sb = new ScriptBuilder();
+            for (var i = 0; i < 683; i++)
+            {
+                sb.Emit(OpCode.NEWMAP);
+                sb.Emit(OpCode.DUP);
+                sb.Emit(OpCode.PUSH0);
+                sb.Emit(OpCode.OVER);
+                sb.Emit(OpCode.SETITEM);
+                sb.Emit(OpCode.PUSH0);
+                sb.Emit(OpCode.OVER);
+                sb.Emit(OpCode.SETITEM);
+            }
+
+            var settings = ProtocolSettings.Default with
+            {
+                Hardforks = ProtocolSettings.Default.Hardforks
+                    .SetItem(Hardfork.HF_Gorgon, 10u)
+                    .SetItem(Hardfork.HF_Huyao, 20u)
+            };
+
+            using var engine = Execute(sb.ToArray(), settings, index);
+            Assert.AreEqual(expectedState, engine.State);
+            if (expectedState == VMState.FAULT)
+            {
+                Assert.IsNotNull(engine.FaultException);
+                Assert.Contains("MaxStackSize exceed", engine.FaultException.Message);
+            }
+        }
+
+        [TestMethod]
         // Before Huyao: (1 << 15) * 30 = 983040 datoshi.
         [DataRow(false, "native", 983040L)]
         [DataRow(false, "contract", 983040L)]
@@ -243,8 +353,8 @@ namespace Neo.UnitTests.SmartContract
         // (2205 + 6799.366) * 30 = 270130.98 datoshi, rounded up to 270131.
         [DataRow(true, "contract", 270131L)]
         [DataRow(true, "missing", 270131L)]
-        // Invalid caller flags are rejected before charging the call.
-        [DataRow(true, "invalidFlags", 0L)]
+        // The CALLT opcode base fee is charged even when caller flags are invalid.
+        [DataRow(true, "invalidFlags", 66150L)]
         public void CallT_Price(bool huyao, string scenario, long expectedFee)
         {
             var snapshot = _snapshotCache.CloneCache();

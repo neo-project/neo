@@ -339,6 +339,16 @@ namespace Neo.SmartContract
         }
 
         /// <summary>
+        /// Computes the hash of the specified script.
+        /// </summary>
+        /// <param name="script">The specified script.</param>
+        /// <returns>The hash of the script.</returns>
+        public static UInt160 ToScriptHash(this Script script)
+        {
+            return ((ReadOnlyMemory<byte>)script).Span.ToScriptHash();
+        }
+
+        /// <summary>
         /// Verifies the witnesses of the specified <see cref="IVerifiable"/>.
         /// </summary>
         /// <param name="verifiable">The <see cref="IVerifiable"/> to be verified.</param>

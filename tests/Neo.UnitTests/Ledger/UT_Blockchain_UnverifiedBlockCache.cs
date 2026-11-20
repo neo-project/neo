@@ -19,6 +19,7 @@ using Neo.Network.P2P.Payloads;
 using Neo.SmartContract.Native;
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
@@ -207,6 +208,22 @@ namespace Neo.UnitTests.Ledger
                 () => Assert.AreEqual(maxCount, GetCache(blockchain).Count),
                 TimeSpan.FromSeconds(5),
                 cancellationToken: CancellationToken.None);
+
+            var otherPeer = CreateTestProbe();
+            otherPeer.Send(system.TaskManager, new TaskManager.Register(new VersionPayload
+            {
+                UserAgent = "cache-test",
+                Capabilities = [new FullNodeCapability(currentHeight)]
+            }));
+            var cachedIndex = firstIndex + (uint)maxCount - 1;
+            otherPeer.Send(blockchainActor, MakeBlock(cachedIndex, 30_000));
+            otherPeer.FishForMessage<object>(
+                message => message is RemoteNode.RestartInventory,
+                TimeSpan.FromSeconds(3),
+                cancellationToken: CancellationToken.None);
+            var cached = GetCache(blockchain)[cachedIndex]!;
+            var nodes = (HashSet<Akka.Actor.IActorRef>)cached.GetType().GetProperty("Nodes")!.GetValue(cached)!;
+            Assert.IsFalse(nodes.Contains(otherPeer.Ref));
 
             peer.Send(blockchainActor, MakeBlock(firstIndex + (uint)maxCount, 10_000));
             peer.FishForMessage<object>(

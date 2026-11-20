@@ -508,8 +508,11 @@ namespace Neo.Network.P2P
             {
                 case TaskManager.Register _:
                 case TaskManager.Update _:
-                case TaskManager.RestartTasks _:
                     return true;
+                case TaskManager.RestartTasks restart:
+                    // The completion is queued before the block reaches the cache.
+                    // Keep its retry behind it in the same FIFO queue.
+                    return restart.Payload.Type != InventoryType.Block;
                 case TaskManager.NewTasks tasks:
                     if (tasks.Payload.Type == InventoryType.Block || tasks.Payload.Type == InventoryType.Extensible)
                         return true;

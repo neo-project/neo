@@ -302,7 +302,9 @@ namespace Neo.SmartContract.Native
             NefFile nef = nefFile.AsSerializable<NefFile>();
             ContractManifest parsedManifest = ContractManifest.Parse(manifest,
                 engine.IsHardforkEnabled(Hardfork.HF_Huyao) ? null : LegacyContractPermissionDescriptorComparer.Instance);
-            Helper.Check(new Script(nef.Script, engine.IsHardforkEnabled(Hardfork.HF_Basilisk)), parsedManifest.Abi);
+            Script script = new(nef.Script, engine.IsHardforkEnabled(Hardfork.HF_Basilisk));
+            Helper.Check(script, parsedManifest.Abi);
+            nef.Script = script;
             UInt160 hash = Helper.GetContractHash(tx.Sender, nef.CheckSum, parsedManifest.Name);
 
             if (Policy.IsBlocked(engine.SnapshotCache, hash))
@@ -398,7 +400,9 @@ namespace Neo.SmartContract.Native
                     throw new InvalidOperationException($"Invalid Manifest: {contract.Hash}");
                 contract.Manifest = manifestNew;
             }
-            Helper.Check(new Script(contract.Nef.Script, engine.IsHardforkEnabled(Hardfork.HF_Basilisk)), contract.Manifest.Abi);
+            Script script = new(contract.Nef.Script, engine.IsHardforkEnabled(Hardfork.HF_Basilisk));
+            Helper.Check(script, contract.Manifest.Abi);
+            contract.Nef.Script = script;
             // Increase update counter
             contract.UpdateCounter++;
             return OnDeployAsync(engine, contract, data, true);
