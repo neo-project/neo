@@ -754,7 +754,7 @@ namespace Neo.SmartContract
             return CallContractInternal(contract, md, flags, hasReturnValue, args);
         }
 
-        private ExecutionContext CallContractInternal(ContractState contract, ContractMethodDescriptor method, CallFlags flags, bool hasReturnValue, IReadOnlyList<StackItem> args)
+        private ExecutionContext CallContractInternal(ContractState contract, ContractMethodDescriptor method, CallFlags flags, bool hasReturnValue, IReadOnlyList<StackItem> args, ExecutionContextCallType callType = ExecutionContextCallType.None)
         {
             if (NativeContract.Policy.IsBlocked(SnapshotCache, contract.Hash))
                 throw new InvalidOperationException($"The contract {contract.Hash} has been blocked.");
@@ -804,6 +804,7 @@ namespace Neo.SmartContract
             for (int i = args.Count - 1; i >= 0; i--)
                 contextNew.EvaluationStack.Push(args[i]);
 
+            state.CallType |= callType;
             return contextNew;
         }
 
@@ -842,7 +843,7 @@ namespace Neo.SmartContract
                     {
                         ExecutionContextState contextState = CurrentContext.GetState<ExecutionContextState>();
                         contextState.NotificationCount += state.NotificationCount;
-                        if (state.IsDynamicCall)
+                        if (state.CallType.HasFlag(ExecutionContextCallType.Dynamic))
                         {
                             if (context.EvaluationStack.Count == 0)
                                 Push(StackItem.Null);
@@ -1018,6 +1019,8 @@ namespace Neo.SmartContract
                         Nef = contract.Nef,
                         Manifest = contract.Manifest
                     };
+                    if (contract.Id < 0)
+                        p.CallType |= ExecutionContextCallType.NativeContract;
                 });
 
             // Call initialization

@@ -405,7 +405,11 @@ namespace Neo.UnitTests.SmartContract
             else if (scenario == "invalidFlags")
                 Assert.Contains("Cannot call this SYSCALL", engine.FaultException.GetBaseException().Message);
             else
+            {
                 Assert.AreEqual(token.Hash, engine.CurrentScriptHash);
+                Assert.AreEqual(scenario == "native" ? ExecutionContextCallType.NativeContract : ExecutionContextCallType.None,
+                    engine.CurrentContext!.GetState<ExecutionContextState>().CallType);
+            }
         }
 
         private static byte[] BuildHasKeyLargeIndexScript()

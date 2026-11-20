@@ -108,8 +108,7 @@ namespace Neo.SmartContract
             if (md is null) throw new InvalidOperationException($"Method \"{method}\" with {args.Count} parameter(s) doesn't exist in the contract {contractHash}.");
             bool hasReturnValue = md.ReturnType != ContractParameterType.Void;
 
-            ExecutionContext context = CallContractInternal(contract, md, callFlags, hasReturnValue, args);
-            context.GetState<ExecutionContextState>().IsDynamicCall = true;
+            CallContractInternal(contract, md, callFlags, hasReturnValue, args, ExecutionContextCallType.Dynamic);
         }
 
         private void AddContractCallFee(ContractState? contract)

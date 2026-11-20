@@ -25,7 +25,7 @@ namespace Neo.UnitTests.SmartContract
             var state = new ExecutionContextState();
             Assert.AreEqual(CallFlags.All, state.CallFlags);
             Assert.IsFalse(state.WhiteListed);
-            Assert.IsFalse(state.IsDynamicCall);
+            Assert.AreEqual(ExecutionContextCallType.None, state.CallType);
             Assert.AreEqual(0, state.NotificationCount);
             Assert.IsNull(state.ScriptHash);
             Assert.IsNull(state.CallingContext);
@@ -38,7 +38,7 @@ namespace Neo.UnitTests.SmartContract
             state.CallFlags = CallFlags.ReadOnly;
             state.SnapshotCache = cache;
             state.NotificationCount = 3;
-            state.IsDynamicCall = true;
+            state.CallType = ExecutionContextCallType.Dynamic | ExecutionContextCallType.NativeContract;
             state.WhiteListed = true;
             state.NativeCallingScriptHash = UInt160.Parse("0x0000000000000000000000000000000000000001");
 
@@ -46,7 +46,7 @@ namespace Neo.UnitTests.SmartContract
             Assert.AreEqual(CallFlags.ReadOnly, state.CallFlags);
             Assert.AreSame(cache, state.SnapshotCache);
             Assert.AreEqual(3, state.NotificationCount);
-            Assert.IsTrue(state.IsDynamicCall);
+            Assert.AreEqual(ExecutionContextCallType.Dynamic | ExecutionContextCallType.NativeContract, state.CallType);
             Assert.IsTrue(state.WhiteListed);
             Assert.AreEqual(UInt160.Parse("0x0000000000000000000000000000000000000001"), state.NativeCallingScriptHash);
         }
