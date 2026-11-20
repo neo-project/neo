@@ -39,7 +39,7 @@ See [Architecture](architecture.md) for a picture of the call path from “RPC i
 ## What you need on your machine
 
 - **OS:** Windows, Linux, or macOS
-- **SDK:** [.NET 10](https://dotnet.microsoft.com/download) (this tree’s projects use `net10.0`; package version prefix is `3.10.2`)
+- **SDK:** [.NET 11](https://dotnet.microsoft.com/download) (this tree’s projects use `net11.0`; package version prefix is `3.10.2`)
 - **Git**
 - For a **persisted** node on Linux: LevelDB or RocksDB native libraries (see [Run a node](how-to/run-a-node.md))
 
@@ -98,7 +98,7 @@ The VM does not know about blocks. Blockchain features (storage, `System.Runtime
 | “I cloned `neo` but `dotnet neo-cli.dll` is missing” | CLI is in [neo-node](https://github.com/neo-project/neo-node). |
 | “Official page says download `neo-cli` from `neo-project/neo-cli`” | That extra repo is historical. Current source is **neo-node**. Releases are under [neo-node/releases](https://github.com/neo-project/neo-node/releases). |
 | “NameService is a native contract in the CLI dump I found online” | In current `neo` source, native contracts include ContractManagement, StdLib, CryptoLib, Ledger, NeoToken, GasToken, Policy, RoleManagement, Oracle, Notary, Treasury. Name service is a [non-native contract](https://github.com/neo-project/non-native-contracts). |
-| “I need Ubuntu 16 and .NET Core” | Current projects target **.NET 10**. The neo-node README still mentions old Ubuntu LTS numbers; any current Linux with the SDK works. |
+| “I need Ubuntu 16 and .NET Core” | Current projects target **.NET 11**. The neo-node README still mentions old Ubuntu LTS numbers; any current Linux with the SDK works. |
 | “I will implement a dApp in this repo” | Application code is compiled with [neo-devpack-dotnet](https://github.com/neo-project/neo-devpack-dotnet) and deployed *to* the chain. This repo *is* the chain. |
 
 ## Next step

@@ -5,7 +5,7 @@ Neo-CLI is the full-node program: P2P, optional RPC, optional consensus, wallet 
 - Source: [github.com/neo-project/neo-node](https://github.com/neo-project/neo-node)
 - N3 branch: **`master-n3`**
 - Solution: `neo-node.sln`
-- Targets **net10.0**, version prefix **3.10.2** (same generation as this library)
+- Targets **net11.0**, version prefix **3.10.2** (same generation as this library)
 
 This documentation lives in **neo-project/neo** so beginners can see the whole stack in one place. Changes to CLI or plugins are still submitted on the **neo-node** repository.
 
@@ -98,7 +98,7 @@ The neo-node README on `master-n3` still says:
 
 **Current source:**
 
-- SDK is **.NET 10**, project is `src/Neo.CLI`
+- SDK is **.NET 11**, project is `src/Neo.CLI`
 - Publish with `dotnet publish src/Neo.CLI -c Release`
 - Run the published `Neo.CLI` / `neo-cli` binary from the output directory, with `config.json` and `Plugins/`
 

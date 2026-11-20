@@ -54,4 +54,4 @@ Details of what we checked against the current source trees: [Official docs note
 └─────────────────────┘
 ```
 
-All three currently target **.NET 10** and version **3.10.x** on the N3 line (`master-n3` for neo and neo-node; `master` for neo-vm).
+All three currently target **.NET 11** and version **3.10.x** on the N3 line (`master-n3` for neo and neo-node; `master` for neo-vm).

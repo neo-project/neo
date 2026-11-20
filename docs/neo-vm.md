@@ -4,7 +4,7 @@ NeoVM is a small **stack machine** that runs contract bytecode. It is published 
 
 - Source: [github.com/neo-project/neo-vm](https://github.com/neo-project/neo-vm)
 - Default branch: **`master`** (there is no `master-n3` on this repo)
-- Target: **net10.0**, version prefix **3.10.2**
+- Target: **net11.0**, version prefix **3.10.2**
 - Official concept page (accurate): [NeoVM](https://developers.neo.org/docs/n3/foundation/neovm)
 
 This guide lives in **neo-project/neo** so VM, host, and node are documented together. Opcode PRs still go to **neo-vm**.
