@@ -1,0 +1,120 @@
+// Copyright (C) 2015-2026 The Neo Project.
+//
+// UT_ContractScriptPointers.cs file belongs to the neo project and is free
+// software distributed under the MIT software license, see the
+// accompanying file LICENSE in the main directory of the
+// repository or http://www.opensource.org/licenses/mit-license.php
+// for more details.
+//
+// Redistribution and use in source and binary forms with or without
+// modifications are permitted.
+
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.Extensions;
+using Neo.Persistence;
+using Neo.SmartContract;
+using Neo.SmartContract.Manifest;
+using Neo.SmartContract.Native;
+using Neo.VM;
+using System.Collections.Immutable;
+using System.Linq;
+
+namespace Neo.UnitTests.SmartContract
+{
+    [TestClass]
+    public class UT_ContractScriptPointers
+    {
+        // getPtr: PUSHA 8, RET; callPtr: CALLA, RET; target: PUSHINT8 42, RET.
+        private static readonly byte[] s_contractScript =
+        [
+            (byte)OpCode.PUSHA, 0x08, 0x00, 0x00, 0x00,
+            (byte)OpCode.RET,
+            (byte)OpCode.CALLA,
+            (byte)OpCode.RET,
+            (byte)OpCode.PUSHINT8, 42,
+            (byte)OpCode.RET
+        ];
+
+        private static readonly ProtocolSettings s_beforeHuyao = TestProtocolSettings.Default with
+        {
+            Hardforks = TestProtocolSettings.Default.Hardforks
+                .Where(p => p.Key < Hardfork.HF_Huyao).ToImmutableDictionary()
+        };
+
+        private static (DataCache Snapshot, UInt160 Hash) CreateContract()
+        {
+            var snapshot = TestBlockchain.GetTestSnapshotCache();
+            var manifest = TestUtils.CreateDefaultManifest();
+            manifest.Abi.Methods =
+            [
+                new ContractMethodDescriptor { Name = "getPtr", Parameters = [], ReturnType = ContractParameterType.Any, Offset = 0, Safe = false },
+                new ContractMethodDescriptor
+                {
+                    Name = "callPtr",
+                    Parameters = [new ContractParameterDefinition { Name = "p", Type = ContractParameterType.Any }],
+                    ReturnType = ContractParameterType.Any,
+                    Offset = 6,
+                    Safe = false
+                }
+            ];
+            var contract = TestUtils.GetContract(s_contractScript, manifest);
+            snapshot.Add(new KeyBuilder(NativeContract.ContractManagement.Id, 8).Add(contract.Hash),
+                new StorageItem(BinarySerializer.Serialize(contract.ToStackItem(), ExecutionEngineLimits.Default)));
+            return (snapshot, contract.Hash);
+        }
+
+        private static ApplicationEngine Run(DataCache snapshot, ScriptBuilder script, ProtocolSettings settings)
+        {
+            var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot, settings: settings, gas: 20_00000000);
+            engine.LoadScript(script.ToArray());
+            engine.Execute();
+            return engine;
+        }
+
+        [TestMethod]
+        public void PointerFromEarlierContractCallCannotBeCalledBeforeHuyao()
+        {
+            var (snapshot, hash) = CreateContract();
+            using var script = new ScriptBuilder();
+            script.EmitDynamicCall(hash, "getPtr");
+            script.EmitPush(1);
+            script.Emit(OpCode.PACK);
+            script.EmitPush((byte)CallFlags.All);
+            script.EmitPush("callPtr");
+            script.EmitPush(hash);
+            script.EmitSysCall(ApplicationEngine.System_Contract_Call);
+
+            using var engine = Run(snapshot, script, s_beforeHuyao);
+            Assert.AreEqual(VMState.FAULT, engine.State);
+            Assert.Contains("Pointers can't be shared between scripts", engine.FaultException!.Message);
+        }
+
+        [TestMethod]
+        public void PointersFromSeparateContractCallsCompareUnequalBeforeHuyao()
+        {
+            var (snapshot, hash) = CreateContract();
+            using var script = new ScriptBuilder();
+            script.EmitDynamicCall(hash, "getPtr");
+            script.EmitDynamicCall(hash, "getPtr");
+            script.Emit(OpCode.EQUAL);
+
+            using var engine = Run(snapshot, script, s_beforeHuyao);
+            Assert.AreEqual(VMState.HALT, engine.State);
+            Assert.IsFalse(engine.ResultStack.Pop().GetBoolean());
+        }
+
+        [TestMethod]
+        public void PointersFromSeparateContractCallsCompareEqualAfterHuyao()
+        {
+            var (snapshot, hash) = CreateContract();
+            using var script = new ScriptBuilder();
+            script.EmitDynamicCall(hash, "getPtr");
+            script.EmitDynamicCall(hash, "getPtr");
+            script.Emit(OpCode.EQUAL);
+
+            using var engine = Run(snapshot, script, TestProtocolSettings.Default);
+            Assert.AreEqual(VMState.HALT, engine.State);
+            Assert.IsTrue(engine.ResultStack.Pop().GetBoolean());
+        }
+    }
+}
