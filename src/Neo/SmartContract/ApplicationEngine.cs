@@ -366,8 +366,18 @@ namespace Neo.SmartContract
             table[OpCode.SETITEM] = SetItem_Before606;
             // Before https://github.com/neo-project/neo-vm/pull/575
             table[OpCode.ROLL] = Roll_Before575;
+            // Before https://github.com/neo-project/neo-vm/pull/571
+            table[OpCode.ASSERTMSG] = AssertMsg_Before571;
 
             return table;
+        }
+
+        private static void AssertMsg_Before571(ExecutionEngine engine, Instruction instruction, ref RunStats runStats)
+        {
+            var msg = engine.Pop().GetString();
+            var x = engine.Pop().GetBoolean();
+            if (!x)
+                throw new Exception($"{OpCode.ASSERTMSG} is executed with false result. Reason: {msg}");
         }
 
         private static void Roll_Before575(ExecutionEngine engine, Instruction instruction, ref RunStats runStats)
