@@ -72,6 +72,7 @@ namespace Neo.UnitTests
             {
                 Script script = new(bytes);
                 Assert.AreEqual(bytes.ToScriptHash(), new UInt160(script.ScriptHash.Span));
+                Assert.AreEqual(bytes.ToScriptHash(), script.ToScriptHash());
             }
         }
 

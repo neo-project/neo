@@ -992,7 +992,7 @@ namespace Neo.SmartContract
         {
             // Set default execution context state
             var state = context.GetState<ExecutionContextState>();
-            state.ScriptHash ??= ((ReadOnlyMemory<byte>)context.Script).Span.ToScriptHash();
+            state.ScriptHash ??= context.Script.ToScriptHash();
             invocationCounter.TryAdd(state.ScriptHash, 1);
             base.LoadContext(context);
             Diagnostic?.ContextLoaded(context);
