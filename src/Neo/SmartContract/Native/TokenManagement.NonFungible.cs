@@ -129,7 +129,8 @@ partial class TokenManagement
             v.GetString(); // Ensure to invoke `ToStrictUtf8String()`
         }
         TokenState token = AddTotalSupply(engine, TokenType.NonFungible, assetId, BigInteger.One, assertOwner: true);
-        await AddBalance(engine, assetId, token, account, BigInteger.One, callOnBalanceChanged: true);
+        BigInteger balanceOld = BalanceOf(engine.SnapshotCache, assetId, account);
+        await AddBalance(engine, assetId, token, account, BigInteger.One, callOnBalanceChanged: false);
         UInt160 uniqueId = GetNextNFTUniqueId(engine);
         StorageKey key = CreateStorageKey(Prefix_NFTAssetIdUniqueIdIndex, assetId, uniqueId);
         engine.SnapshotCache.Add(key, new());
@@ -142,6 +143,7 @@ partial class TokenManagement
             Owner = account,
             Properties = (Map)properties.DeepCopy(asImmutable: true)
         }));
+        await OnBalanceChanged(engine, assetId, token, account, BigInteger.One, balanceOld);
         await PostNFTTransferAsync(engine, uniqueId, token, null, account, StackItem.Null, callOnPayment: true, callOnTransfer: true);
         return uniqueId;
     }
@@ -159,14 +161,17 @@ partial class TokenManagement
         StorageKey key = CreateStorageKey(Prefix_NFTState, uniqueId);
         NFTState nft = engine.SnapshotCache.TryGet(key)?.GetInteroperable<NFTState>()
             ?? throw new InvalidOperationException("The unique id does not exist.");
-        TokenState token = AddTotalSupply(engine, TokenType.NonFungible, nft.AssetId, BigInteger.MinusOne, assertOwner: true);
-        if (!await AddBalance(engine, nft.AssetId, token, nft.Owner, BigInteger.MinusOne, callOnBalanceChanged: true))
+        BigInteger balanceOld = BalanceOf(engine.SnapshotCache, nft.AssetId, nft.Owner);
+        if (balanceOld < BigInteger.One)
             throw new InvalidOperationException("Insufficient balance to burn.");
+        TokenState token = AddTotalSupply(engine, TokenType.NonFungible, nft.AssetId, BigInteger.MinusOne, assertOwner: true);
+        await AddBalance(engine, nft.AssetId, token, nft.Owner, BigInteger.MinusOne, callOnBalanceChanged: false);
         engine.SnapshotCache.Delete(key);
         key = CreateStorageKey(Prefix_NFTAssetIdUniqueIdIndex, nft.AssetId, uniqueId);
         engine.SnapshotCache.Delete(key);
         key = CreateStorageKey(Prefix_NFTOwnerUniqueIdIndex, nft.Owner, uniqueId);
         engine.SnapshotCache.Delete(key);
+        await OnBalanceChanged(engine, nft.AssetId, token, nft.Owner, BigInteger.MinusOne, balanceOld);
         await PostNFTTransferAsync(engine, uniqueId, token, nft.Owner, null, StackItem.Null, callOnPayment: false, callOnTransfer: true);
     }
 
@@ -192,15 +197,19 @@ partial class TokenManagement
         TokenState token = engine.SnapshotCache.TryGet(key)!.GetInteroperable<TokenState>();
         if (from != to)
         {
-            if (!await AddBalance(engine, nft.AssetId, token, from, BigInteger.MinusOne, callOnBalanceChanged: true))
-                return false;
-            await AddBalance(engine, nft.AssetId, token, to, BigInteger.One, callOnBalanceChanged: true);
+            BigInteger balanceFromOld = BalanceOf(engine.SnapshotCache, nft.AssetId, from);
+            if (balanceFromOld < BigInteger.One) return false;
+            BigInteger balanceToOld = BalanceOf(engine.SnapshotCache, nft.AssetId, to);
+            await AddBalance(engine, nft.AssetId, token, from, BigInteger.MinusOne, callOnBalanceChanged: false);
+            await AddBalance(engine, nft.AssetId, token, to, BigInteger.One, callOnBalanceChanged: false);
             key = CreateStorageKey(Prefix_NFTOwnerUniqueIdIndex, from, uniqueId);
             engine.SnapshotCache.Delete(key);
             key = CreateStorageKey(Prefix_NFTOwnerUniqueIdIndex, to, uniqueId);
             engine.SnapshotCache.Add(key, new());
             nft = engine.SnapshotCache.GetAndChange(key_nft)!.GetInteroperable<NFTState>();
             nft.Owner = to;
+            await OnBalanceChanged(engine, nft.AssetId, token, from, BigInteger.MinusOne, balanceFromOld);
+            await OnBalanceChanged(engine, nft.AssetId, token, to, BigInteger.One, balanceToOld);
         }
         await PostNFTTransferAsync(engine, uniqueId, token, from, to, data, callOnPayment: true, callOnTransfer: true);
         return true;
