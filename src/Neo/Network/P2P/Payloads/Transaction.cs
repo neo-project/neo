@@ -399,6 +399,7 @@ namespace Neo.Network.P2P.Payloads
                 }
             }
             UInt160[] hashes = GetScriptHashesForVerifying(null!);
+            VerifyResult result = VerifyResult.Invalid;
             for (int i = 0; i < hashes.Length; i++)
             {
                 var witness = Witnesses[i];
@@ -415,6 +416,7 @@ namespace Neo.Network.P2P.Payloads
                     {
                         return VerifyResult.Invalid;
                     }
+                    result = VerifyResult.Succeed;
                 }
                 else if (IsMultiSigContract(witness.VerificationScript.Span, out var m, out ECPoint[]? points) && IsMultiSignatureInvocationScript(m, witness.InvocationScript, out var signatures))
                 {
@@ -436,15 +438,16 @@ namespace Neo.Network.P2P.Payloads
                     {
                         return VerifyResult.Invalid;
                     }
+                    result = VerifyResult.Succeed;
                 }
-                else if (!witness.VerificationScript.IsEmpty)
+                else if (witness.VerificationScript.IsEmpty)
                 {
-                    // Only deployed contracts with an empty verification script can be
-                    // deferred to state-dependent witness verification.
-                    return VerifyResult.Invalid;
+                    // Deployed contracts are verified in the state-dependent phase.
+                    result = VerifyResult.Succeed;
                 }
+                else return VerifyResult.Invalid;
             }
-            return VerifyResult.Succeed;
+            return result;
         }
 
         public StackItem ToStackItem()

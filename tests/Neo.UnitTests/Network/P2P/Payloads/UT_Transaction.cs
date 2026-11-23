@@ -1552,6 +1552,20 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         }
 
         [TestMethod]
+        public void Test_VerifyStateIndependent_WithoutWitnessesIsInvalid()
+        {
+            var tx = new Transaction
+            {
+                Attributes = [],
+                Script = new byte[] { (byte)OpCode.PUSH1 },
+                Signers = [],
+                Witnesses = []
+            };
+
+            Assert.AreEqual(VerifyResult.Invalid, tx.VerifyStateIndependent(TestProtocolSettings.Default));
+        }
+
+        [TestMethod]
         public void Test_VerifyStateInDependent_Multi()
         {
             var txData = Convert.FromBase64String("AHXd31W0NlsAAAAAAJRGawAAAAAA3g8CAAGSs5x3qmDym1fBc87ZF/F/0yGm6wEAX" +
