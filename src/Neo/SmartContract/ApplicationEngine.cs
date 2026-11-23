@@ -1007,11 +1007,7 @@ namespace Neo.SmartContract
         /// <returns>The loaded context.</returns>
         public ExecutionContext LoadContract(ContractState contract, ContractMethodDescriptor method, CallFlags callFlags)
         {
-            // Before Huyao, pointers from separate contract loads must have distinct Script identities.
-            Script script = IsHardforkEnabled(Hardfork.HF_Huyao)
-                ? contract.Script
-                : new Script((ReadOnlyMemory<byte>)contract.Script);
-            ExecutionContext context = LoadScript(script,
+            ExecutionContext context = LoadScript(contract.Script,
                 rvcount: method.ReturnType == ContractParameterType.Void ? 0 : 1,
                 initialPosition: method.Offset,
                 configureState: p =>

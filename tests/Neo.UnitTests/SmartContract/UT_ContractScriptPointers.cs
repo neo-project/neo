@@ -16,6 +16,8 @@ using Neo.SmartContract;
 using Neo.SmartContract.Manifest;
 using Neo.SmartContract.Native;
 using Neo.VM;
+using Neo.VM.Types;
+using System;
 using System.Collections.Immutable;
 using System.Linq;
 
@@ -71,86 +73,60 @@ namespace Neo.UnitTests.SmartContract
             return engine;
         }
 
-        [TestMethod]
-        public void PointerFromEarlierContractCallCannotBeCalledBeforeHuyao()
+        private static ApplicationEngine ComparePointers(ProtocolSettings settings, OpCode opcode, bool inStruct = false)
         {
-            var (snapshot, hash) = CreateContract();
-            using var script = new ScriptBuilder();
-            script.EmitDynamicCall(hash, "getPtr");
-            script.EmitPush(1);
-            script.Emit(OpCode.PACK);
-            script.EmitPush((byte)CallFlags.All);
-            script.EmitPush("callPtr");
-            script.EmitPush(hash);
-            script.EmitSysCall(ApplicationEngine.System_Contract_Call);
-
-            using var engine = Run(snapshot, script, s_beforeHuyao);
-            Assert.AreEqual(VMState.FAULT, engine.State);
-            Assert.Contains("Pointers can't be shared between scripts", engine.FaultException!.Message);
+            var engine = ApplicationEngine.Create(TriggerType.Application, null,
+                TestBlockchain.GetTestSnapshotCache(), settings: settings, gas: 20_00000000);
+            engine.LoadScript(new Script(new byte[] { (byte)opcode, (byte)OpCode.RET }));
+            byte[] bytes = [(byte)OpCode.RET];
+            var first = new Pointer(new Script(bytes), 0);
+            var second = new Pointer(new Script(bytes), 0);
+            engine.Push(inStruct ? new Neo.VM.Types.Struct([first]) : first);
+            engine.Push(inStruct ? new Neo.VM.Types.Struct([second]) : second);
+            engine.Execute();
+            return engine;
         }
 
         [TestMethod]
-        public void PointersFromSeparateContractCallsCompareUnequalBeforeHuyao()
+        public void PointerFromDifferentScriptInstanceRespectsHuyao()
         {
-            var (snapshot, hash) = CreateContract();
-            using var script = new ScriptBuilder();
-            script.EmitDynamicCall(hash, "getPtr");
-            script.EmitDynamicCall(hash, "getPtr");
-            script.Emit(OpCode.EQUAL);
+            var script = new Script(new byte[] { (byte)OpCode.CALLA, (byte)OpCode.RET });
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null,
+                TestBlockchain.GetTestSnapshotCache(), settings: s_beforeHuyao, gas: 20_00000000);
+            engine.LoadScript(script);
+            engine.Push(new Pointer(new Script((ReadOnlyMemory<byte>)script), 1));
+            engine.Execute();
+            Assert.AreEqual(VMState.FAULT, engine.State);
+            Assert.Contains("Pointers can't be shared between scripts", engine.FaultException!.Message);
 
-            using var engine = Run(snapshot, script, s_beforeHuyao);
+            using var after = ApplicationEngine.Create(TriggerType.Application, null,
+                TestBlockchain.GetTestSnapshotCache(), settings: TestProtocolSettings.Default, gas: 20_00000000);
+            after.LoadScript(script);
+            after.Push(new Pointer(new Script((ReadOnlyMemory<byte>)script), 1));
+            after.Execute();
+            Assert.AreEqual(VMState.HALT, after.State);
+        }
+
+        [TestMethod]
+        public void PointersFromDifferentScriptInstancesCompareUnequalBeforeHuyao()
+        {
+            using var engine = ComparePointers(s_beforeHuyao, OpCode.EQUAL);
             Assert.AreEqual(VMState.HALT, engine.State);
             Assert.IsFalse(engine.ResultStack.Pop().GetBoolean());
         }
 
         [TestMethod]
-        public void PointersFromSeparateContractCallsCompareEqualAfterHuyao()
+        public void PointersFromSeparateContractCallsCompareEqual()
         {
             var (snapshot, hash) = CreateContract();
             using var script = new ScriptBuilder();
             script.EmitDynamicCall(hash, "getPtr");
             script.EmitDynamicCall(hash, "getPtr");
-            script.Emit(OpCode.EQUAL);
-
-            using var engine = Run(snapshot, script, TestProtocolSettings.Default);
-            Assert.AreEqual(VMState.HALT, engine.State);
-            Assert.IsTrue(engine.ResultStack.Pop().GetBoolean());
-        }
-
-        [TestMethod]
-        public void PointerFromEarlierContractCallCanBeCalledAfterHuyao()
-        {
-            var (snapshot, hash) = CreateContract();
-            using var script = new ScriptBuilder();
-            script.EmitDynamicCall(hash, "getPtr");
-            script.EmitPush(1);
-            script.Emit(OpCode.PACK);
-            script.EmitPush((byte)CallFlags.All);
-            script.EmitPush("callPtr");
-            script.EmitPush(hash);
-            script.EmitSysCall(ApplicationEngine.System_Contract_Call);
-
-            using var engine = Run(snapshot, script, TestProtocolSettings.Default);
-            Assert.AreEqual(VMState.HALT, engine.State);
-            Assert.AreEqual(42, (int)engine.ResultStack.Pop().GetInteger());
-        }
-
-        [TestMethod]
-        public void PointerComparisonsInStructsRespectHuyao()
-        {
-            var (snapshot, hash) = CreateContract();
-            using var script = new ScriptBuilder();
-            script.EmitDynamicCall(hash, "getPtr");
-            script.EmitPush(1);
-            script.Emit(OpCode.PACKSTRUCT);
-            script.EmitDynamicCall(hash, "getPtr");
-            script.EmitPush(1);
-            script.Emit(OpCode.PACKSTRUCT);
             script.Emit(OpCode.EQUAL);
 
             using var before = Run(snapshot, script, s_beforeHuyao);
             Assert.AreEqual(VMState.HALT, before.State);
-            Assert.IsFalse(before.ResultStack.Pop().GetBoolean());
+            Assert.IsTrue(before.ResultStack.Pop().GetBoolean());
 
             using var after = Run(snapshot, script, TestProtocolSettings.Default);
             Assert.AreEqual(VMState.HALT, after.State);
@@ -158,19 +134,47 @@ namespace Neo.UnitTests.SmartContract
         }
 
         [TestMethod]
-        public void NotEqualRespectsHuyao()
+        public void PointerFromEarlierContractCallCanBeCalled()
         {
             var (snapshot, hash) = CreateContract();
             using var script = new ScriptBuilder();
             script.EmitDynamicCall(hash, "getPtr");
-            script.EmitDynamicCall(hash, "getPtr");
-            script.Emit(OpCode.NOTEQUAL);
+            script.EmitPush(1);
+            script.Emit(OpCode.PACK);
+            script.EmitPush((byte)CallFlags.All);
+            script.EmitPush("callPtr");
+            script.EmitPush(hash);
+            script.EmitSysCall(ApplicationEngine.System_Contract_Call);
 
             using var before = Run(snapshot, script, s_beforeHuyao);
             Assert.AreEqual(VMState.HALT, before.State);
-            Assert.IsTrue(before.ResultStack.Pop().GetBoolean());
+            Assert.AreEqual(42, (int)before.ResultStack.Pop().GetInteger());
 
             using var after = Run(snapshot, script, TestProtocolSettings.Default);
+            Assert.AreEqual(VMState.HALT, after.State);
+            Assert.AreEqual(42, (int)after.ResultStack.Pop().GetInteger());
+        }
+
+        [TestMethod]
+        public void PointerComparisonsInStructsRespectHuyao()
+        {
+            using var before = ComparePointers(s_beforeHuyao, OpCode.EQUAL, inStruct: true);
+            Assert.AreEqual(VMState.HALT, before.State);
+            Assert.IsFalse(before.ResultStack.Pop().GetBoolean());
+
+            using var after = ComparePointers(TestProtocolSettings.Default, OpCode.EQUAL, inStruct: true);
+            Assert.AreEqual(VMState.HALT, after.State);
+            Assert.IsTrue(after.ResultStack.Pop().GetBoolean());
+        }
+
+        [TestMethod]
+        public void NotEqualRespectsHuyao()
+        {
+            using var before = ComparePointers(s_beforeHuyao, OpCode.NOTEQUAL);
+            Assert.AreEqual(VMState.HALT, before.State);
+            Assert.IsTrue(before.ResultStack.Pop().GetBoolean());
+
+            using var after = ComparePointers(TestProtocolSettings.Default, OpCode.NOTEQUAL);
             Assert.AreEqual(VMState.HALT, after.State);
             Assert.IsFalse(after.ResultStack.Pop().GetBoolean());
         }
