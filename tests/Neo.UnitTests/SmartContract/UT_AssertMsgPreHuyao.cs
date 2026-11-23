@@ -67,4 +67,3 @@ namespace Neo.UnitTests.SmartContract
         }
     }
 }
-
