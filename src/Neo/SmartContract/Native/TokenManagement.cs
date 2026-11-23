@@ -147,7 +147,12 @@ public sealed partial class TokenManagement : NativeContract
                 engine.SnapshotCache.Delete(key);
         }
         if (callOnBalanceChanged)
-            await engine.CallFromNativeContractIfExistsAsync(Hash, token.Owner, "_onBalanceChanged", assetId, account, amount, balanceOld, balanceOld + amount);
+            await OnBalanceChanged(engine, assetId, token, account, amount, balanceOld);
         return true;
+    }
+
+    ContractTask OnBalanceChanged(ApplicationEngine engine, UInt160 assetId, TokenState token, UInt160 account, BigInteger amount, BigInteger balanceOld)
+    {
+        return engine.CallFromNativeContractIfExistsAsync(Hash, token.Owner, "_onBalanceChanged", assetId, account, amount, balanceOld, balanceOld + amount);
     }
 }
