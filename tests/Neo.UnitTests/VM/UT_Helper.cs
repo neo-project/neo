@@ -70,6 +70,27 @@ namespace Neo.UnitTests.VMT
         }
 
         [TestMethod]
+        public void TestToJsonDepthLimit()
+        {
+            var root = new VM.Types.Array();
+            var current = root;
+            for (int i = 0; i < 64; i++)
+            {
+                var child = new VM.Types.Array();
+                current.Add(child);
+                current = child;
+            }
+
+            _ = root.ToJson();
+            var map = new Map();
+            map[1] = root;
+            Assert.ThrowsExactly<InvalidOperationException>(() => map.ToJson());
+
+            current.Add(new VM.Types.Array());
+            Assert.ThrowsExactly<InvalidOperationException>(() => root.ToJson());
+        }
+
+        [TestMethod]
         public void TestEmitAppCall1()
         {
             ScriptBuilder sb = new ScriptBuilder();
