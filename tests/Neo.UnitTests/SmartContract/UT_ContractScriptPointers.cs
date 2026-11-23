@@ -116,5 +116,63 @@ namespace Neo.UnitTests.SmartContract
             Assert.AreEqual(VMState.HALT, engine.State);
             Assert.IsTrue(engine.ResultStack.Pop().GetBoolean());
         }
+
+        [TestMethod]
+        public void PointerFromEarlierContractCallCanBeCalledAfterHuyao()
+        {
+            var (snapshot, hash) = CreateContract();
+            using var script = new ScriptBuilder();
+            script.EmitDynamicCall(hash, "getPtr");
+            script.EmitPush(1);
+            script.Emit(OpCode.PACK);
+            script.EmitPush((byte)CallFlags.All);
+            script.EmitPush("callPtr");
+            script.EmitPush(hash);
+            script.EmitSysCall(ApplicationEngine.System_Contract_Call);
+
+            using var engine = Run(snapshot, script, TestProtocolSettings.Default);
+            Assert.AreEqual(VMState.HALT, engine.State);
+            Assert.AreEqual(42, (int)engine.ResultStack.Pop().GetInteger());
+        }
+
+        [TestMethod]
+        public void PointerComparisonsInStructsRespectHuyao()
+        {
+            var (snapshot, hash) = CreateContract();
+            using var script = new ScriptBuilder();
+            script.EmitDynamicCall(hash, "getPtr");
+            script.EmitPush(1);
+            script.Emit(OpCode.PACKSTRUCT);
+            script.EmitDynamicCall(hash, "getPtr");
+            script.EmitPush(1);
+            script.Emit(OpCode.PACKSTRUCT);
+            script.Emit(OpCode.EQUAL);
+
+            using var before = Run(snapshot, script, s_beforeHuyao);
+            Assert.AreEqual(VMState.HALT, before.State);
+            Assert.IsFalse(before.ResultStack.Pop().GetBoolean());
+
+            using var after = Run(snapshot, script, TestProtocolSettings.Default);
+            Assert.AreEqual(VMState.HALT, after.State);
+            Assert.IsTrue(after.ResultStack.Pop().GetBoolean());
+        }
+
+        [TestMethod]
+        public void NotEqualRespectsHuyao()
+        {
+            var (snapshot, hash) = CreateContract();
+            using var script = new ScriptBuilder();
+            script.EmitDynamicCall(hash, "getPtr");
+            script.EmitDynamicCall(hash, "getPtr");
+            script.Emit(OpCode.NOTEQUAL);
+
+            using var before = Run(snapshot, script, s_beforeHuyao);
+            Assert.AreEqual(VMState.HALT, before.State);
+            Assert.IsTrue(before.ResultStack.Pop().GetBoolean());
+
+            using var after = Run(snapshot, script, TestProtocolSettings.Default);
+            Assert.AreEqual(VMState.HALT, after.State);
+            Assert.IsFalse(after.ResultStack.Pop().GetBoolean());
+        }
     }
 }

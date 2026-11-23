@@ -362,6 +362,10 @@ namespace Neo.SmartContract
         {
             var table = ComposeDefaultJumpTable();
 
+            table[OpCode.CALLA] = CallA_BeforeHuyao;
+            table[OpCode.EQUAL] = Equal_BeforeHuyao;
+            table[OpCode.NOTEQUAL] = NotEqual_BeforeHuyao;
+
             // Before https://github.com/neo-project/neo-vm/pull/606
             table[OpCode.SETITEM] = SetItem_Before606;
             // Before https://github.com/neo-project/neo-vm/pull/575
