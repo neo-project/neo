@@ -437,6 +437,12 @@ namespace Neo.Network.P2P.Payloads
                         return VerifyResult.Invalid;
                     }
                 }
+                else if (!witness.VerificationScript.IsEmpty)
+                {
+                    // Only deployed contracts with an empty verification script can be
+                    // deferred to state-dependent witness verification.
+                    return VerifyResult.Invalid;
+                }
             }
             return VerifyResult.Succeed;
         }

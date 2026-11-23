@@ -84,8 +84,8 @@ namespace Neo.UnitTests.Ledger
                 ]
             };
 
-            // Custom witnesses are checked during state-dependent verification.
-            Assert.AreEqual(scriptLocation == 0 ? VerifyResult.InvalidScript : VerifyResult.Succeed,
+            // Custom witnesses are rejected before state-dependent verification.
+            Assert.AreEqual(scriptLocation == 0 ? VerifyResult.InvalidScript : VerifyResult.Invalid,
                 txWithOverflowWitness.VerifyStateIndependent(_system.Settings));
             if (scriptLocation != 0)
                 Assert.AreEqual(VerifyResult.Invalid,

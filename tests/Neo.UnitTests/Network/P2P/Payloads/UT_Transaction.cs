@@ -14,6 +14,7 @@ using Neo.Extensions;
 using Neo.IO;
 using Neo.Json;
 using Neo.Ledger;
+using Neo.UnitTests.Extensions;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
@@ -1315,8 +1316,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
             tx = tx.ToArray().AsSerializable<Transaction>();
             Assert.AreEqual(matchingScriptHash, signer == tx.Witnesses[0].ScriptHash);
 
-            // Nonstandard witnesses are deferred to state-dependent verification.
-            Assert.AreEqual(VerifyResult.Succeed, tx.VerifyStateIndependent(TestProtocolSettings.Default));
+            Assert.AreEqual(VerifyResult.Invalid, tx.VerifyStateIndependent(TestProtocolSettings.Default));
             Assert.AreEqual(VerifyResult.Invalid, tx.VerifyStateDependent(TestProtocolSettings.Default, snapshot, new(), []));
             Assert.AreEqual(VerifyResult.Invalid, tx.Verify(TestProtocolSettings.Default, snapshot, new(), []));
             Assert.AreEqual(VerifyResult.Invalid, system.MemPool.TryAdd(tx, snapshot));
@@ -1489,6 +1489,66 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             tx.Witnesses = data.GetWitnesses();
             Assert.AreEqual(VerifyResult.Succeed, tx.VerifyStateDependent(TestProtocolSettings.Default, snapshotCache, new(), []));
+            Assert.AreEqual(VerifyResult.Succeed, tx.Verify(TestProtocolSettings.Default, snapshotCache, new(), []));
+        }
+
+        [TestMethod]
+        public void Test_Verify_SingleSignatureWitness()
+        {
+            using var system = TestBlockchain.GetSystem();
+            using var snapshot = system.GetSnapshotCache();
+            var wallet = TestUtils.GenerateTestWallet("123");
+            var account = wallet.CreateAccount();
+            var balance = snapshot.GetAndChange(NativeContract.GAS.CreateStorageKey(20, account.ScriptHash),
+                () => new StorageItem(new AccountState()));
+            balance.GetInteroperable<AccountState>().Balance = 100 * NativeContract.GAS.Factor;
+            snapshot.Commit();
+
+            var tx = TestUtils.CreateValidTx(snapshot, wallet, account);
+            Assert.AreEqual(VerifyResult.Succeed, tx.Verify(TestProtocolSettings.Default, snapshot, new(), []));
+        }
+
+        [TestMethod]
+        public void Test_Verify_DeployedContractWitness()
+        {
+            using var system = TestBlockchain.GetSystem();
+            using var snapshot = system.GetSnapshotCache();
+            var contract = TestUtils.GetContract(
+                [(byte)OpCode.PUSH1, (byte)OpCode.RET],
+                TestUtils.CreateManifest(ContractBasicMethod.Verify, ContractParameterType.Boolean));
+            snapshot.AddContract(contract.Hash, contract);
+            var balance = snapshot.GetAndChange(NativeContract.GAS.CreateStorageKey(20, contract.Hash),
+                () => new StorageItem(new AccountState()));
+            balance.GetInteroperable<AccountState>().Balance = 100 * NativeContract.GAS.Factor;
+            snapshot.Commit();
+
+            var tx = new Transaction
+            {
+                Attributes = [],
+                NetworkFee = 1_00000000,
+                Script = new byte[] { (byte)OpCode.PUSH1 },
+                Signers = [new Signer { Account = contract.Hash, Scopes = WitnessScope.Global }],
+                ValidUntilBlock = NativeContract.Ledger.CurrentIndex(snapshot) + 10,
+                Witnesses = [Witness.Empty]
+            };
+            Assert.AreEqual(VerifyResult.Succeed, tx.VerifyStateIndependent(TestProtocolSettings.Default));
+            Assert.AreEqual(VerifyResult.Succeed, tx.Verify(TestProtocolSettings.Default, snapshot, new(), []));
+        }
+
+        [TestMethod]
+        public void Test_Verify_CustomVerificationScriptRejected()
+        {
+            byte[] verificationScript = [(byte)OpCode.PUSH1];
+            var tx = new Transaction
+            {
+                Attributes = [],
+                NetworkFee = 1_00000000,
+                Script = new byte[] { (byte)OpCode.PUSH1 },
+                Signers = [new Signer { Account = verificationScript.ToScriptHash() }],
+                Witnesses = [new Witness { VerificationScript = verificationScript }]
+            };
+
+            Assert.AreEqual(VerifyResult.Invalid, tx.VerifyStateIndependent(TestProtocolSettings.Default));
         }
 
         [TestMethod]
