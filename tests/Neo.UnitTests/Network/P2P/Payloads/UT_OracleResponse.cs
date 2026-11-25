@@ -13,6 +13,9 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
 using Neo.IO;
 using Neo.Network.P2P.Payloads;
+using Neo.Persistence;
+using Neo.SmartContract;
+using Neo.SmartContract.Native;
 using System;
 
 namespace Neo.UnitTests.Network.P2P.Payloads
@@ -102,6 +105,37 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         public void FixedScript_IsNonEmpty()
         {
             Assert.IsTrue(OracleResponse.FixedScript.Length > 0);
+        }
+
+        [TestMethod]
+        public void Verify_WithoutDesignatedOracleNodes_ReturnsFalse()
+        {
+            var snapshot = TestBlockchain.GetTestSnapshotCache().CloneCache();
+            var request = new OracleRequest
+            {
+                OriginalTxid = UInt256.Zero,
+                GasForResponse = 10_00000000,
+                Url = "https://example.com",
+                CallbackContract = UInt160.Zero,
+                CallbackMethod = "callback",
+                UserData = []
+            };
+            snapshot.Add(new KeyBuilder(NativeContract.Oracle.Id, 7).AddBigEndian(42UL), StorageItem.CreateSealed(request));
+
+            Assert.AreEqual(0, NativeContract.RoleManagement.GetDesignatedByRole(
+                snapshot, Role.Oracle, NativeContract.Ledger.CurrentIndex(snapshot) + 1).Length);
+
+            var response = new OracleResponse { Id = 42 };
+            var tx = new Transaction
+            {
+                Script = OracleResponse.FixedScript,
+                Signers = [new Signer { Account = UInt160.Zero, Scopes = WitnessScope.None }],
+                NetworkFee = request.GasForResponse,
+                Attributes = [response],
+                Witnesses = []
+            };
+
+            Assert.IsFalse(response.Verify(snapshot, tx));
         }
     }
 }
