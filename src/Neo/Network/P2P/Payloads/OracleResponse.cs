@@ -101,6 +101,8 @@ namespace Neo.Network.P2P.Payloads
             if (!tx.Script.SequenceEqual(FixedScript)) return false;
             OracleRequest? request = NativeContract.Oracle.GetRequest(snapshot, Id);
             if (request is null) return false;
+            Transaction? original = NativeContract.Ledger.GetTransaction(snapshot, request.OriginalTxid);
+            if (original is null || original.Signers.Any(p => NativeContract.Policy.IsBlocked(snapshot, p.Account))) return false;
             if (tx.NetworkFee + tx.SystemFee != request.GasForResponse) return false;
             UInt160 oracleAccount = Contract.GetBFTAddress(NativeContract.RoleManagement.GetDesignatedByRole(snapshot, Role.Oracle, NativeContract.Ledger.CurrentIndex(snapshot) + 1));
             return tx.Signers.Any(p => p.Account.Equals(oracleAccount));

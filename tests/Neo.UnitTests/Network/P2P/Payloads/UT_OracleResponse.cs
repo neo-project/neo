@@ -13,7 +13,14 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Extensions;
 using Neo.IO;
 using Neo.Network.P2P.Payloads;
+using Neo.Persistence;
+using Neo.SmartContract;
+using Neo.SmartContract.Native;
+using Neo.UnitTests.Extensions;
+using Neo.VM;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Neo.UnitTests.Network.P2P.Payloads
 {
@@ -102,6 +109,93 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         public void FixedScript_IsNonEmpty()
         {
             Assert.IsTrue(OracleResponse.FixedScript.Length > 0);
+        }
+
+        [TestMethod]
+        public void Verify_RejectsResponseAfterOriginalSignerIsBlocked()
+        {
+            var snapshot = TestBlockchain.GetTestSnapshotCache().CloneCache();
+            var account = UInt160.Parse("0x0000000000000000000000000000000000001234");
+            var otherAccount = UInt160.Parse("0x0000000000000000000000000000000000005678");
+            var original = new Transaction
+            {
+                Script = new byte[] { (byte)OpCode.RET },
+                Signers =
+                [
+                    new Signer { Account = account, Scopes = WitnessScope.Global },
+                    new Signer { Account = otherAccount, Scopes = WitnessScope.Global }
+                ],
+                Attributes = [],
+                Witnesses = [],
+                ValidUntilBlock = 100
+            };
+            snapshot.Add(NativeContract.Ledger.CreateStorageKey(11, original.Hash),
+                new StorageItem(new TransactionState { BlockIndex = 0, Transaction = original }));
+            const ulong requestId = 7;
+            const long gasForResponse = 10_00000000;
+            snapshot.Add(new KeyBuilder(NativeContract.Oracle.Id, 7).AddBigEndian(requestId),
+                StorageItem.CreateSealed(new OracleRequest
+                {
+                    OriginalTxid = original.Hash,
+                    GasForResponse = gasForResponse,
+                    Url = "https://example.com",
+                    CallbackContract = UInt160.Zero,
+                    CallbackMethod = "callback",
+                    UserData = []
+                }));
+
+            var oracleKey = new Neo.Wallets.KeyPair(Enumerable.Repeat((byte)0x22, 32).ToArray());
+            var committee = NativeContract.NEO.GetCommitteeAddress(snapshot);
+            var block = new Block
+            {
+                Header = new Header
+                {
+                    Index = 0,
+                    Timestamp = 10_000,
+                    PrevHash = UInt256.Zero,
+                    MerkleRoot = UInt256.Zero,
+                    NextConsensus = UInt160.Zero,
+                    Witness = Witness.Empty
+                },
+                Transactions = []
+            };
+            NativeContract.RoleManagement.Call(snapshot,
+                new Nep17NativeContractExtensions.ManualWitness(committee), block, "designateAsRole",
+                new ContractParameter(ContractParameterType.Integer) { Value = (int)Role.Oracle },
+                new ContractParameter(ContractParameterType.Array)
+                {
+                    Value = new List<ContractParameter>
+                    {
+                        new(ContractParameterType.PublicKey) { Value = oracleKey.PublicKey }
+                    }
+                });
+
+            var response = new OracleResponse { Id = requestId, Code = OracleResponseCode.Timeout };
+            var responseTx = new Transaction
+            {
+                Script = OracleResponse.FixedScript,
+                Signers =
+                [
+                    new Signer
+                    {
+                        Account = Contract.GetBFTAddress([oracleKey.PublicKey]),
+                        Scopes = WitnessScope.None
+                    },
+                    new Signer { Account = NativeContract.Oracle.Hash, Scopes = WitnessScope.None }
+                ],
+                Attributes = [response],
+                Witnesses = [],
+                SystemFee = gasForResponse,
+                ValidUntilBlock = 100
+            };
+
+            Assert.IsTrue(response.Verify(snapshot, responseTx));
+            snapshot.Add(NativeContract.Policy.CreateStorageKey(15, account), new StorageItem(new byte[] { 1 }));
+            Assert.IsFalse(response.Verify(snapshot, responseTx));
+            snapshot.Delete(NativeContract.Policy.CreateStorageKey(15, account));
+            Assert.IsTrue(response.Verify(snapshot, responseTx));
+            snapshot.Add(NativeContract.Policy.CreateStorageKey(15, otherAccount), new StorageItem(new byte[] { 1 }));
+            Assert.IsFalse(response.Verify(snapshot, responseTx));
         }
     }
 }
