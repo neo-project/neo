@@ -16,6 +16,7 @@ using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.VM;
 using System;
+using System.Buffers.Binary;
 using System.Linq;
 
 namespace Neo.UnitTests.Network.P2P
@@ -182,6 +183,26 @@ namespace Neo.UnitTests.Network.P2P
             Assert.IsNotNull(copy);
 
             Assert.IsTrue(copy.Flags.HasFlag(MessageFlags.Compressed));
+        }
+
+        [TestMethod]
+        public void OversizedTransactionPayload_IsRejectedBeforeDeserialization()
+        {
+            var payload = new byte[Transaction.MaxTransactionSize + 1];
+            foreach (bool compressed in new[] { false, true })
+            {
+                ReadOnlyMemory<byte> encoded = compressed ? payload.AsSpan().CompressLz4() : payload;
+                var buffer = new byte[7 + encoded.Length];
+                buffer[0] = compressed ? (byte)MessageFlags.Compressed : (byte)MessageFlags.None;
+                buffer[1] = (byte)MessageCommand.Transaction;
+                buffer[2] = 0xFE;
+                BinaryPrimitives.WriteInt32LittleEndian(buffer.AsSpan(3, 4), encoded.Length);
+                encoded.Span.CopyTo(buffer.AsSpan(7));
+
+                var exception = Assert.ThrowsExactly<FormatException>(() =>
+                    Message.TryDeserialize(ByteString.CopyFrom(buffer), out _));
+                Assert.Contains(compressed ? "out of range" : "payload size exceeds the maximum", exception.Message);
+            }
         }
 
         [TestMethod]
