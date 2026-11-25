@@ -10,8 +10,7 @@
 // modifications are permitted.
 
 using Neo.Plugins;
-using System.Runtime.CompilerServices;
-using System.Runtime.Loader;
+using System.Diagnostics;
 
 namespace Neo.UnitTests.Plugins;
 
@@ -24,58 +23,43 @@ public class UT_PluginLoadContext
     [TestMethod]
     [DataRow(true)]
     [DataRow(false)]
-    public void TestLoadPluginDirectoryUsesIsolatedContext(bool nameMatchesDirectory)
+    public async Task TestLoadPluginDirectoryUsesIsolatedContext(bool nameMatchesDirectory)
     {
         var directory = Directory.CreateTempSubdirectory("neo-plugin-");
-        WeakReference? contextReference = null;
+        var testOutput = AppContext.BaseDirectory;
+        var fixture = Path.Combine(testOutput, FixtureAssemblyName + ".dll");
         try
         {
             var assemblyName = nameMatchesDirectory ? directory.Name : FixtureAssemblyName;
             var assemblyPath = Path.Combine(directory.FullName, assemblyName + ".dll");
-            File.Copy(Path.Combine(AppContext.BaseDirectory, FixtureAssemblyName + ".dll"), assemblyPath);
-            var dependencyPath = Path.Combine(directory.FullName, DependencyAssemblyName + ".dll");
-            File.Copy(Path.Combine(AppContext.BaseDirectory, DependencyAssemblyName + ".dll"), dependencyPath);
-
+            File.Copy(fixture, assemblyPath);
+            var dependencyFile = DependencyAssemblyName + ".dll";
+            File.Copy(Path.Combine(testOutput, dependencyFile), Path.Combine(directory.FullName, dependencyFile));
             var hostAssemblyPath = typeof(Plugin).Assembly.Location;
             File.Copy(hostAssemblyPath, Path.Combine(directory.FullName, Path.GetFileName(hostAssemblyPath)));
 
-            VerifyPlugin(directory.FullName, assemblyPath, dependencyPath, out contextReference);
-        }
-        finally
-        {
-            // The runtime releases assembly files when the collectible context is reclaimed.
-            for (var i = 0; i < 10 && contextReference?.IsAlive == true; i++)
+            // Windows keeps loaded assembly files open until the child process exits.
+            var startInfo = new ProcessStartInfo(Environment.GetEnvironmentVariable("DOTNET_HOST_PATH") ?? "dotnet")
             {
-                GC.Collect();
-                GC.WaitForPendingFinalizers();
-                GC.Collect();
-            }
+                RedirectStandardError = true,
+                UseShellExecute = false
+            };
+            foreach (var argument in new[]
+            {
+                "exec", "--runtimeconfig", Path.Combine(testOutput, "Neo.UnitTests.runtimeconfig.json"),
+                "--depsfile", Path.Combine(testOutput, "Neo.UnitTests.deps.json"),
+                fixture, directory.FullName, assemblyPath
+            })
+                startInfo.ArgumentList.Add(argument);
 
-            directory.Delete(recursive: true);
-        }
-    }
-
-    [MethodImpl(MethodImplOptions.NoInlining)]
-    private static void VerifyPlugin(string directory, string assemblyPath, string dependencyPath, out WeakReference contextReference)
-    {
-        var context = Plugin.LoadPluginDirectory(directory, isCollectible: true);
-        Assert.IsNotNull(context);
-        contextReference = new WeakReference(context);
-
-        try
-        {
-            var plugin = Plugin.Plugins.Single(p => AssemblyLoadContext.GetLoadContext(p.GetType().Assembly) == context);
-            Assert.AreNotSame(AssemblyLoadContext.Default, context);
-            Assert.IsFalse(context.Assemblies.Any(a => a.GetName().Name == typeof(Plugin).Assembly.GetName().Name));
-            Assert.AreEqual(assemblyPath, plugin.GetType().Assembly.Location);
-            var method = plugin.GetType().GetMethod("GetDependencyAssemblyLocation");
-            Assert.IsNotNull(method);
-            Assert.AreEqual(dependencyPath, method.Invoke(plugin, null) as string);
+            using var process = Process.Start(startInfo)!;
+            var errors = process.StandardError.ReadToEndAsync();
+            await process.WaitForExitAsync();
+            Assert.AreEqual(0, process.ExitCode, await errors);
         }
         finally
         {
-            Plugin.Plugins.RemoveAll(p => AssemblyLoadContext.GetLoadContext(p.GetType().Assembly) == context);
-            context.Unload();
+            directory.Delete(recursive: true);
         }
     }
 }

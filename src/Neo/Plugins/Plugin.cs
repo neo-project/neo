@@ -200,14 +200,14 @@ public abstract class Plugin : IDisposable
         }
     }
 
-    internal static PluginLoadContext? LoadPluginDirectory(string directory, bool isCollectible = false)
+    private static void LoadPluginDirectory(string directory)
     {
         var paths = Directory.GetFiles(directory, "*.dll", SearchOption.TopDirectoryOnly);
-        if (paths.Length == 0) return null;
+        if (paths.Length == 0) return;
 
         var namedAssembly = Combine(directory, new DirectoryInfo(directory).Name + ".dll");
         var mainAssembly = File.Exists(namedAssembly) ? namedAssembly : paths[0];
-        var context = new PluginLoadContext(mainAssembly, isCollectible);
+        var context = new PluginLoadContext(mainAssembly);
         foreach (var path in paths)
         {
             try
@@ -220,8 +220,6 @@ public abstract class Plugin : IDisposable
                 Logs.RuntimeLogger.Error(ex, "Failed to load plugin assembly file {File}", path);
             }
         }
-
-        return context;
     }
 
     /// <summary>

@@ -2,7 +2,9 @@
 
   <PropertyGroup>
     <AssemblyName>Neo.PluginFixture</AssemblyName>
-    <OutputType>Library</OutputType>
+    <OutputType>Exe</OutputType>
+    <UseAppHost>false</UseAppHost>
+    <StartupObject>Neo.PluginFixture.Program</StartupObject>
   </PropertyGroup>
 
   <ItemGroup>

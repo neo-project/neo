@@ -33,8 +33,7 @@ internal sealed class PluginLoadContext : AssemblyLoadContext
     private readonly AssemblyDependencyResolver _resolver;
     private readonly string _pluginDirectory;
 
-    public PluginLoadContext(string mainAssemblyPath, bool isCollectible = false)
-        : base(isCollectible: isCollectible)
+    public PluginLoadContext(string mainAssemblyPath)
     {
         _resolver = new AssemblyDependencyResolver(mainAssemblyPath);
         _pluginDirectory = GetDirectoryName(mainAssemblyPath)!;
