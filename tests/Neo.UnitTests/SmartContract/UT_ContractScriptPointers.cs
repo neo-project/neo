@@ -108,6 +108,25 @@ namespace Neo.UnitTests.SmartContract
         }
 
         [TestMethod]
+        [DataRow(false)]
+        [DataRow(true)]
+        public void ContextUnloadedRespectsHuyaoScriptEquality(bool huyaoEnabled)
+        {
+            using var snapshot = TestBlockchain.GetTestSnapshotCache();
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot,
+                settings: huyaoEnabled ? TestProtocolSettings.Default : s_beforeHuyao);
+            byte[] script = [(byte)OpCode.RET];
+            engine.LoadScript(new Script(script));
+            var inner = engine.LoadScript(new Script(script));
+            Assert.IsFalse(ReferenceEquals(inner.Script, engine.EntryContext!.Script));
+
+            var key = StorageKey.Create(NativeContract.Policy.Id, 200, new byte[] { 1 });
+            inner.GetState<ExecutionContextState>().SnapshotCache!.Add(key, new StorageItem(1u));
+            Assert.AreEqual(VMState.HALT, engine.Execute());
+            Assert.AreEqual(!huyaoEnabled, snapshot.TryGet(key) is not null);
+        }
+
+        [TestMethod]
         public void PointersFromDifferentScriptInstancesCompareUnequalBeforeHuyao()
         {
             using var engine = ComparePointers(s_beforeHuyao, OpCode.EQUAL);
