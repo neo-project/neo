@@ -327,7 +327,7 @@ namespace Neo.Network.P2P
             _system.Blockchain.Tell(payload.Headers);
         }
 
-        private void OnRestartInventory(IReadOnlyList<UInt256> hashes)
+        private void OnRestartInventory(UInt256[] hashes)
         {
             foreach (var hash in hashes)
             {
