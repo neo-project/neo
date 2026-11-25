@@ -74,11 +74,11 @@ public class UT_GasToken
 
         // Transfer
 
-        Assert.IsTrue(NativeContract.NEO.Transfer(snapshot, from, to, BigInteger.Zero, true, persistingBlock));
-        Assert.ThrowsExactly<InvalidOperationException>(() => _ = NativeContract.NEO.Transfer(snapshot, from, null, BigInteger.Zero, true, persistingBlock));
-        Assert.ThrowsExactly<InvalidOperationException>(() => _ = NativeContract.NEO.Transfer(snapshot, null, to, BigInteger.Zero, false, persistingBlock));
-        Assert.AreEqual(100000000, NativeContract.NEO.BalanceOf(snapshot, from));
-        Assert.AreEqual(0, NativeContract.NEO.BalanceOf(snapshot, to));
+        Assert.IsTrue(UT_NeoToken.Transfer(snapshot, from, to, BigInteger.Zero, true, persistingBlock));
+        Assert.ThrowsExactly<InvalidOperationException>(() => _ = UT_NeoToken.Transfer(snapshot, from, null, BigInteger.Zero, true, persistingBlock));
+        Assert.ThrowsExactly<InvalidOperationException>(() => _ = UT_NeoToken.Transfer(snapshot, null, to, BigInteger.Zero, false, persistingBlock));
+        Assert.AreEqual(100000000, UT_NeoToken.BalanceOf(snapshot, from));
+        Assert.AreEqual(0, UT_NeoToken.BalanceOf(snapshot, to));
 
         Assert.AreEqual(52000500_00000000, NativeContract.TokenManagement.BalanceOf(snapshot, NativeContract.Governance.GasTokenId, new UInt160(from)));
         Assert.AreEqual(0, NativeContract.TokenManagement.BalanceOf(snapshot, NativeContract.Governance.GasTokenId, new UInt160(to)));

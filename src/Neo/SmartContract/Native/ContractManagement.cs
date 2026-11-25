@@ -235,7 +235,7 @@ public sealed class ContractManagement : NativeContract
     /// <param name="nefFile">The NEF file of the contract.</param>
     /// <param name="manifest">The manifest of the contract.</param>
     /// <returns>The deployed contract.</returns>
-    [ContractMethod(RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
+    [ContractMethod(RequiredCallFlags = CallFlags.All)]
     private ContractTask<ContractState> Deploy(ApplicationEngine engine, byte[] nefFile, byte[] manifest)
     {
         return Deploy(engine, nefFile, manifest, StackItem.Null);
@@ -301,7 +301,7 @@ public sealed class ContractManagement : NativeContract
     /// <param name="nefFile">The NEF file of the contract.</param>
     /// <param name="manifest">The manifest of the contract.</param>
     /// <returns>The updated contract.</returns>
-    [ContractMethod(RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]
+    [ContractMethod(RequiredCallFlags = CallFlags.All)]
     private ContractTask Update(ApplicationEngine engine, byte[]? nefFile, byte[]? manifest)
     {
         return Update(engine, nefFile, manifest, StackItem.Null);

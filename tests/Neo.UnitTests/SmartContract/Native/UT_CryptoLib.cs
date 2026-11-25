@@ -19,6 +19,7 @@ using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
+using Neo.Wallets;
 using Org.BouncyCastle.Utilities.Encoders;
 using System.Numerics;
 using System.Text;
@@ -620,15 +621,13 @@ public class UT_CryptoLib
     public async Task TestVerifyWithECDsa_CustomTxWitness_SingleSig()
     {
         byte[] privkey = "7177f0d04c79fa0b8c91fe90c1cf1d44772d1fba6e5eb9b281a22cd3aafb51fe".HexToBytes();
-        var pubHex = "04" + "fd0a8c1ce5ae5570fdd46e7599c16b175bf0ebdfe9c178f1ab848fb16dac74a5" +
-            "d301b0534c7bcf1b3760881f0c420d17084907edd771e1c9c8e941bbf6ff9108";
-        ECPoint pubKey = ECPoint.Parse(pubHex, ECCurve.Secp256k1);
+        KeyPair key = new(privkey, ECCurve.Secp256k1);
 
         // vrf is a builder of witness verification script corresponding to the public key.
         using ScriptBuilder vrf = new();
         vrf.EmitPush((byte)NamedCurveHash.secp256k1Keccak256); // push Koblitz curve identifier and Keccak256 hasher.
         vrf.Emit(OpCode.SWAP); // swap curve identifier with the signature.
-        vrf.EmitPush(pubKey.EncodePoint(true)); // emit the caller's public key.
+        vrf.EmitPush(key.PublicKey.EncodePoint(true)); // emit the caller's public key.
 
         // Construct and push the signed message. The signed message is effectively the network-dependent transaction hash,
         // i.e. msg = [4-network-magic-bytes-LE, tx-hash-BE]
@@ -669,7 +668,7 @@ public class UT_CryptoLib
             Witnesses = []
         };
         var signData = tx.GetSignData(TestProtocolSettings.Default.Network);
-        var txSignature = Crypto.Sign(signData, privkey, ECCurve.Secp256k1, HashAlgorithm.Keccak256);
+        var txSignature = Crypto.Sign(signData, key, HashAlgorithm.Keccak256);
 
         // inv is a builder of witness invocation script corresponding to the public key.
         using ScriptBuilder inv = new();
@@ -759,33 +758,18 @@ public class UT_CryptoLib
     public async Task TestVerifyWithECDsa_CustomTxWitness_MultiSig()
     {
         var privkey1 = "b2dde592bfce654ef03f1ceea452d2b0112e90f9f52099bcd86697a2bd0a2b60".HexToBytes();
-        var pubKey1 = ECPoint.Parse("04" +
-            "0486468683c112125978ffe876245b2006bfe739aca8539b67335079262cb27a" +
-            "d0dedc9e5583f99b61c6f46bf80b97eaec3654b87add0e5bd7106c69922a229d", ECCurve.Secp256k1);
-
         var privkey2 = "b9879e26941872ee6c9e6f01045681496d8170ed2cc4a54ce617b39ae1891b3a".HexToBytes();
-        var pubKey2 = ECPoint.Parse("04" +
-            "0d26fc2ad3b1aae20f040b5f83380670f8ef5c2b2ac921ba3bdd79fd0af05251" +
-            "77715fd4370b1012ddd10579698d186ab342c223da3e884ece9cab9b6638c7bb", ECCurve.Secp256k1);
-
         var privkey3 = "4e1fe2561a6da01ee030589d504d62b23c26bfd56c5e07dfc9b8b74e4602832a".HexToBytes();
-        var pubKey3 = ECPoint.Parse("04" +
-            "7b4e72ae854b6a0955b3e02d92651ab7fa641a936066776ad438f95bb674a269" +
-            "a63ff98544691663d91a6cfcd215831f01bfb7a226363a6c5c67ef14541dba07", ECCurve.Secp256k1);
-
         var privkey4 = "6dfd066bb989d3786043aa5c1f0476215d6f5c44f5fc3392dd15e2599b67a728".HexToBytes();
-        var pubKey4 = ECPoint.Parse("04" +
-            "b62ac4c8a352a892feceb18d7e2e3a62c8c1ecbaae5523d89d747b0219276e22" +
-            "5be2556a137e0e806e4915762d816cdb43f572730d23bb1b1cba750011c4edc6", ECCurve.Secp256k1);
 
         // Public keys must be sorted, exactly like for standard CreateMultiSigRedeemScript.
-        var keys = new List<(byte[], ECPoint)>
+        var keys = new List<KeyPair>
         {
-            (privkey1, pubKey1),
-            (privkey2, pubKey2),
-            (privkey3, pubKey3),
-            (privkey4, pubKey4),
-        }.OrderBy(k => k.Item2).ToList();
+            new(privkey1,ECCurve.Secp256k1),
+            new(privkey2,ECCurve.Secp256k1),
+            new(privkey3,ECCurve.Secp256k1),
+            new(privkey4,ECCurve.Secp256k1)
+        }.OrderBy(k => k.PublicKey).ToList();
 
         // Consider 4 users willing to sign 3/4 multisignature transaction with their Secp256k1 private keys.
         var m = 3;
@@ -794,7 +778,7 @@ public class UT_CryptoLib
         // Must ensure the following conditions are met before verification script construction:
         Assert.IsGreaterThan(0, n);
         Assert.IsLessThanOrEqualTo(n, m);
-        Assert.AreEqual(n, keys.Select(k => k.Item2).Distinct().Count());
+        Assert.AreEqual(n, keys.Select(k => k.PublicKey).Distinct().Count());
 
         // In fact, the following algorithm is implemented via NeoVM instructions:
         //
@@ -820,7 +804,7 @@ public class UT_CryptoLib
         vrf.EmitPush(m); // push m.
         foreach (var tuple in keys)
         {
-            vrf.EmitPush(tuple.Item2.EncodePoint(true)); // push public keys in compressed form.
+            vrf.EmitPush(tuple.PublicKey.EncodePoint(true)); // push public keys in compressed form.
         }
         vrf.EmitPush(n); // push n.
 
@@ -944,7 +928,7 @@ public class UT_CryptoLib
             if (i == 1) // Skip one key since we need only 3 signatures.
                 continue;
             var signData = tx.GetSignData(TestProtocolSettings.Default.Network);
-            var sig = Crypto.Sign(signData, keys[i].Item1, ECCurve.Secp256k1, HashAlgorithm.Keccak256);
+            var sig = Crypto.Sign(signData, keys[i], HashAlgorithm.Keccak256);
             inv.EmitPush(sig);
         }
 
@@ -1095,36 +1079,32 @@ public class UT_CryptoLib
     public void TestVerifyWithECDsa()
     {
         byte[] privR1 = "6e63fda41e9e3aba9bb5696d58a75731f044a9bdc48fe546da571543b2fa460e".HexToBytes();
-        ECPoint pubR1 = ECPoint.Parse("04" +
-            "cae768e1cf58d50260cab808da8d6d83d5d3ab91eac41cdce577ce5862d73641" +
-            "3643bdecd6d21c3b66f122ab080f9219204b10aa8bbceb86c1896974768648f3", ECCurve.Secp256r1);
+        KeyPair keyR1 = new(privR1, ECCurve.Secp256r1);
 
         byte[] privK1 = "0b5fb3a050385196b327be7d86cbce6e40a04c8832445af83ad19c82103b3ed9".HexToBytes();
-        ECPoint pubK1 = ECPoint.Parse("04" +
-            "b6363b353c3ee1620c5af58594458aa00abf43a6d134d7c4cb2d901dc0f474fd" +
-            "74c94740bd7169aa0b1ef7bc657e824b1d7f4283c547e7ec18c8576acf84418a", ECCurve.Secp256k1);
+        KeyPair keyK1 = new(privK1, ECCurve.Secp256k1);
 
         byte[] message = Encoding.Default.GetBytes("HelloWorld");
 
         // secp256r1 + SHA256
-        byte[] signature = Crypto.Sign(message, privR1, ECCurve.Secp256r1, HashAlgorithm.SHA256);
-        Assert.IsTrue(Crypto.VerifySignature(message, signature, pubR1)); // SHA256 hash is used by default.
-        Assert.IsTrue(CallVerifyWithECDsa(message, pubR1, signature, NamedCurveHash.secp256r1SHA256));
+        byte[] signature = Crypto.Sign(message, keyR1, HashAlgorithm.SHA256);
+        Assert.IsTrue(Crypto.VerifySignature(message, signature, keyR1.PublicKey)); // SHA256 hash is used by default.
+        Assert.IsTrue(CallVerifyWithECDsa(message, keyR1.PublicKey, signature, NamedCurveHash.secp256r1SHA256));
 
         // secp256r1 + Keccak256
-        signature = Crypto.Sign(message, privR1, ECCurve.Secp256r1, HashAlgorithm.Keccak256);
-        Assert.IsTrue(Crypto.VerifySignature(message, signature, pubR1, HashAlgorithm.Keccak256));
-        Assert.IsTrue(CallVerifyWithECDsa(message, pubR1, signature, NamedCurveHash.secp256r1Keccak256));
+        signature = Crypto.Sign(message, keyR1, HashAlgorithm.Keccak256);
+        Assert.IsTrue(Crypto.VerifySignature(message, signature, keyR1.PublicKey, HashAlgorithm.Keccak256));
+        Assert.IsTrue(CallVerifyWithECDsa(message, keyR1.PublicKey, signature, NamedCurveHash.secp256r1Keccak256));
 
         // secp256k1 + SHA256
-        signature = Crypto.Sign(message, privK1, ECCurve.Secp256k1, HashAlgorithm.SHA256);
-        Assert.IsTrue(Crypto.VerifySignature(message, signature, pubK1)); // SHA256 hash is used by default.
-        Assert.IsTrue(CallVerifyWithECDsa(message, pubK1, signature, NamedCurveHash.secp256k1SHA256));
+        signature = Crypto.Sign(message, keyK1, HashAlgorithm.SHA256);
+        Assert.IsTrue(Crypto.VerifySignature(message, signature, keyK1.PublicKey)); // SHA256 hash is used by default.
+        Assert.IsTrue(CallVerifyWithECDsa(message, keyK1.PublicKey, signature, NamedCurveHash.secp256k1SHA256));
 
         // secp256k1 + Keccak256
-        signature = Crypto.Sign(message, privK1, ECCurve.Secp256k1, HashAlgorithm.Keccak256);
-        Assert.IsTrue(Crypto.VerifySignature(message, signature, pubK1, HashAlgorithm.Keccak256));
-        Assert.IsTrue(CallVerifyWithECDsa(message, pubK1, signature, NamedCurveHash.secp256k1Keccak256));
+        signature = Crypto.Sign(message, keyK1, HashAlgorithm.Keccak256);
+        Assert.IsTrue(Crypto.VerifySignature(message, signature, keyK1.PublicKey, HashAlgorithm.Keccak256));
+        Assert.IsTrue(CallVerifyWithECDsa(message, keyK1.PublicKey, signature, NamedCurveHash.secp256k1Keccak256));
     }
 
     [TestMethod]
@@ -1132,11 +1112,9 @@ public class UT_CryptoLib
     {
         var message = "hello world"u8.ToArray();
         var privateKey = "6e63fda41e9e3aba9bb5696d58a75731f044a9bdc48fe546da571543b2fa460e".HexToBytes();
-        var publicKey = ECPoint.Parse("04" +
-            "cae768e1cf58d50260cab808da8d6d83d5d3ab91eac41cdce577ce5862d73641" +
-            "3643bdecd6d21c3b66f122ab080f9219204b10aa8bbceb86c1896974768648f3", ECCurve.Secp256r1);
+        var key = new KeyPair(privateKey);
 
-        var sign = Crypto.Sign(message, privateKey, ECCurve.Secp256r1, HashAlgorithm.SHA256);
+        var sign = Crypto.Sign(message, key, HashAlgorithm.SHA256);
 
         // IndexOutOfRangeException, but should be FormatException
         Assert.ThrowsExactly<IndexOutOfRangeException>(() => CryptoLib.VerifyWithECDsa(message, null!, sign, NamedCurveHash.secp256r1SHA256));
@@ -1150,23 +1128,23 @@ public class UT_CryptoLib
         // FormatException if the signature is empty
         Assert.ThrowsExactly<FormatException>(() => CryptoLib.VerifyWithECDsa(message, [0x01], sign, NamedCurveHash.secp256r1SHA256));
 
-        Assert.ThrowsExactly<FormatException>(() => CryptoLib.VerifyWithECDsa(message, publicKey.EncodePoint(true), [], NamedCurveHash.secp256r1SHA256));
+        Assert.ThrowsExactly<FormatException>(() => CryptoLib.VerifyWithECDsa(message, key.PublicKey.EncodePoint(true), [], NamedCurveHash.secp256r1SHA256));
 
-        bool ok = CryptoLib.VerifyWithECDsa(message, publicKey.EncodePoint(true), sign, NamedCurveHash.secp256r1SHA256);
+        bool ok = CryptoLib.VerifyWithECDsa(message, key.PublicKey.EncodePoint(true), sign, NamedCurveHash.secp256r1SHA256);
         Assert.IsTrue(ok);
 
-        ok = CryptoLib.VerifyWithECDsa(message, publicKey.EncodePoint(false), sign, NamedCurveHash.secp256r1SHA256);
+        ok = CryptoLib.VerifyWithECDsa(message, key.PublicKey.EncodePoint(false), sign, NamedCurveHash.secp256r1SHA256);
         Assert.IsTrue(ok);
 
-        Assert.ThrowsExactly<ArgumentException>(() => CryptoLib.VerifyWithECDsa(message, publicKey.EncodePoint(false), sign, NamedCurveHash.secp256k1SHA256));
+        Assert.ThrowsExactly<ArgumentException>(() => CryptoLib.VerifyWithECDsa(message, key.PublicKey.EncodePoint(false), sign, NamedCurveHash.secp256k1SHA256));
 
         // ArithmeticException, but should be ArgumentException
         byte[] invalidPublicKey = [0x03, .. Enumerable.Repeat<byte>(0x03, 32)];
         Assert.ThrowsExactly<ArithmeticException>(() => CryptoLib.VerifyWithECDsa(message, invalidPublicKey, sign, NamedCurveHash.secp256k1SHA256));
 
         // null messsage and signature is valid, result is true
-        sign = Crypto.Sign([], privateKey, ECCurve.Secp256r1, HashAlgorithm.SHA256);
-        ok = CryptoLib.VerifyWithECDsa(null!, publicKey.EncodePoint(true), sign, NamedCurveHash.secp256r1SHA256);
+        sign = Crypto.Sign([], key, HashAlgorithm.SHA256);
+        ok = CryptoLib.VerifyWithECDsa(null!, key.PublicKey.EncodePoint(true), sign, NamedCurveHash.secp256r1SHA256);
         Assert.IsTrue(ok);
     }
 

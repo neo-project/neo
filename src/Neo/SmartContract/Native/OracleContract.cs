@@ -15,6 +15,7 @@ using Neo.Cryptography;
 using Neo.Extensions.IO;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
+using Neo.SmartContract.Manifest;
 using Neo.VM;
 using Neo.VM.Types;
 using System.Buffers.Binary;
@@ -200,6 +201,11 @@ public sealed class OracleContract : NativeContract
                     await TokenManagement.MintInternal(engine, Governance.GasTokenId, account, gas, assertOwner: false, callOnBalanceChanged: false, callOnPayment: false, callOnTransfer: false);
             }
         }
+    }
+
+    protected override void OnManifestCompose(IsHardforkEnabledDelegate hfChecker, uint blockHeight, ContractManifest manifest)
+    {
+        manifest.SupportedStandards = ["NEP-30"];
     }
 
     [ContractMethod(RequiredCallFlags = CallFlags.States | CallFlags.AllowNotify)]

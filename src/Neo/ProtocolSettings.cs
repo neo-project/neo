@@ -52,18 +52,12 @@ public record ProtocolSettings
     public required string[] SeedList { get; init; }
 
     /// <summary>
-    /// Indicates the time in milliseconds between two blocks. Note that starting from
-    /// HF_Echidna block generation time is managed by native Policy contract, hence
-    /// use NeoSystemExtensions.GetTimePerBlock extension method instead of direct access
-    /// to this property.
+    /// Indicates the time in milliseconds between two blocks.
     /// </summary>
     public uint MillisecondsPerBlock { get; init; }
 
     /// <summary>
-    /// Indicates the time between two blocks. Note that starting from HF_Echidna block
-    /// generation time is managed by native Policy contract, hence use
-    /// NeoSystemExtensions.GetTimePerBlock extension method instead of direct access
-    /// to this property.
+    /// Indicates the time between two blocks.
     /// </summary>
     public TimeSpan TimePerBlock => TimeSpan.FromMilliseconds(MillisecondsPerBlock);
 
@@ -83,10 +77,7 @@ public record ProtocolSettings
     public int MemoryPoolMaxTransactions { get; init; }
 
     /// <summary>
-    /// Indicates the maximum number of blocks that can be traced in the smart contract. Note
-    /// that starting from HF_Echidna the maximum number of traceable blocks is managed by
-    /// native Policy contract, hence use NeoSystemExtensions.GetMaxTraceableBlocks extension
-    /// method instead of direct access to this property.
+    /// Indicates the maximum number of blocks that can be traced in the smart contract.
     /// </summary>
     public uint MaxTraceableBlocks { get; init; }
 

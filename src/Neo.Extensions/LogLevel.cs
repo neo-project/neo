@@ -9,7 +9,7 @@
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
-using static Akka.Event.LogLevel;
+using Serilog.Events;
 
 namespace Neo;
 
@@ -21,25 +21,25 @@ public enum LogLevel : byte
     /// <summary>
     /// The debug log level.
     /// </summary>
-    Debug = DebugLevel,
+    Debug = LogEventLevel.Debug,
 
     /// <summary>
     /// The information log level.
     /// </summary>
-    Info = InfoLevel,
+    Info = LogEventLevel.Information,
 
     /// <summary>
     /// The warning log level.
     /// </summary>
-    Warning = WarningLevel,
+    Warning = LogEventLevel.Warning,
 
     /// <summary>
     /// The error log level.
     /// </summary>
-    Error = ErrorLevel,
+    Error = LogEventLevel.Error,
 
     /// <summary>
     /// The fatal log level.
     /// </summary>
-    Fatal = Error + 1
+    Fatal = LogEventLevel.Fatal
 }

@@ -32,6 +32,20 @@ public class UT_Mnemonic
     }
 
     [TestMethod]
+    public void CreateWithBits()
+    {
+        Assert.ThrowsExactly<ArgumentException>(() => Mnemonic.Create(127));
+        Assert.ThrowsExactly<ArgumentException>(() => Mnemonic.Create(257));
+        Assert.ThrowsExactly<ArgumentException>(() => Mnemonic.Create(132));
+
+        Mnemonic mnemonic = Mnemonic.Create(128);
+        Assert.AreEqual(12, mnemonic.Count);
+
+        mnemonic = Mnemonic.Create(256);
+        Assert.AreEqual(24, mnemonic.Count);
+    }
+
+    [TestMethod]
     public void InvariantCulture_EqualsEnglish()
     {
         byte[] entropy = new byte[16];

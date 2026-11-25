@@ -75,12 +75,12 @@ public interface IReadOnlyStore<TKey, TValue> where TKey : class?
     /// Returns an enumerable collection of key/value pairs within the specified key range, ordered according to the
     /// specified seek direction.
     /// </summary>
-    /// <param name="start">The inclusive lower bound of the key range to search, represented as a byte array. Cannot be null.</param>
-    /// <param name="end">The exclusive upper bound of the key range to search, represented as a byte array. Cannot be null.</param>
+    /// <param name="start">The inclusive lower bound of the key range to search. Cannot be null.</param>
+    /// <param name="end">The exclusive upper bound of the key range to search. Cannot be null.</param>
     /// <param name="direction">The direction in which to enumerate the results. Use SeekDirection.Forward to enumerate in ascending key order,
     /// or SeekDirection.Backward for descending order. The default is SeekDirection.Forward.</param>
     /// <returns>An enumerable collection of key/value pairs whose keys are greater than or equal to <paramref name="start"/> and
     /// less than <paramref name="end"/>, ordered according to <paramref name="direction"/>. The collection is empty if
     /// no keys are found in the specified range.</returns>
-    public IEnumerable<(TKey Key, TValue Value)> FindRange(byte[] start, byte[] end, SeekDirection direction = SeekDirection.Forward);
+    public IEnumerable<(TKey Key, TValue Value)> FindRange(TKey start, TKey end, SeekDirection direction = SeekDirection.Forward);
 }

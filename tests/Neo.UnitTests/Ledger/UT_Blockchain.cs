@@ -129,7 +129,7 @@ public class UT_Blockchain : TestKit
         key?.CopyTo(buffer.AsSpan(1));
         return new()
         {
-            Id = NativeContract.NEO.Id,
+            Id = NativeContract.Governance.Id,
             Key = buffer
         };
     }

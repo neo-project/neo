@@ -361,7 +361,9 @@ public partial class ApplicationEngine : ExecutionEngine
 
     internal ContractTask CallFromNativeContractAsync(UInt160 callingScriptHash, UInt160 hash, string method, params object?[] args)
     {
-        var contextNew = CallContractInternal(hash, method, CallFlags.All, false, args.Select(Convert).ToArray());
+        StackItem[] argsObjects = args.Select(Convert).ToArray();
+        Diagnostic?.CallFromNative(hash, method, argsObjects);
+        var contextNew = CallContractInternal(hash, method, CallFlags.All, false, argsObjects);
         var state = contextNew.GetState<ExecutionContextState>();
         state.NativeCallingScriptHash = callingScriptHash;
         ContractTask task = new();
@@ -371,7 +373,9 @@ public partial class ApplicationEngine : ExecutionEngine
 
     internal ContractTask<T> CallFromNativeContractAsync<T>(UInt160 callingScriptHash, UInt160 hash, string method, params object?[] args)
     {
-        var contextNew = CallContractInternal(hash, method, CallFlags.All, true, args.Select(Convert).ToArray());
+        StackItem[] argsObjects = args.Select(Convert).ToArray();
+        Diagnostic?.CallFromNative(hash, method, argsObjects);
+        var contextNew = CallContractInternal(hash, method, CallFlags.All, true, argsObjects);
         var state = contextNew.GetState<ExecutionContextState>();
         state.NativeCallingScriptHash = callingScriptHash;
         ContractTask<T> task = new();
@@ -607,16 +611,19 @@ public partial class ApplicationEngine : ExecutionEngine
         }
     }
 
-    public override void Dispose()
+    protected override void Dispose(bool disposing)
     {
-        Diagnostic?.Disposed();
-        if (disposables != null)
+        if (disposing)
         {
-            foreach (var disposable in disposables)
-                disposable.Dispose();
-            disposables = null;
+            Diagnostic?.Disposed();
+            if (disposables != null)
+            {
+                foreach (var disposable in disposables)
+                    disposable.Dispose();
+                disposables = null;
+            }
         }
-        base.Dispose();
+        base.Dispose(disposing);
     }
 
     /// <summary>

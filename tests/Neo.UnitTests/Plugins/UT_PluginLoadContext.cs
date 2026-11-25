@@ -1,4 +1,4 @@
-// Copyright (C) 2015-2025 The Neo Project.
+// Copyright (C) 2015-2026 The Neo Project.
 //
 // UT_PluginLoadContext.cs file belongs to the neo project and is free
 // software distributed under the MIT software license, see the
@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Neo.Plugins;
+using System.Runtime.CompilerServices;
 using System.Runtime.Loader;
 
 namespace Neo.UnitTests.Plugins;
@@ -19,84 +20,62 @@ public class UT_PluginLoadContext
 {
     private const string FixtureAssemblyName = "Neo.PluginFixture";
     private const string DependencyAssemblyName = "Neo.PluginFixture.Dependency";
-    private static readonly Lock s_locker = new();
 
     [TestMethod]
-    public void TestLoadPluginsUsesIsolatedContext()
+    [DataRow(true)]
+    [DataRow(false)]
+    public void TestLoadPluginDirectoryUsesIsolatedContext(bool nameMatchesDirectory)
     {
-        lock (s_locker)
+        var directory = Directory.CreateTempSubdirectory("neo-plugin-");
+        WeakReference? contextReference = null;
+        try
         {
-            try
+            var assemblyName = nameMatchesDirectory ? directory.Name : FixtureAssemblyName;
+            var assemblyPath = Path.Combine(directory.FullName, assemblyName + ".dll");
+            File.Copy(Path.Combine(AppContext.BaseDirectory, FixtureAssemblyName + ".dll"), assemblyPath);
+            var dependencyPath = Path.Combine(directory.FullName, DependencyAssemblyName + ".dll");
+            File.Copy(Path.Combine(AppContext.BaseDirectory, DependencyAssemblyName + ".dll"), dependencyPath);
+
+            var hostAssemblyPath = typeof(Plugin).Assembly.Location;
+            File.Copy(hostAssemblyPath, Path.Combine(directory.FullName, Path.GetFileName(hostAssemblyPath)));
+
+            VerifyPlugin(directory.FullName, assemblyPath, dependencyPath, out contextReference);
+        }
+        finally
+        {
+            // The runtime releases assembly files when the collectible context is reclaimed.
+            for (var i = 0; i < 10 && contextReference?.IsAlive == true; i++)
             {
-                var pluginRoot = PrepareFixturePluginDirectory(out var pluginAssemblyPath);
-                Plugin.Plugins.Clear();
-
-                Plugin.LoadPlugins();
-
-                var plugin = Plugin.Plugins.SingleOrDefault(p =>
-                    string.Equals(p.GetType().Assembly.Location, pluginAssemblyPath, StringComparison.OrdinalIgnoreCase));
-                Assert.IsNotNull(plugin);
-
-                var loadContext = AssemblyLoadContext.GetLoadContext(plugin.GetType().Assembly);
-                Assert.IsNotNull(loadContext);
-                Assert.AreNotSame(AssemblyLoadContext.Default, loadContext);
-                Assert.AreEqual(pluginAssemblyPath, plugin.GetType().Assembly.Location);
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
+                GC.Collect();
             }
-            finally
-            {
-                Plugin.Plugins.Clear();
-            }
+
+            directory.Delete(recursive: true);
         }
     }
 
-    [TestMethod]
-    public void TestLoadPluginsResolvesDependencyFromPluginDirectory()
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static void VerifyPlugin(string directory, string assemblyPath, string dependencyPath, out WeakReference contextReference)
     {
-        lock (s_locker)
+        var context = Plugin.LoadPluginDirectory(directory, isCollectible: true);
+        Assert.IsNotNull(context);
+        contextReference = new WeakReference(context);
+
+        try
         {
-            try
-            {
-                var pluginRoot = PrepareFixturePluginDirectory(out _);
-                Plugin.Plugins.Clear();
-
-                Plugin.LoadPlugins();
-
-                var plugin = Plugin.Plugins.SingleOrDefault(p =>
-                    p.GetType().Assembly.Location.StartsWith(pluginRoot, StringComparison.OrdinalIgnoreCase));
-                Assert.IsNotNull(plugin);
-
-                var method = plugin.GetType().GetMethod("GetDependencyAssemblyLocation");
-                Assert.IsNotNull(method);
-
-                var location = method.Invoke(plugin, null) as string;
-                Assert.IsFalse(string.IsNullOrEmpty(location));
-                Assert.AreEqual(Path.Combine(pluginRoot, $"{DependencyAssemblyName}.dll"), location);
-            }
-            finally
-            {
-                Plugin.Plugins.Clear();
-            }
+            var plugin = Plugin.Plugins.Single(p => AssemblyLoadContext.GetLoadContext(p.GetType().Assembly) == context);
+            Assert.AreNotSame(AssemblyLoadContext.Default, context);
+            Assert.IsFalse(context.Assemblies.Any(a => a.GetName().Name == typeof(Plugin).Assembly.GetName().Name));
+            Assert.AreEqual(assemblyPath, plugin.GetType().Assembly.Location);
+            var method = plugin.GetType().GetMethod("GetDependencyAssemblyLocation");
+            Assert.IsNotNull(method);
+            Assert.AreEqual(dependencyPath, method.Invoke(plugin, null) as string);
         }
-    }
-
-    private static string PrepareFixturePluginDirectory(out string pluginAssemblyPath)
-    {
-        var pluginsDir = Plugin.PluginsDirectory;
-        Directory.CreateDirectory(pluginsDir);
-        var pluginDirectoryName = $"{FixtureAssemblyName}.{Guid.NewGuid():N}";
-        var pluginRoot = Path.Combine(pluginsDir, pluginDirectoryName);
-        Directory.CreateDirectory(pluginRoot);
-
-        var sourcePluginPath = Path.Combine(AppContext.BaseDirectory, $"{FixtureAssemblyName}.dll");
-        var sourceDependencyPath = Path.Combine(AppContext.BaseDirectory, $"{DependencyAssemblyName}.dll");
-
-        Assert.IsTrue(File.Exists(sourcePluginPath), $"Missing fixture plugin assembly: {sourcePluginPath}");
-        Assert.IsTrue(File.Exists(sourceDependencyPath), $"Missing fixture dependency assembly: {sourceDependencyPath}");
-
-        pluginAssemblyPath = Path.Combine(pluginRoot, $"{pluginDirectoryName}.dll");
-        File.Copy(sourcePluginPath, pluginAssemblyPath, true);
-        File.Copy(sourceDependencyPath, Path.Combine(pluginRoot, $"{DependencyAssemblyName}.dll"), true);
-
-        return pluginRoot;
+        finally
+        {
+            Plugin.Plugins.RemoveAll(p => AssemblyLoadContext.GetLoadContext(p.GetType().Assembly) == context);
+            context.Unload();
+        }
     }
 }

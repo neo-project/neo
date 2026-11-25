@@ -27,10 +27,6 @@ public delegate bool MessageReceivedHandler(NeoSystem system, Message message);
 partial class RemoteNode
 {
     private class Timer { }
-    private class PendingKnownHashesCollection : KeyedCollectionSlim<UInt256, Tuple<UInt256, DateTime>>
-    {
-        protected override UInt256 GetKeyForItem(Tuple<UInt256, DateTime> item) => item.Item1;
-    }
 
     public static event MessageReceivedHandler MessageReceived
     {
@@ -39,7 +35,7 @@ partial class RemoteNode
     }
 
     private static readonly List<MessageReceivedHandler> s_handlers = new();
-    private readonly PendingKnownHashesCollection _pendingKnownHashes = new();
+    private readonly HashSetCache<UInt256> _pendingKnownHashes;
     private readonly HashSetCache<UInt256> _knownHashes;
     private readonly HashSetCache<UInt256> _sentHashes;
     private bool _verack = false;
@@ -360,7 +356,7 @@ partial class RemoteNode
         }
         if (hashes.Length == 0) return;
         foreach (var hash in hashes)
-            _pendingKnownHashes.TryAdd(Tuple.Create(hash, TimeProvider.Current.UtcNow));
+            _pendingKnownHashes.TryAdd(hash);
         _system.TaskManager.Tell(new TaskManager.NewTasks(InvPayload.Create(payload.Type, hashes)));
     }
 
@@ -373,18 +369,39 @@ partial class RemoteNode
     private void OnPingMessageReceived(PingPayload payload)
     {
         UpdateLastBlockIndex(payload.LastBlockIndex);
+
+        // Refresh routing table liveness on inbound Ping.
+        _localNode.RoutingTable.MarkSuccess(Version!.NodeId);
+
         EnqueueMessage(Message.Create(MessageCommand.Pong, PingPayload.Create(NativeContract.Ledger.CurrentIndex(_system.StoreView), payload.Nonce)));
     }
 
     private void OnPongMessageReceived(PingPayload payload)
     {
         UpdateLastBlockIndex(payload.LastBlockIndex);
+
+        // DHT: Pong means our probe succeeded, strongly refresh liveness.
+        _localNode.RoutingTable.MarkSuccess(Version!.NodeId);
     }
 
     private void OnVerackMessageReceived()
     {
         _verack = true;
         _system.TaskManager.Tell(new TaskManager.Register(Version!));
+
+        // DHT: a verack means the handshake is complete and the remote identity (NodeId) has been verified.
+        // Feed the remote contact into the local RoutingTable.
+        var nodeId = Version!.NodeId;
+
+        // Record both:
+        //  - Observed endpoint: what we actually connected to (may be NAT-mapped; not necessarily dialable)
+        //  - Advertised endpoint: what the peer claims to be listening on (dialable candidate)
+        _localNode.RoutingTable.Update(nodeId, new OverlayEndpoint(TransportProtocol.Tcp, Remote, EndpointKind.Observed));
+        if (ListenerTcpPort > 0)
+            _localNode.RoutingTable.Update(nodeId, new OverlayEndpoint(TransportProtocol.Tcp, Listener, EndpointKind.Advertised));
+
+        _localNode.RoutingTable.MarkSuccess(nodeId);
+
         CheckMessageQueue();
     }
 
@@ -406,9 +423,9 @@ partial class RemoteNode
                     break;
             }
         }
-        if (!_localNode.AllowNewConnection(Self, this))
+        if (!_localNode.AllowNewConnection(Self, this, out DisconnectReason reason))
         {
-            Disconnect(true);
+            Disconnect(reason);
             return;
         }
         SendMessage(Message.Create(MessageCommand.Verack));
@@ -417,12 +434,7 @@ partial class RemoteNode
     private void OnTimer()
     {
         var oneMinuteAgo = TimeProvider.Current.UtcNow.AddMinutes(-1);
-        while (_pendingKnownHashes.Count > 0)
-        {
-            var (_, time) = _pendingKnownHashes.FirstOrDefault!;
-            if (oneMinuteAgo <= time) break;
-            if (!_pendingKnownHashes.RemoveFirst()) break;
-        }
+        _pendingKnownHashes.Prune(oneMinuteAgo);
         if (oneMinuteAgo > _lastSent)
             EnqueueMessage(Message.Create(MessageCommand.Ping, PingPayload.Create(NativeContract.Ledger.CurrentIndex(_system.StoreView))));
     }

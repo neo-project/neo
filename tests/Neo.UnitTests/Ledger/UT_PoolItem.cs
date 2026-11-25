@@ -18,7 +18,7 @@ namespace Neo.UnitTests.Ledger;
 [TestClass]
 public class UT_PoolItem
 {
-    private static readonly Random TestRandom = new(1337); // use fixed seed for guaranteed determinism
+    private static readonly ThreadLocal<Random> TestRandom = new(() => new Random(1337));// use fixed seed for guaranteed determinism
 
     [TestInitialize]
     public void TestSetup()
@@ -137,7 +137,7 @@ public class UT_PoolItem
     {
         var tx = new Transaction
         {
-            Nonce = (uint)TestRandom.Next(),
+            Nonce = (uint)TestRandom.Value!.Next(),
             Script = overrideScriptBytes ?? ReadOnlyMemory<byte>.Empty,
             NetworkFee = networkFee,
             Attributes = [],

@@ -74,6 +74,11 @@ public enum VerifyResult : byte
     Expired,
 
     /// <summary>
+    /// Indicates that the <see cref="Transaction"/> has a NotYetValid that is too far in the future.
+    /// </summary>
+    NotYetValid,
+
+    /// <summary>
     /// Indicates that the <see cref="Transaction"/> failed to verify due to insufficient fees.
     /// </summary>
     InsufficientFunds,

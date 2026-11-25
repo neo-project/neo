@@ -34,7 +34,6 @@ public abstract class Plugin : IDisposable
         Combine(GetDirectoryName(AppContext.BaseDirectory)!, "Plugins");
 
     private static readonly FileSystemWatcher? s_configWatcher;
-    private static readonly List<PluginLoadContext> s_pluginLoadContexts = [];
 
     /// <summary>
     /// Indicates the root path of the plugin.
@@ -120,77 +119,8 @@ public abstract class Plugin : IDisposable
         {
             case ".json":
             case ".dll":
-                Utility.Log(nameof(Plugin), LogLevel.Warning,
-                    $"File {e.Name} is {e.ChangeType}, please restart node.");
+                Logs.RuntimeLogger.Warning("File {File} is {ChangeType}, please restart node.", e.Name, e.ChangeType);
                 break;
-        }
-    }
-
-    private sealed class PluginLoadContext : AssemblyLoadContext
-    {
-        private readonly AssemblyDependencyResolver _resolver;
-        private readonly string _pluginDirectory;
-        private readonly HashSet<string> _sharedAssemblies;
-
-        public PluginLoadContext(string mainAssemblyPath)
-            : base(isCollectible: false)
-        {
-            _resolver = new AssemblyDependencyResolver(mainAssemblyPath);
-            _pluginDirectory = GetDirectoryName(mainAssemblyPath)!;
-            _sharedAssemblies = new(StringComparer.OrdinalIgnoreCase)
-            {
-                typeof(Plugin).Assembly.GetName().Name!
-            };
-        }
-
-        protected override Assembly? Load(AssemblyName assemblyName)
-        {
-            if (_sharedAssemblies.Contains(assemblyName.Name!))
-                return Default.LoadFromAssemblyName(assemblyName);
-
-            var path = _resolver.ResolveAssemblyToPath(assemblyName);
-            if (path != null)
-                return LoadFromAssemblyPath(path);
-
-            if (assemblyName.Name is null)
-                return null;
-
-            var localPath = Combine(_pluginDirectory, $"{assemblyName.Name}.dll");
-            return File.Exists(localPath) ? LoadFromAssemblyPath(localPath) : null;
-        }
-
-        protected override IntPtr LoadUnmanagedDll(string unmanagedDllName)
-        {
-            var path = _resolver.ResolveUnmanagedDllToPath(unmanagedDllName);
-            if (path != null)
-                return LoadUnmanagedDllFromPath(path);
-
-            var localPath = Combine(_pluginDirectory, unmanagedDllName);
-            if (File.Exists(localPath))
-                return LoadUnmanagedDllFromPath(localPath);
-
-            if (OperatingSystem.IsWindows())
-            {
-                localPath = Combine(_pluginDirectory, $"{unmanagedDllName}.dll");
-                if (File.Exists(localPath))
-                    return LoadUnmanagedDllFromPath(localPath);
-            }
-
-            if (OperatingSystem.IsLinux())
-            {
-                localPath = Combine(_pluginDirectory, $"lib{unmanagedDllName}.so");
-                if (File.Exists(localPath))
-                    return LoadUnmanagedDllFromPath(localPath);
-            }
-
-            if (OperatingSystem.IsMacOS())
-            {
-                localPath = Combine(_pluginDirectory, $"lib{unmanagedDllName}.dylib");
-                if (File.Exists(localPath))
-                    return LoadUnmanagedDllFromPath(localPath);
-            }
-
-            return IntPtr.Zero;
         }
     }
 
@@ -212,7 +142,7 @@ public abstract class Plugin : IDisposable
             .GetSection("PluginConfiguration");
     }
 
-    private static int LoadPlugin(Assembly assembly)
+    private static void LoadPlugin(Assembly assembly)
     {
         Type[] exportedTypes;
 
@@ -220,15 +150,14 @@ public abstract class Plugin : IDisposable
 
         try
         {
-            exportedTypes = (Type[])assembly.ExportedTypes;
+            exportedTypes = assembly.GetExportedTypes();
         }
         catch (Exception ex)
         {
-            Utility.Log(nameof(Plugin), LogLevel.Error, $"Failed to load plugin assembly {assemblyName}: {ex}");
+            Logs.RuntimeLogger.Error(ex, "Failed to load plugin assembly {Assembly}", assemblyName);
             throw;
         }
 
-        var loaded = 0;
         foreach (var type in exportedTypes)
         {
             if (!type.IsSubclassOf(typeof(Plugin))) continue;
@@ -240,71 +169,59 @@ public abstract class Plugin : IDisposable
             try
             {
                 constructor.Invoke(null);
-                loaded++;
             }
             catch (Exception ex)
             {
-                Utility.Log(nameof(Plugin), LogLevel.Error, $"Failed to initialize plugin type {type.FullName} of {assemblyName}: {ex}");
+                Logs.RuntimeLogger.Error(ex, "Failed to initialize plugin type {Type} of {Assembly}", type.FullName, assemblyName);
             }
         }
-
-        return loaded;
     }
 
     internal static void LoadPlugins()
     {
         if (!Directory.Exists(PluginsDirectory)) return;
-        foreach (var rootPath in Directory.GetDirectories(PluginsDirectory))
-        {
-            var pluginName = new DirectoryInfo(rootPath).Name;
-            var mainAssemblyPath = Combine(rootPath, $"{pluginName}.dll");
-            if (!File.Exists(mainAssemblyPath))
-            {
-                Utility.Log(nameof(Plugin), LogLevel.Warning, $"Plugin assembly not found: {mainAssemblyPath}");
-                continue;
-            }
 
+        var preloadedAssemblies = AssemblyLoadContext.Default.Assemblies
+            .Where(p => p.FullName?.StartsWith("Neo", StringComparison.InvariantCultureIgnoreCase) == true)
+            .ToArray();
+        foreach (var assembly in preloadedAssemblies)
+            LoadPlugin(assembly);
+
+        foreach (var directory in Directory.EnumerateDirectories(PluginsDirectory))
+        {
             try
             {
-                var loadContext = new PluginLoadContext(mainAssemblyPath);
-                s_pluginLoadContexts.Add(loadContext);
-                var assembly = loadContext.LoadFromAssemblyPath(mainAssemblyPath);
-                var loaded = LoadPlugin(assembly);
-                if (loaded > 0)
-                    continue;
-
-                foreach (var filename in Directory.EnumerateFiles(rootPath, "*.dll", SearchOption.TopDirectoryOnly))
-                {
-                    if (string.Equals(filename, mainAssemblyPath, StringComparison.OrdinalIgnoreCase))
-                        continue;
-
-                    try
-                    {
-                        assembly = loadContext.LoadFromAssemblyPath(filename);
-                        if (LoadPlugin(assembly) > 0)
-                            break;
-                    }
-                    catch (Exception ex)
-                    {
-                        Utility.Log(nameof(Plugin), LogLevel.Error, $"Failed to load plugin assembly file {filename}: {ex}");
-                    }
-                }
+                LoadPluginDirectory(directory);
             }
             catch (Exception ex)
             {
-                Utility.Log(nameof(Plugin), LogLevel.Error, $"Failed to load plugin assembly file {mainAssemblyPath}: {ex}");
+                Logs.RuntimeLogger.Error(ex, "Failed to load plugins from {Directory}", directory);
             }
         }
     }
 
-    /// <summary>
-    /// Write a log for the plugin.
-    /// </summary>
-    /// <param name="message">The message of the log.</param>
-    /// <param name="level">The level of the log.</param>
-    protected void Log(object message, LogLevel level = LogLevel.Info)
+    internal static PluginLoadContext? LoadPluginDirectory(string directory, bool isCollectible = false)
     {
-        Utility.Log($"{nameof(Plugin)}:{Name}", level, message);
+        var paths = Directory.GetFiles(directory, "*.dll", SearchOption.TopDirectoryOnly);
+        if (paths.Length == 0) return null;
+
+        var namedAssembly = Combine(directory, new DirectoryInfo(directory).Name + ".dll");
+        var mainAssembly = File.Exists(namedAssembly) ? namedAssembly : paths[0];
+        var context = new PluginLoadContext(mainAssembly, isCollectible);
+        foreach (var path in paths)
+        {
+            try
+            {
+                if (context.LoadPluginAssembly(path) is { } assembly)
+                    LoadPlugin(assembly);
+            }
+            catch (Exception ex)
+            {
+                Logs.RuntimeLogger.Error(ex, "Failed to load plugin assembly file {File}", path);
+            }
+        }
+
+        return context;
     }
 
     /// <summary>
@@ -333,10 +250,7 @@ public abstract class Plugin : IDisposable
     {
         foreach (var plugin in Plugins)
         {
-            if (plugin.IsStopped)
-            {
-                continue;
-            }
+            if (plugin.IsStopped) continue;
 
             bool result;
             try
@@ -345,7 +259,7 @@ public abstract class Plugin : IDisposable
             }
             catch (Exception ex)
             {
-                Utility.Log(nameof(Plugin), LogLevel.Error, ex);
+                Logs.RuntimeLogger.Error(ex, "Failed to send message to plugin {Plugin}", plugin.Name);
 
                 switch (plugin.ExceptionPolicy)
                 {

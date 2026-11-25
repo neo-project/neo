@@ -86,7 +86,7 @@ public class UT_PolicyContract
         Assert.AreEqual(0, ret.GetInteger());
 
         // With signature, wrong value
-        UInt160 committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot);
+        UInt160 committeeMultiSigAddr = NativeContract.Governance.GetCommitteeAddress(snapshot);
         Assert.ThrowsExactly<ArgumentOutOfRangeException>(() =>
         {
             NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), block,
@@ -149,7 +149,7 @@ public class UT_PolicyContract
         Assert.AreEqual(1000, ret.GetInteger());
 
         // With signature
-        UInt160 committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot);
+        UInt160 committeeMultiSigAddr = NativeContract.Governance.GetCommitteeAddress(snapshot);
         ret = NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), block,
             "setFeePerByte", new ContractParameter(ContractParameterType.Integer) { Value = 1 });
         Assert.IsInstanceOfType<Null>(ret);
@@ -192,7 +192,7 @@ public class UT_PolicyContract
         Assert.AreEqual(30, ret.GetInteger());
 
         // With signature, wrong value
-        UInt160 committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot);
+        UInt160 committeeMultiSigAddr = NativeContract.Governance.GetCommitteeAddress(snapshot);
         Assert.ThrowsExactly<ArgumentOutOfRangeException>(() =>
         {
             NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), block,
@@ -246,7 +246,7 @@ public class UT_PolicyContract
         Assert.AreEqual(100000, ret.GetInteger());
 
         // With signature, wrong value
-        UInt160 committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot);
+        UInt160 committeeMultiSigAddr = NativeContract.Governance.GetCommitteeAddress(snapshot);
         Assert.ThrowsExactly<ArgumentOutOfRangeException>(() =>
         {
             NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), block,
@@ -298,7 +298,7 @@ public class UT_PolicyContract
 
         // With signature
 
-        UInt160 committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot);
+        UInt160 committeeMultiSigAddr = NativeContract.Governance.GetCommitteeAddress(snapshot);
         var ret = NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), block,
           "blockAccount",
           new ContractParameter(ContractParameterType.ByteArray) { Value = UInt160.Parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01").ToArray() });
@@ -346,7 +346,7 @@ public class UT_PolicyContract
             },
             Transactions = []
         };
-        UInt160 committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot);
+        UInt160 committeeMultiSigAddr = NativeContract.Governance.GetCommitteeAddress(snapshot);
 
         // Block without signature
 
@@ -406,7 +406,7 @@ public class UT_PolicyContract
             },
             Transactions = []
         };
-        UInt160 committeeMultiSigAddr = NativeContract.NEO.GetCommitteeAddress(snapshot);
+        UInt160 committeeMultiSigAddr = NativeContract.Governance.GetCommitteeAddress(snapshot);
 
         var ret = NativeContract.Policy.Call(snapshot, new Nep17NativeContractExtensions.ManualWitness(committeeMultiSigAddr), block,
             "blockAccount", new ContractParameter(ContractParameterType.Hash160) { Value = UInt160.Zero });
@@ -437,7 +437,7 @@ public class UT_PolicyContract
         byte[] script;
         using (var sb = new ScriptBuilder())
         {
-            sb.EmitDynamicCall(NativeContract.NEO.Hash, "balanceOf", NativeContract.NEO.GetCommitteeAddress(_snapshotCache.CloneCache()));
+            sb.EmitDynamicCall(NativeContract.TokenManagement.Hash, "balanceOf", NativeContract.Governance.NeoTokenId, NativeContract.Governance.GetCommitteeAddress(_snapshotCache.CloneCache()));
             script = sb.ToArray();
         }
 
@@ -447,15 +447,15 @@ public class UT_PolicyContract
 
         Assert.AreEqual(VMState.HALT, engine.Execute());
         Assert.AreEqual(0, engine.ResultStack.Pop().GetInteger());
-        Assert.AreEqual(2028330, engine.FeeConsumed);
-        Assert.AreEqual(0, NativeContract.Policy.CleanWhitelist(engine, NativeContract.NEO.GetContractState(ProtocolSettings.Default, 0)));
+        Assert.AreEqual(2028570, engine.FeeConsumed);
+        Assert.AreEqual(0, NativeContract.Policy.CleanWhitelist(engine, NativeContract.TokenManagement.GetContractState(ProtocolSettings.Default, 0)));
         Assert.IsEmpty(engine.Notifications);
 
         // Whitelist
 
         engine = CreateEngineWithCommitteeSigner(snapshotCache, script);
 
-        NativeContract.Policy.SetWhitelistFeeContract(engine, NativeContract.NEO.Hash, "balanceOf", 1, 0);
+        NativeContract.Policy.SetWhitelistFeeContract(engine, NativeContract.TokenManagement.Hash, "balanceOf", 2, 0);
         engine.SnapshotCache.Commit();
 
         // Whitelisted
@@ -463,14 +463,14 @@ public class UT_PolicyContract
         Assert.HasCount(1, engine.Notifications); // Whitelist changed
         Assert.AreEqual(VMState.HALT, engine.Execute());
         Assert.AreEqual(0, engine.ResultStack.Pop().GetInteger());
-        Assert.AreEqual(1045290, engine.FeeConsumed);
+        Assert.AreEqual(1045530, engine.FeeConsumed);
 
         // Clean white list
 
         engine.SnapshotCache.Commit();
         engine = CreateEngineWithCommitteeSigner(snapshotCache, script);
 
-        Assert.AreEqual(1, NativeContract.Policy.CleanWhitelist(engine, NativeContract.NEO.GetContractState(ProtocolSettings.Default, 0)));
+        Assert.AreEqual(1, NativeContract.Policy.CleanWhitelist(engine, NativeContract.TokenManagement.GetContractState(ProtocolSettings.Default, 0)));
         Assert.HasCount(1, engine.Notifications); // Whitelist deleted
     }
 
@@ -523,7 +523,7 @@ public class UT_PolicyContract
     {
         var snapshotCache = _snapshotCache.CloneCache();
         var engine = CreateEngineWithCommitteeSigner(snapshotCache);
-        Assert.ThrowsExactly<InvalidOperationException>(() => NativeContract.Policy.SetWhitelistFeeContract(engine, NativeContract.NEO.Hash, "noexists", 0, 10));
+        Assert.ThrowsExactly<InvalidOperationException>(() => NativeContract.Policy.SetWhitelistFeeContract(engine, NativeContract.Governance.Hash, "noexists", 0, 10));
     }
 
     [TestMethod]
@@ -531,8 +531,8 @@ public class UT_PolicyContract
     {
         var snapshotCache = _snapshotCache.CloneCache();
         var engine = CreateEngineWithCommitteeSigner(snapshotCache);
-        // transfer exists with 4 args
-        Assert.ThrowsExactly<InvalidOperationException>(() => NativeContract.Policy.SetWhitelistFeeContract(engine, NativeContract.NEO.Hash, "transfer", 0, 10));
+        // transfer exists with 5 args, so passing 4 args should throw InvalidOperationException
+        Assert.ThrowsExactly<InvalidOperationException>(() => NativeContract.Policy.SetWhitelistFeeContract(engine, NativeContract.TokenManagement.Hash, "transfer", 4, 10));
     }
 
     [TestMethod]
@@ -553,7 +553,7 @@ public class UT_PolicyContract
         };
 
         using var engine = ApplicationEngine.Create(TriggerType.Application, tx, snapshotCache, settings: TestProtocolSettings.Default);
-        Assert.ThrowsExactly<InvalidOperationException>(() => NativeContract.Policy.SetWhitelistFeeContract(engine, NativeContract.NEO.Hash, "transfer", 4, 10));
+        Assert.ThrowsExactly<InvalidOperationException>(() => NativeContract.Policy.SetWhitelistFeeContract(engine, NativeContract.TokenManagement.Hash, "transfer", 5, 10));
     }
 
     [TestMethod]
@@ -561,20 +561,26 @@ public class UT_PolicyContract
     {
         var snapshotCache = _snapshotCache.CloneCache();
         var engine = CreateEngineWithCommitteeSigner(snapshotCache);
-        NativeContract.Policy.SetWhitelistFeeContract(engine, NativeContract.NEO.Hash, "transfer", 4, 123_456);
+        NativeContract.Policy.SetWhitelistFeeContract(engine, NativeContract.TokenManagement.Hash, "transfer", 5, 123_456);
 
-        var method = NativeContract.NEO.GetContractState(ProtocolSettings.Default, 0)
+        var method = NativeContract.TokenManagement.GetContractState(ProtocolSettings.Default, 0)
                 .Manifest.Abi.Methods.Where(u => u.Name == "balanceOf").Single();
 
-        NativeContract.Policy.SetWhitelistFeeContract(engine, NativeContract.NEO.Hash, method.Name, method.Parameters.Length, 123_456);
-        Assert.IsTrue(NativeContract.Policy.IsWhitelistFeeContract(engine.SnapshotCache, NativeContract.NEO.Hash, method, out var fixedFee));
+        NativeContract.Policy.SetWhitelistFeeContract(engine, NativeContract.TokenManagement.Hash, method.Name, method.Parameters.Length, 123_456);
+        Assert.IsTrue(NativeContract.Policy.IsWhitelistFeeContract(engine.SnapshotCache, NativeContract.TokenManagement.Hash, method, out var fixedFee));
         Assert.AreEqual(123_456, fixedFee);
+
+        // Verify transfer method is whitelisted
+        var transferMethod = NativeContract.TokenManagement.GetContractState(ProtocolSettings.Default, 0)
+                .Manifest.Abi.Methods.Where(u => u.Name == "transfer" && u.Parameters.Length == 5).Single();
+        Assert.IsTrue(NativeContract.Policy.IsWhitelistFeeContract(engine.SnapshotCache, NativeContract.TokenManagement.Hash, transferMethod, out var transferFixedFee));
+        Assert.AreEqual(123_456, transferFixedFee);
     }
 
     private static ApplicationEngine CreateEngineWithCommitteeSigner(DataCache snapshotCache, byte[]? script = null)
     {
         // Get committe public keys and calculate m
-        var committee = NativeContract.NEO.GetCommittee(snapshotCache);
+        var committee = NativeContract.Governance.GetCommittee(snapshotCache);
         var m = (committee.Length / 2) + 1;
         var committeeContract = Contract.CreateMultiSigContract(m, committee);
 

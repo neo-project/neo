@@ -230,7 +230,7 @@ public sealed class PolicyContract : NativeContract
         var key = CreateStorageKey(Prefix_BlockedAccount, account);
         if (engine.SnapshotCache.Contains(key)) return false;
 
-        await NEO.VoteInternal(engine, account, null);
+        await Governance.VoteInternal(engine, account, null);
 
         engine.SnapshotCache.Add(key, new StorageItem(Array.Empty<byte>()));
         return true;

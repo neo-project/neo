@@ -29,7 +29,7 @@ class NEP6WalletFactory : IWalletFactory
         return wallet;
     }
 
-    public Wallet OpenWallet(string path, string password, ProtocolSettings settings)
+    public Wallet OpenWallet(string path, string? password, ProtocolSettings settings)
     {
         return new NEP6Wallet(path, password, settings);
     }

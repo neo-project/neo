@@ -36,9 +36,9 @@ public ref struct MemoryReader
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public readonly byte Peek()
+    public readonly int Peek()
     {
-        EnsurePosition(1);
+        if (_pos >= _span.Length) return -1;
         return _span[_pos];
     }
 

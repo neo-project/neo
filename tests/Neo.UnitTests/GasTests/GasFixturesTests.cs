@@ -79,7 +79,7 @@ public class GasFixturesTests
         {
             if (fixture.Signature.SignedByCommittee)
             {
-                signatures.Add(NativeContract.NEO.GetCommitteeAddress(snapshot));
+                signatures.Add(NativeContract.Governance.GetCommitteeAddress(snapshot));
             }
         }
 
