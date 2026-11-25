@@ -105,7 +105,7 @@ namespace Neo.SmartContract.Native
             if (request == null) throw new ArgumentException("Oracle request not found");
             if (engine.IsHardforkEnabled(Hardfork.HF_Iara))
             {
-                Transaction original = Ledger.GetTransaction(engine.SnapshotCache, request.OriginalTxid)
+                var original = Ledger.GetTransaction(engine.SnapshotCache, request.OriginalTxid)
                     ?? throw new InvalidOperationException("Original Oracle request transaction not found");
                 if (original.Signers.Any(p => Policy.IsBlocked(engine.SnapshotCache, p.Account)))
                     throw new InvalidOperationException("An original Oracle request signer is blocked");
