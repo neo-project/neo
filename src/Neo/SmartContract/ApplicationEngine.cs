@@ -81,7 +81,6 @@ namespace Neo.SmartContract
         private readonly Dictionary<ExecutionContext, ContractTaskAwaiter> contractTasks = new();
         // In the unit of picoGAS, 1 picoGAS = 1e-12 GAS
         private readonly BigInteger _execFeeFactor;
-        private readonly bool _isHuyaoEnabled;
         // In the unit of datoshi, 1 datoshi = 1e-8 GAS
         internal readonly uint StoragePrice;
         private byte[] nonceData;
@@ -268,8 +267,6 @@ namespace Neo.SmartContract
             nonceData = container is Transaction tx ? tx.Hash.ToArray()[..16] : new byte[16];
 
             var persistingIndex = GetPersistingIndex();
-            _isHuyaoEnabled = settings?.IsHardforkEnabled(Hardfork.HF_Huyao, persistingIndex) ?? false;
-
             if (snapshotCache is null || persistingIndex == 0)
             {
                 // Policy storage isn't available yet (genesis or no snapshot): fall back to the defaults.
@@ -294,7 +291,7 @@ namespace Neo.SmartContract
                 StoragePrice = NativeContract.Policy.GetStoragePrice(snapshotCache);
             }
 
-            if (!_isHuyaoEnabled)
+            if (settings == null || !settings.IsHardforkEnabled(Hardfork.HF_Huyao, persistingIndex))
                 _preExecuteInstruction = instruction =>
                 {
                     _whitelisted = CurrentContext?.GetState<ExecutionContextState>()?.WhiteListed ?? false;
@@ -838,9 +835,7 @@ namespace Neo.SmartContract
         protected override void ContextUnloaded(ExecutionContext context)
         {
             base.ContextUnloaded(context);
-            if (_isHuyaoEnabled
-                ? context.Script != CurrentContext?.Script
-                : !ReferenceEquals(context.Script, CurrentContext?.Script))
+            if (!ReferenceEquals(context.Script, CurrentContext?.Script))
             {
                 ExecutionContextState state = context.GetState<ExecutionContextState>();
                 if (UncaughtException is null)

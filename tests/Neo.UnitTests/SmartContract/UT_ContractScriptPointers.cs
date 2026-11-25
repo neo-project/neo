@@ -110,7 +110,7 @@ namespace Neo.UnitTests.SmartContract
         [TestMethod]
         [DataRow(false)]
         [DataRow(true)]
-        public void ContextUnloadedRespectsHuyaoScriptEquality(bool huyaoEnabled)
+        public void ContextUnloadedCommitsSeparateScriptInstances(bool huyaoEnabled)
         {
             using var snapshot = TestBlockchain.GetTestSnapshotCache();
             using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshot,
@@ -123,7 +123,7 @@ namespace Neo.UnitTests.SmartContract
             var key = StorageKey.Create(NativeContract.Policy.Id, 200, new byte[] { 1 });
             inner.GetState<ExecutionContextState>().SnapshotCache!.Add(key, new StorageItem(1u));
             Assert.AreEqual(VMState.HALT, engine.Execute());
-            Assert.AreEqual(!huyaoEnabled, snapshot.TryGet(key) is not null);
+            Assert.IsNotNull(snapshot.TryGet(key));
         }
 
         [TestMethod]
