@@ -28,6 +28,7 @@ namespace Neo.Extensions
         /// This value is twice the size of ExecutionEngineLimits.MaxItemSize.
         /// </summary>
         public const int MaxToJsonSize = ushort.MaxValue * 4;
+        // JToken.Parse uses a maximum depth of 64 JSON objects and arrays by default.
         private const int MaxToJsonDepth = 64;
 
         /// <summary>
@@ -43,13 +44,13 @@ namespace Neo.Extensions
 
         public static JObject ToJson(this StackItem item, HashSet<StackItem>? context, ref int maxSize)
         {
-            return ToJson(item, context, ref maxSize, 0);
+            return ToJson(item, context, ref maxSize, 1);
         }
 
-        private static JObject ToJson(StackItem item, HashSet<StackItem>? context, ref int maxSize, int depth)
+        private static JObject ToJson(StackItem item, HashSet<StackItem>? context, ref int maxSize, int jsonDepth)
         {
-            if (depth > MaxToJsonDepth)
-                throw new InvalidOperationException("Stack item nesting exceeds the supported depth.");
+            if (jsonDepth > MaxToJsonDepth || (item is Array or Map) && jsonDepth == MaxToJsonDepth)
+                throw new InvalidOperationException("Stack item JSON nesting exceeds the supported depth.");
 
             JObject json = new()
             {
@@ -66,7 +67,7 @@ namespace Neo.Extensions
                         maxSize -= 2/*[]*/+ Math.Max(0, (array.Count - 1))/*,*/;
                         JArray a = [];
                         foreach (var stackItem in array)
-                            a.Add(ToJson(stackItem, context, ref maxSize, depth + 1));
+                            a.Add(ToJson(stackItem, context, ref maxSize, jsonDepth + 2));
                         value = a;
                         if (!context.Remove(array)) throw new InvalidOperationException("Circular reference.");
                         break;
@@ -104,8 +105,8 @@ namespace Neo.Extensions
                             maxSize -= 17/*{"key":,"value":}*/;
                             JObject i = new()
                             {
-                                ["key"] = ToJson(k, context, ref maxSize, depth + 1),
-                                ["value"] = ToJson(v, context, ref maxSize, depth + 1)
+                                ["key"] = ToJson(k, context, ref maxSize, jsonDepth + 3),
+                                ["value"] = ToJson(v, context, ref maxSize, jsonDepth + 3)
                             };
                             a.Add(i);
                         }
