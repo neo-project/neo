@@ -262,8 +262,12 @@ namespace Neo.UnitTests.SmartContract.Native
             {
                 Header = new Header
                 {
-                    Index = 1, Timestamp = 1, PrevHash = UInt256.Zero,
-                    MerkleRoot = UInt256.Zero, NextConsensus = UInt160.Zero, Witness = Witness.Empty
+                    Index = 1,
+                    Timestamp = 1,
+                    PrevHash = UInt256.Zero,
+                    MerkleRoot = UInt256.Zero,
+                    NextConsensus = UInt160.Zero,
+                    Witness = Witness.Empty
                 },
                 Transactions = [responseTx]
             };
