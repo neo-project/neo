@@ -5,6 +5,9 @@
 // accompanying file LICENSE in the main directory of the
 // repository or http://www.opensource.org/licenses/mit-license.php
 // for more details.
+//
+// Redistribution and use in source and binary forms with or without
+// modifications are permitted.
 
 using Akka.Actor;
 using Akka.TestKit.MsTest;
