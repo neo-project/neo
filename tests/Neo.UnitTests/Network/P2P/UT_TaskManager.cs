@@ -1201,14 +1201,14 @@ namespace Neo.UnitTests.Network.P2P
                 session.IndexTasks[key] = TimeProvider.Current.UtcNow.AddMinutes(-5);
         }
 
-        // X holds [h+1, h+4] and never answers, Q holds [h+5, h+150] and delivers all of it.
+        // X holds [h+1, h+4] and never answers. Q requests up to its session limit and receives [h+5, h+150].
         private (Akka.TestKit.TestProbe x, Akka.TestKit.TestProbe q) SetupGapScenario(Akka.TestKit.TestActorRef<TaskManager> taskManager, uint height)
         {
             GetGlobalInvTasks(taskManager)[UInt256.Zero] = 3; // Isolate index scheduling from header requests.
             var x = RegisterPeer(taskManager, height + 4);
             Assert.AreEqual(4, ExpectBlockRequest(x, height + 1).Count);
             var q = RegisterPeer(taskManager, height + 150);
-            Assert.AreEqual(146, ExpectBlockRequest(q, height + 5).Count);
+            Assert.AreEqual(TaskSession.MaxTasks, ExpectBlockRequest(q, height + 5).Count);
 
             for (uint i = 5; i <= 150; i++)
                 q.Send(taskManager, CreateBlock(height + i));

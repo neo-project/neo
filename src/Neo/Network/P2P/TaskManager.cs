@@ -110,28 +110,34 @@ namespace Neo.Network.P2P
             }
 
             HashSet<UInt256> hashes = [.. payload.Hashes];
-            // Remove all previously processed knownHashes from the list that is being requested
             hashes.Remove(_knownHashes);
-            // Add to AvailableTasks the ones, of type InventoryType.Block, that are global (already under process by other sessions)
-            if (payload.Type == InventoryType.Block)
-                session.AvailableTasks.UnionWith(hashes.Where(p => globalInvTasks.ContainsKey(p) && !session.InvTasks.ContainsKey(p)));
+            HashSet<UInt256> requested = new();
+            foreach (UInt256 hash in hashes)
+            {
+                if (session.InvTasks.ContainsKey(hash) || session.AvailableTasks.Contains(hash))
+                    continue;
 
-            // Remove those that are already in process by other sessions
-            hashes.Remove(globalInvTasks);
-            if (hashes.Count == 0)
+                if (globalInvTasks.ContainsKey(hash))
+                {
+                    // Blocks requested from another peer can be retried later, within this session's budget.
+                    if (payload.Type == InventoryType.Block && !session.HasTooManyTasks)
+                        session.AvailableTasks.Add(hash);
+                }
+                else if (!session.HasTooManyTasks)
+                {
+                    IncrementGlobalTask(hash);
+                    session.InvTasks[hash] = TimeProvider.Current.UtcNow;
+                    requested.Add(hash);
+                }
+            }
+
+            if (requested.Count == 0)
             {
                 RequestTasks(Sender, session);
                 return;
             }
 
-            // Update globalTasks with the ones that will be requested within this current session
-            foreach (UInt256 hash in hashes)
-            {
-                IncrementGlobalTask(hash);
-                session.InvTasks[hash] = TimeProvider.Current.UtcNow;
-            }
-
-            foreach (InvPayload group in InvPayload.CreateGroup(payload.Type, hashes))
+            foreach (InvPayload group in InvPayload.CreateGroup(payload.Type, requested))
                 Sender.Tell(Message.Create(MessageCommand.GetData, group));
         }
 
@@ -400,7 +406,7 @@ namespace Neo.Network.P2P
 
         private void RequestTasks(IActorRef remoteNode, TaskSession session)
         {
-            if (session.HasTooManyTasks) return;
+            if (session.PendingTaskCount >= TaskSession.MaxTasks) return;
 
             var snapshot = system.StoreView;
 
@@ -411,8 +417,14 @@ namespace Neo.Network.P2P
                 session.AvailableTasks.Remove(session.InvTasks);
                 // Search any similar hash that is on Singleton's knowledge, which means, on the way or already processed
                 session.AvailableTasks.RemoveWhere(p => NativeContract.Ledger.ContainsBlock(snapshot, p));
-                HashSet<UInt256> hashes = [.. session.AvailableTasks];
-                hashes.RemoveWhere(p => !IncrementGlobalTask(p));
+                HashSet<UInt256> hashes = new();
+                foreach (UInt256 hash in session.AvailableTasks)
+                {
+                    if (hashes.Count >= TaskSession.MaxTasks - session.PendingTaskCount)
+                        break;
+                    if (IncrementGlobalTask(hash))
+                        hashes.Add(hash);
+                }
                 if (hashes.Count > 0)
                 {
                     session.AvailableTasks.Remove(hashes);
@@ -431,7 +443,8 @@ namespace Neo.Network.P2P
             // When the number of AvailableTasks is no more than 0,
             // no pending tasks of InventoryType.Block, it should process pending the tasks of headers
             // If not HeaderTask pending to be processed it should ask for more Blocks
-            if (!session.InvTasks.ContainsKey(HeaderTaskHash) &&
+            if (session.TaskCount < TaskSession.MaxTasks &&
+                !session.InvTasks.ContainsKey(HeaderTaskHash) &&
                 (!HasHeaderTask || globalInvTasks[HeaderTaskHash] < MaxConcurrentTasks) &&
                 headerHeight < session.LastBlockIndex &&
                 !system.HeaderCache.Full)
@@ -463,7 +476,11 @@ namespace Neo.Network.P2P
                     endHeight = next;
                 }
 
-                uint count = Math.Min(endHeight - startHeight + 1, InvPayload.MaxHashesCount);
+                uint count = Math.Min(endHeight - startHeight + 1,
+                    (uint)Math.Min(InvPayload.MaxHashesCount, TaskSession.MaxTasks - session.TaskCount));
+                // A full session cannot track another index task. Count zero is invalid on the wire,
+                // so wait for a task to complete or expire before requesting more blocks.
+                if (count == 0) return;
                 for (uint i = 0; i < count; i++)
                 {
                     session.IndexTasks[startHeight + i] = TimeProvider.Current.UtcNow;
