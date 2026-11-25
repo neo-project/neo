@@ -32,7 +32,7 @@ namespace Neo.Network.P2P
     {
         internal record StartProtocol;
         internal record Relay(IInventory Inventory);
-        internal record RestartInventory(UInt256 Hash);
+        internal record RestartInventory(IReadOnlyList<UInt256> Hashes);
 
         internal const int MaxQueuedMessages = 1024;
         internal const long MaxQueuedBytes = 256L * 1024 * 1024; // 256 MiB per connection, shared by both queues.
@@ -214,7 +214,7 @@ namespace Neo.Network.P2P
                     OnRelay(relay.Inventory);
                     break;
                 case RestartInventory restart:
-                    OnRestartInventory(restart.Hash);
+                    OnRestartInventory(restart.Hashes);
                     break;
                 case StartProtocol _:
                     OnStartProtocol();

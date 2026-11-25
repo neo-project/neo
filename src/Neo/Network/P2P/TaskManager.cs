@@ -235,8 +235,7 @@ namespace Neo.Network.P2P
                     session.ReceivedBlockHashes.Remove(index);
                 }
 
-                foreach (var hash in payload.Hashes)
-                    source.Tell(new RemoteNode.RestartInventory(hash));
+                source.Tell(new RemoteNode.RestartInventory(payload.Hashes));
                 return;
             }
 

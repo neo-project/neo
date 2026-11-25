@@ -333,16 +333,25 @@ namespace Neo.UnitTests.Network.P2P
             var known = (HashSetCache<UInt256>)typeof(RemoteNode)
                 .GetField("_knownHashes", BindingFlags.Instance | BindingFlags.NonPublic)!
                 .GetValue(remoteNodeActor.UnderlyingActor)!;
-            pending.TryAdd(hash);
-            known.TryAdd(hash);
+            var secondHash = UInt256.Parse("0x2222222222222222222222222222222222222222222222222222222222222222");
+            var unrelatedHash = UInt256.Zero;
+            foreach (var item in new[] { hash, secondHash, unrelatedHash })
+            {
+                pending.TryAdd(item);
+                known.TryAdd(item);
+            }
 
-            remoteNodeActor.Tell(new RemoteNode.RestartInventory(hash));
+            remoteNodeActor.Tell(new RemoteNode.RestartInventory([hash, secondHash]));
 
             AwaitAssert(
                 () =>
                 {
                     Assert.IsFalse(pending.Contains(hash));
                     Assert.IsFalse(known.Contains(hash));
+                    Assert.IsFalse(pending.Contains(secondHash));
+                    Assert.IsFalse(known.Contains(secondHash));
+                    Assert.IsTrue(pending.Contains(unrelatedHash));
+                    Assert.IsTrue(known.Contains(unrelatedHash));
                 },
                 TimeSpan.FromSeconds(3),
                 cancellationToken: CancellationToken.None);

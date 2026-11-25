@@ -813,26 +813,32 @@ namespace Neo.UnitTests.Network.P2P
             peer.ReceiveOne(TimeSpan.FromSeconds(2), cancellationToken: CancellationToken.None);
 
             var block = CreateBlock(currentHeight + 1);
+            var secondBlock = CreateBlock(currentHeight + 2);
             var session = GetSessions(taskManager)[peer.Ref];
             session.ReceivedBlockHashes[block.Index] = block.Hash;
+            session.ReceivedBlockHashes[secondBlock.Index] = secondBlock.Hash;
 
             var knownHashesField = typeof(TaskManager).GetField("_knownHashes", BindingFlags.Instance | BindingFlags.NonPublic)!;
             var knownHashes = (HashSetCache<UInt256>)knownHashesField.GetValue(taskManager.UnderlyingActor)!;
             knownHashes.TryAdd(block.Hash);
+            knownHashes.TryAdd(secondBlock.Hash);
 
             peer.Send(taskManager, new TaskManager.RestartTasks(
-                InvPayload.Create(InventoryType.Block, block.Hash), peer.Ref));
+                InvPayload.Create(InventoryType.Block, block.Hash, secondBlock.Hash), peer.Ref));
 
             AwaitAssert(
                 () =>
                 {
                     Assert.IsFalse(session.ReceivedBlockHashes.ContainsKey(block.Index));
                     Assert.IsFalse(knownHashes.Contains(block.Hash));
+                    Assert.IsFalse(session.ReceivedBlockHashes.ContainsKey(secondBlock.Index));
+                    Assert.IsFalse(knownHashes.Contains(secondBlock.Hash));
                 },
                 TimeSpan.FromSeconds(3),
                 cancellationToken: CancellationToken.None);
 
             peer.ExpectMsg<RemoteNode.RestartInventory>(cancellationToken: CancellationToken.None);
+            peer.ExpectNoMsg(TimeSpan.FromMilliseconds(200), cancellationToken: CancellationToken.None);
 
             peer.Send(taskManager, new TaskManager.NewTasks(
                 InvPayload.Create(InventoryType.Block, block.Hash)));

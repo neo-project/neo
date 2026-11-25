@@ -13,6 +13,7 @@ using Akka.IO;
 using Neo.Extensions;
 using Neo.IO;
 using Neo.IO.Caching;
+using Neo.Network.P2P.Payloads;
 using System;
 using System.IO;
 
@@ -117,9 +118,20 @@ namespace Neo.Network.P2P
         private void DecompressPayload()
         {
             if (_payloadCompressed.Length == 0) return;
-            var decompressed = Flags.HasFlag(MessageFlags.Compressed)
-                ? _payloadCompressed.Span.DecompressLz4(PayloadMaxSize)
-                : _payloadCompressed;
+            var maxLength = PayloadMaxSize;
+            if (Command == MessageCommand.Transaction)
+                maxLength = Transaction.MaxTransactionSize;
+            ReadOnlyMemory<byte> decompressed;
+            if (Flags.HasFlag(MessageFlags.Compressed))
+            {
+                decompressed = _payloadCompressed.Span.DecompressLz4(maxLength);
+            }
+            else
+            {
+                if (_payloadCompressed.Length > maxLength)
+                    throw new FormatException($"The {Command} payload size exceeds the maximum of {maxLength} bytes.");
+                decompressed = _payloadCompressed;
+            }
             Payload = ReflectionCache<MessageCommand>.CreateSerializable(Command, decompressed);
         }
 
