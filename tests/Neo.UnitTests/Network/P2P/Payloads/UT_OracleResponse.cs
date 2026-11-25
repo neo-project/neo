@@ -112,7 +112,7 @@ namespace Neo.UnitTests.Network.P2P.Payloads
         }
 
         [TestMethod]
-        public void Verify_RejectsResponseAfterOriginalSignerIsBlocked()
+        public void Verify_AllowsResponseAfterOriginalSignerIsBlocked()
         {
             var snapshot = TestBlockchain.GetTestSnapshotCache().CloneCache();
             var account = UInt160.Parse("0x0000000000000000000000000000000000001234");
@@ -191,11 +191,11 @@ namespace Neo.UnitTests.Network.P2P.Payloads
 
             Assert.IsTrue(response.Verify(snapshot, responseTx));
             snapshot.Add(NativeContract.Policy.CreateStorageKey(15, account), new StorageItem(new byte[] { 1 }));
-            Assert.IsFalse(response.Verify(snapshot, responseTx));
+            Assert.IsTrue(response.Verify(snapshot, responseTx));
             snapshot.Delete(NativeContract.Policy.CreateStorageKey(15, account));
             Assert.IsTrue(response.Verify(snapshot, responseTx));
             snapshot.Add(NativeContract.Policy.CreateStorageKey(15, otherAccount), new StorageItem(new byte[] { 1 }));
-            Assert.IsFalse(response.Verify(snapshot, responseTx));
+            Assert.IsTrue(response.Verify(snapshot, responseTx));
         }
     }
 }

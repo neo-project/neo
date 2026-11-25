@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Neo.Extensions;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract;
@@ -19,6 +20,8 @@ using Neo.VM;
 using Neo.VM.Types;
 using System;
 using System.Linq;
+using System.Numerics;
+using System.Threading.Tasks;
 
 namespace Neo.UnitTests.SmartContract.Native
 {
@@ -207,6 +210,65 @@ namespace Neo.UnitTests.SmartContract.Native
         {
             Assert.ThrowsExactly<ArgumentException>(() =>
                 NativeContract.Oracle.Call(_snapshot, EmptyTx(), null, "finish"));
+        }
+
+        [TestMethod]
+        public async Task BlockedOriginalSigner_FaultsResponseAndReleasesUrlSlot()
+        {
+            const ulong id = 7;
+            const string url = "https://example.com/blocked";
+            var signer = UInt160.Parse("0x0000000000000000000000000000000000001234");
+            var original = EmptyTx();
+            original.Signers = [new Signer { Account = signer, Scopes = WitnessScope.Global }];
+            original.Witnesses = [Witness.Empty];
+            _snapshot.Add(NativeContract.Ledger.CreateStorageKey(11, original.Hash),
+                new StorageItem(new TransactionState { BlockIndex = 0, Transaction = original }));
+            SeedRequest(id, new OracleRequest
+            {
+                OriginalTxid = original.Hash,
+                GasForResponse = 10_00000000,
+                Url = url,
+                CallbackContract = UInt160.Zero,
+                CallbackMethod = "callback",
+                UserData = []
+            });
+            var urlKey = new KeyBuilder(NativeContract.Oracle.Id, 6)
+                .Add(Neo.Cryptography.Crypto.Hash160(url.ToStrictUtf8Bytes()));
+            var ids = new Neo.VM.Types.Array { new Integer(id) };
+            _snapshot.Add(urlKey, new StorageItem(BinarySerializer.Serialize(ids, ExecutionEngineLimits.Default)));
+            _snapshot.Add(new KeyBuilder(NativeContract.Policy.Id, 25).Add("Iara".ToStrictUtf8Bytes()), new StorageItem(0));
+            _snapshot.Add(NativeContract.Policy.CreateStorageKey(15, signer), new StorageItem([1]));
+
+            var response = new OracleResponse { Id = id, Code = OracleResponseCode.Timeout };
+            var responseTx = EmptyTx([response]);
+            responseTx.Script = OracleResponse.FixedScript;
+            responseTx.SystemFee = 10_00000000;
+            using (var engine = ApplicationEngine.Create(TriggerType.Application, responseTx, _snapshot,
+                settings: TestProtocolSettings.Default, gas: responseTx.SystemFee))
+            {
+                engine.LoadScript(responseTx.Script);
+                Assert.AreEqual(VMState.FAULT, engine.Execute());
+                Assert.Contains("original Oracle request signer is blocked", engine.FaultException.ToString());
+            }
+
+            Assert.IsNotNull(NativeContract.Oracle.GetRequest(_snapshot, id));
+            var block = new Block
+            {
+                Header = new Header
+                {
+                    Index = 1, Timestamp = 1, PrevHash = UInt256.Zero,
+                    MerkleRoot = UInt256.Zero, NextConsensus = UInt160.Zero, Witness = Witness.Empty
+                },
+                Transactions = [responseTx]
+            };
+            using (var engine = ApplicationEngine.Create(TriggerType.PostPersist, null, _snapshot, block,
+                settings: TestProtocolSettings.Default))
+            {
+                await NativeContract.Oracle.PostPersistAsync(engine);
+            }
+            Assert.IsNull(NativeContract.Oracle.GetRequest(_snapshot, id));
+            Assert.IsEmpty(NativeContract.Oracle.GetRequestsByUrl(_snapshot, url));
+            Assert.IsFalse(_snapshot.Contains(urlKey));
         }
     }
 }
