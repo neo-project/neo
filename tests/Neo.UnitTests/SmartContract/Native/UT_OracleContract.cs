@@ -213,11 +213,16 @@ namespace Neo.UnitTests.SmartContract.Native
         }
 
         [TestMethod]
-        public async Task BlockedOriginalSigner_FaultsResponseAndReleasesUrlSlot()
+        [DataRow(false)]
+        [DataRow(true)]
+        public async Task BlockedSignerOrRequester_FaultsResponseAndReleasesUrlSlot(bool blockRequester)
         {
             const ulong id = 7;
             const string url = "https://example.com/blocked";
             var signer = UInt160.Parse("0x0000000000000000000000000000000000001234");
+            var callback = TestUtils.GetContract(Ret, TestUtils.CreateManifest("callback", ContractParameterType.Void,
+                ContractParameterType.String, ContractParameterType.Any, ContractParameterType.Integer, ContractParameterType.ByteArray));
+            _snapshot.AddContract(callback.Hash, callback);
             var original = EmptyTx();
             original.Signers = [new Signer { Account = signer, Scopes = WitnessScope.Global }];
             original.Witnesses = [Witness.Empty];
@@ -228,16 +233,16 @@ namespace Neo.UnitTests.SmartContract.Native
                 OriginalTxid = original.Hash,
                 GasForResponse = 10_00000000,
                 Url = url,
-                CallbackContract = UInt160.Zero,
+                CallbackContract = callback.Hash,
                 CallbackMethod = "callback",
-                UserData = []
+                UserData = BinarySerializer.Serialize(StackItem.Null, ExecutionEngineLimits.Default)
             });
             var urlKey = new KeyBuilder(NativeContract.Oracle.Id, 6)
                 .Add(Neo.Cryptography.Crypto.Hash160(url.ToStrictUtf8Bytes()));
             var ids = new Neo.VM.Types.Array { new Integer(id) };
             _snapshot.Add(urlKey, new StorageItem(BinarySerializer.Serialize(ids, ExecutionEngineLimits.Default)));
             _snapshot.Add(new KeyBuilder(NativeContract.Policy.Id, 25).Add("Iara".ToStrictUtf8Bytes()), new StorageItem(0));
-            _snapshot.Add(NativeContract.Policy.CreateStorageKey(15, signer), new StorageItem([1]));
+            _snapshot.Add(NativeContract.Policy.CreateStorageKey(15, blockRequester ? callback.Hash : signer), new StorageItem([1]));
 
             var response = new OracleResponse { Id = id, Code = OracleResponseCode.Timeout };
             var responseTx = EmptyTx([response]);
@@ -248,7 +253,8 @@ namespace Neo.UnitTests.SmartContract.Native
             {
                 engine.LoadScript(responseTx.Script);
                 Assert.AreEqual(VMState.FAULT, engine.Execute());
-                Assert.Contains("original Oracle request signer is blocked", engine.FaultException.ToString());
+                Assert.Contains(blockRequester ? "has been blocked" : "original Oracle request signer is blocked",
+                    engine.FaultException.ToString());
             }
 
             Assert.IsNotNull(NativeContract.Oracle.GetRequest(_snapshot, id));
