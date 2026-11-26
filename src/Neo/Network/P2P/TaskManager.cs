@@ -47,6 +47,7 @@ namespace Neo.Network.P2P
         private static readonly UInt256 HeaderTaskHash = UInt256.Zero;
 
         private const int MaxConcurrentTasks = 3;
+        private const int MaxDeferredTasks = InvPayload.MaxHashesCount;
 
         private readonly NeoSystem system;
         /// <summary>
@@ -127,6 +128,10 @@ namespace Neo.Network.P2P
                     IncrementGlobalTask(hash);
                     session.InvTasks[hash] = TimeProvider.Current.UtcNow;
                     requested.Add(hash);
+                }
+                else if (session.DeferredHashes.Count < MaxDeferredTasks && session.DeferredHashes.Add(hash))
+                {
+                    session.DeferredTasks.Enqueue((payload.Type, hash));
                 }
             }
 
@@ -226,6 +231,18 @@ namespace Neo.Network.P2P
                 {
                     session.AvailableTasks.Remove(hash);
                     session.InvTasks.Remove(hash);
+                    session.DeferredHashes.Remove(hash);
+                }
+            }
+
+            foreach (var session in sessions.Values)
+            {
+                int count = session.DeferredTasks.Count;
+                for (int i = 0; i < count; i++)
+                {
+                    var task = session.DeferredTasks.Dequeue();
+                    if (session.DeferredHashes.Contains(task.Hash))
+                        session.DeferredTasks.Enqueue(task);
                 }
             }
 
@@ -405,6 +422,31 @@ namespace Neo.Network.P2P
 
         private void RequestTasks(IActorRef remoteNode, TaskSession session)
         {
+            if (session.PendingTaskCount >= TaskSession.MaxTasks) return;
+
+            // Drain previously announced inventory before scheduling more block-index work.
+            Dictionary<InventoryType, HashSet<UInt256>> deferredRequests = new();
+            while (session.DeferredTasks.Count > 0 && !session.HasTooManyTasks)
+            {
+                var (type, hash) = session.DeferredTasks.Dequeue();
+                session.DeferredHashes.Remove(hash);
+                if (_knownHashes.Contains(hash) || session.InvTasks.ContainsKey(hash) || session.AvailableTasks.Contains(hash))
+                    continue;
+                if (globalInvTasks.ContainsKey(hash))
+                {
+                    if (type == InventoryType.Block)
+                        session.AvailableTasks.Add(hash);
+                    continue;
+                }
+                IncrementGlobalTask(hash);
+                session.InvTasks[hash] = TimeProvider.Current.UtcNow;
+                if (!deferredRequests.TryGetValue(type, out var hashes))
+                    deferredRequests[type] = hashes = new();
+                hashes.Add(hash);
+            }
+            foreach (var (type, hashes) in deferredRequests)
+                foreach (InvPayload group in InvPayload.CreateGroup(type, hashes))
+                    remoteNode.Tell(Message.Create(MessageCommand.GetData, group));
             if (session.PendingTaskCount >= TaskSession.MaxTasks) return;
 
             var snapshot = system.StoreView;
