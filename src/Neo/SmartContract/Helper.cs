@@ -345,7 +345,7 @@ namespace Neo.SmartContract
         /// <returns>The hash of the script.</returns>
         public static UInt160 ToScriptHash(this Script script)
         {
-            return ((ReadOnlyMemory<byte>)script).Span.ToScriptHash();
+            return new UInt160(script.ScriptHash.Span);
         }
 
         /// <summary>
