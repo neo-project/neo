@@ -120,7 +120,16 @@ namespace Neo.UnitTests.Network.P2P
             var session = GetSessions(manager)[peer.Ref];
             Assert.AreEqual(TaskSession.MaxTasks, session.InvTasks.Count);
             Assert.AreEqual(TaskSession.MaxTasks, GetGlobalTasks(manager).Count);
+            Assert.AreEqual(InvPayload.MaxHashesCount, session.DeferredTasks.Count);
             Assert.IsTrue(session.HasTooManyTasks);
+
+            manager.Receive(new TaskManager.NewTasks(InvPayload.Create(InventoryType.Block, Hashes(1, 500))), peer);
+            Assert.AreEqual(InvPayload.MaxHashesCount, session.DeferredTasks.Count);
+
+            var deferredHash = Array.Find(Hashes(1, 500), session.DeferredTasks.ContainsKey);
+            Assert.IsNotNull(deferredHash);
+            manager.Receive(new TaskManager.RestartTasks(InvPayload.Create(InventoryType.Block, deferredHash)));
+            Assert.IsFalse(session.DeferredTasks.ContainsKey(deferredHash));
             Sys.Stop(manager);
         }
 

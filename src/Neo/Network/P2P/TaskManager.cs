@@ -47,6 +47,7 @@ namespace Neo.Network.P2P
         private static readonly UInt256 HeaderTaskHash = UInt256.Zero;
 
         private const int MaxConcurrentTasks = 3;
+        // Retain at most one full inventory announcement beyond the active task budget per peer.
         private const int MaxDeferredTasks = InvPayload.MaxHashesCount;
 
         private readonly NeoSystem system;
@@ -109,40 +110,14 @@ namespace Neo.Network.P2P
                 return;
             }
 
-            HashSet<UInt256> hashes = [.. payload.Hashes];
-            hashes.Remove(_knownHashes);
-            HashSet<UInt256> requested = new();
-            foreach (UInt256 hash in hashes)
+            foreach (UInt256 hash in payload.Hashes)
             {
-                if (session.InvTasks.ContainsKey(hash) || session.AvailableTasks.Contains(hash))
+                if (_knownHashes.Contains(hash) || session.InvTasks.ContainsKey(hash) || session.AvailableTasks.Contains(hash))
                     continue;
-
-                if (globalInvTasks.ContainsKey(hash))
-                {
-                    // Blocks requested from another peer can be retried later, within this session's budget.
-                    if (payload.Type == InventoryType.Block && !session.HasTooManyTasks)
-                        session.AvailableTasks.Add(hash);
-                }
-                else if (!session.HasTooManyTasks)
-                {
-                    IncrementGlobalTask(hash);
-                    session.InvTasks[hash] = TimeProvider.Current.UtcNow;
-                    requested.Add(hash);
-                }
-                else if (session.DeferredHashes.Count < MaxDeferredTasks && session.DeferredHashes.Add(hash))
-                {
-                    session.DeferredTasks.Enqueue((payload.Type, hash));
-                }
+                if (session.DeferredTasks.Count < MaxDeferredTasks)
+                    session.DeferredTasks.TryAdd(hash, payload.Type);
             }
-
-            if (requested.Count == 0)
-            {
-                RequestTasks(Sender, session);
-                return;
-            }
-
-            foreach (InvPayload group in InvPayload.CreateGroup(payload.Type, requested))
-                Sender.Tell(Message.Create(MessageCommand.GetData, group));
+            RequestTasks(Sender, session);
         }
 
         private void OnPersistCompleted(Block block)
@@ -231,18 +206,7 @@ namespace Neo.Network.P2P
                 {
                     session.AvailableTasks.Remove(hash);
                     session.InvTasks.Remove(hash);
-                    session.DeferredHashes.Remove(hash);
-                }
-            }
-
-            foreach (var session in sessions.Values)
-            {
-                int count = session.DeferredTasks.Count;
-                for (int i = 0; i < count; i++)
-                {
-                    var task = session.DeferredTasks.Dequeue();
-                    if (session.DeferredHashes.Contains(task.Hash))
-                        session.DeferredTasks.Enqueue(task);
+                    session.DeferredTasks.Remove(hash);
                 }
             }
 
@@ -420,16 +384,16 @@ namespace Neo.Network.P2P
             return Akka.Actor.Props.Create(() => new TaskManager(system)).WithMailbox("task-manager-mailbox");
         }
 
-        private void RequestTasks(IActorRef remoteNode, TaskSession session)
+        private bool RequestDeferredTasks(IActorRef remoteNode, TaskSession session)
         {
-            if (session.PendingTaskCount >= TaskSession.MaxTasks) return;
+            if (session.DeferredTasks.Count == 0) return false;
 
-            // Drain previously announced inventory before scheduling more block-index work.
-            Dictionary<InventoryType, HashSet<UInt256>> deferredRequests = new();
-            while (session.DeferredTasks.Count > 0 && !session.HasTooManyTasks)
+            Dictionary<InventoryType, List<UInt256>> requests = new();
+            List<UInt256> processed = new();
+            foreach (var (hash, type) in session.DeferredTasks)
             {
-                var (type, hash) = session.DeferredTasks.Dequeue();
-                session.DeferredHashes.Remove(hash);
+                if (session.HasTooManyTasks) break;
+                processed.Add(hash);
                 if (_knownHashes.Contains(hash) || session.InvTasks.ContainsKey(hash) || session.AvailableTasks.Contains(hash))
                     continue;
                 if (globalInvTasks.ContainsKey(hash))
@@ -440,14 +404,22 @@ namespace Neo.Network.P2P
                 }
                 IncrementGlobalTask(hash);
                 session.InvTasks[hash] = TimeProvider.Current.UtcNow;
-                if (!deferredRequests.TryGetValue(type, out var hashes))
-                    deferredRequests[type] = hashes = new();
+                if (!requests.TryGetValue(type, out var hashes))
+                    requests[type] = hashes = new();
                 hashes.Add(hash);
             }
-            foreach (var (type, hashes) in deferredRequests)
+            foreach (UInt256 hash in processed)
+                session.DeferredTasks.Remove(hash);
+            foreach (var (type, hashes) in requests)
                 foreach (InvPayload group in InvPayload.CreateGroup(type, hashes))
                     remoteNode.Tell(Message.Create(MessageCommand.GetData, group));
+            return requests.Count > 0;
+        }
+
+        private void RequestTasks(IActorRef remoteNode, TaskSession session)
+        {
             if (session.PendingTaskCount >= TaskSession.MaxTasks) return;
+            if (RequestDeferredTasks(remoteNode, session)) return;
 
             var snapshot = system.StoreView;
 

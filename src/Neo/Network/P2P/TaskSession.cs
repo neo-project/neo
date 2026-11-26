@@ -24,9 +24,8 @@ namespace Neo.Network.P2P
         public Dictionary<UInt256, DateTime> InvTasks { get; } = new Dictionary<UInt256, DateTime>();
         public Dictionary<uint, DateTime> IndexTasks { get; } = new Dictionary<uint, DateTime>();
         public HashSet<UInt256> AvailableTasks { get; } = new HashSet<UInt256>();
-        // Inventory beyond the active task limit remains available for later requests.
-        public Queue<(InventoryType Type, UInt256 Hash)> DeferredTasks { get; } = new();
-        public HashSet<UInt256> DeferredHashes { get; } = new();
+        // Inventory waiting for room in the active task budget.
+        public Dictionary<UInt256, InventoryType> DeferredTasks { get; } = new();
         public Dictionary<uint, UInt256> ReceivedBlockHashes { get; } = new Dictionary<uint, UInt256>();
         public int PendingTaskCount => InvTasks.Count + IndexTasks.Count;
         public int TaskCount => PendingTaskCount + AvailableTasks.Count;
