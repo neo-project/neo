@@ -11,7 +11,6 @@
 
 using Akka.Actor;
 using Akka.Configuration;
-using Akka.IO;
 using Neo.Extensions;
 using Neo.IO.Actors;
 using Neo.IO.Caching;
@@ -91,7 +90,7 @@ namespace Neo.Network.P2P
                 if (session.ReceivedBlockHashes.TryGetValue(invalidBlock.Index, out var blockHash))
                 {
                     if (blockHash == invalidBlock.Hash)
-                        actor.Tell(Tcp.Abort.Instance);
+                        actor.Tell(new Connection.Close { Abort = true });
                 }
             }
         }
@@ -156,7 +155,7 @@ namespace Neo.Network.P2P
                     if (block.Hash == receivedBlockHash)
                         RequestTasks(actor, session);
                     else
-                        actor.Tell(Tcp.Abort.Instance);
+                        actor.Tell(new Connection.Close { Abort = true });
                 }
 
                 // Safety net: drop any remaining entries for heights at or below the one
@@ -291,7 +290,7 @@ namespace Neo.Network.P2P
             if (session.ReceivedBlockHashes.TryGetValue(block.Index, out var previousHash))
             {
                 if (block.Hash != previousHash)
-                    Sender.Tell(Tcp.Abort.Instance);
+                    Sender.Tell(new Connection.Close { Abort = true });
             }
             else
             {
