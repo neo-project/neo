@@ -19,11 +19,12 @@ internal static class Program
 {
     public static int Main(string[] args)
     {
-        var directory = args[0];
+        var fixtureRoot = args[0];
         var assemblyPath = args[1];
-        var dependencyPath = Path.Combine(directory, "Neo.PluginFixture.Dependency.dll");
-        var loader = typeof(Plugin).GetMethod("LoadPluginDirectory", BindingFlags.NonPublic | BindingFlags.Static)!;
-        loader.Invoke(null, [directory]);
+        var dependencyPath = Path.Combine(Path.GetDirectoryName(assemblyPath)!, "Neo.PluginFixture.Dependency.dll");
+        AppContext.SetData("APP_CONTEXT_BASE_DIRECTORY", fixtureRoot + Path.DirectorySeparatorChar);
+        var loader = typeof(Plugin).GetMethod("LoadPlugins", BindingFlags.NonPublic | BindingFlags.Static)!;
+        loader.Invoke(null, null);
 
         var plugin = Plugin.Plugins.Single(p => p.GetType().Assembly.Location == assemblyPath);
         var assembly = plugin.GetType().Assembly;

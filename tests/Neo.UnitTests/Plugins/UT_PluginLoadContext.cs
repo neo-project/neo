@@ -23,14 +23,23 @@ public class UT_PluginLoadContext
     [TestMethod]
     [DataRow(true)]
     [DataRow(false)]
-    public async Task TestLoadPluginDirectoryUsesIsolatedContext(bool nameMatchesDirectory)
+    public async Task TestLoadPluginsUsesIsolatedContext(bool nameMatchesDirectory)
     {
-        var directory = Directory.CreateTempSubdirectory("neo-plugin-");
+        var root = Directory.CreateTempSubdirectory("neo-plugin-");
         var testOutput = AppContext.BaseDirectory;
         var fixture = Path.Combine(testOutput, FixtureAssemblyName + ".dll");
         try
         {
+            var pluginsDirectory = root.CreateSubdirectory("Plugins");
+            pluginsDirectory.CreateSubdirectory("Empty");
+            var directory = pluginsDirectory.CreateSubdirectory("InstalledPlugin");
             var assemblyName = nameMatchesDirectory ? directory.Name : FixtureAssemblyName;
+            if (nameMatchesDirectory)
+            {
+                File.Copy(Path.Combine(testOutput, FixtureAssemblyName + ".deps.json"),
+                    Path.Combine(directory.FullName, assemblyName + ".deps.json"));
+                File.WriteAllText(Path.Combine(directory.FullName, "Invalid.dll"), "This file is not an assembly.");
+            }
             var assemblyPath = Path.Combine(directory.FullName, assemblyName + ".dll");
             File.Copy(fixture, assemblyPath);
             var dependencyFile = DependencyAssemblyName + ".dll";
@@ -48,7 +57,7 @@ public class UT_PluginLoadContext
             {
                 "exec", "--runtimeconfig", Path.Combine(testOutput, "Neo.UnitTests.runtimeconfig.json"),
                 "--depsfile", Path.Combine(testOutput, "Neo.UnitTests.deps.json"),
-                fixture, directory.FullName, assemblyPath
+                fixture, root.FullName, assemblyPath
             })
                 startInfo.ArgumentList.Add(argument);
 
@@ -59,7 +68,7 @@ public class UT_PluginLoadContext
         }
         finally
         {
-            directory.Delete(recursive: true);
+            root.Delete(recursive: true);
         }
     }
 }
