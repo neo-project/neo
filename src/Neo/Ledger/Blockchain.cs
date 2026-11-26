@@ -11,7 +11,6 @@
 
 using Akka.Actor;
 using Akka.Configuration;
-using Akka.IO;
 using Neo.IO.Actors;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
@@ -161,7 +160,7 @@ namespace Neo.Ledger
                 if (!list.Nodes.Add(Sender))
                 {
                     // Same index with different hash
-                    Sender.Tell(Tcp.Abort.Instance);
+                    Sender.Tell(new Connection.Close { Abort = true });
                     return;
                 }
             }
