@@ -21,6 +21,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\Neo.Extensions\Neo.Extensions.csproj" />
     <ProjectReference Include="..\..\src\Neo\Neo.csproj" />
+    <ProjectReference Include="..\Neo.PluginFixture\Neo.PluginFixture.csproj" />
   </ItemGroup>
 
 </Project>

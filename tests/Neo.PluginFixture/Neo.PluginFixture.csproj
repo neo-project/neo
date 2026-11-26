@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <AssemblyName>Neo.PluginFixture</AssemblyName>
+    <OutputType>Exe</OutputType>
+    <UseAppHost>false</UseAppHost>
+    <StartupObject>Neo.PluginFixture.Program</StartupObject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Neo\Neo.csproj" />
+    <ProjectReference Include="..\Neo.PluginFixture.Dependency\Neo.PluginFixture.Dependency.csproj" />
+  </ItemGroup>
+
+</Project>

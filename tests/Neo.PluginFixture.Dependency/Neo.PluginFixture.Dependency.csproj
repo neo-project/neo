@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <AssemblyName>Neo.PluginFixture.Dependency</AssemblyName>
+    <OutputType>Library</OutputType>
+  </PropertyGroup>
+
+</Project>
