@@ -11,6 +11,8 @@
 
 using Neo.Plugins;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
+using System.Text.Json;
 
 namespace Neo.UnitTests.Plugins;
 
@@ -44,6 +46,15 @@ public class UT_PluginLoadContext
             File.Copy(fixture, assemblyPath);
             var dependencyFile = DependencyAssemblyName + ".dll";
             File.Copy(Path.Combine(testOutput, dependencyFile), Path.Combine(directory.FullName, dependencyFile));
+            var (nativeLibrary, nativeFixture) = OperatingSystem.IsWindows()
+                ? ("hostpolicy.dll", "NeoPluginFixtureNative.dll")
+                : OperatingSystem.IsMacOS()
+                    ? ("libhostpolicy.dylib", "libNeoPluginFixtureNative.dylib")
+                    : ("libhostpolicy.so", "libNeoPluginFixtureNative.so");
+            // Reuse a native image from the test runtime to exercise the plugin's native sidecar probing.
+            var nativePath = Path.Combine(RuntimeEnvironment.GetRuntimeDirectory(), nativeLibrary);
+            File.Copy(nativePath, Path.Combine(directory.FullName, nativeFixture));
+            File.Copy(nativePath, Path.Combine(directory.FullName, "NeoPluginFixtureNativeExact.bin"));
             var hostAssemblyPath = typeof(Plugin).Assembly.Location;
             File.Copy(hostAssemblyPath, Path.Combine(directory.FullName, Path.GetFileName(hostAssemblyPath)));
 
@@ -51,6 +62,7 @@ public class UT_PluginLoadContext
             var startInfo = new ProcessStartInfo(Environment.GetEnvironmentVariable("DOTNET_HOST_PATH") ?? "dotnet")
             {
                 RedirectStandardError = true,
+                RedirectStandardOutput = true,
                 UseShellExecute = false
             };
             foreach (var argument in new[]
@@ -63,8 +75,18 @@ public class UT_PluginLoadContext
 
             using var process = Process.Start(startInfo)!;
             var errors = process.StandardError.ReadToEndAsync();
+            var output = process.StandardOutput.ReadToEndAsync();
             await process.WaitForExitAsync();
             Assert.AreEqual(0, process.ExitCode, await errors);
+
+            using var result = JsonDocument.Parse(await output);
+            var observations = result.RootElement;
+            Assert.IsFalse(observations.GetProperty("loadedInDefaultContext").GetBoolean());
+            Assert.IsFalse(observations.GetProperty("ownsHostAssembly").GetBoolean());
+            Assert.IsTrue(observations.GetProperty("usesLocalDependency").GetBoolean());
+            Assert.IsTrue(observations.GetProperty("nativeAssetLoaded").GetBoolean());
+            Assert.IsTrue(observations.GetProperty("nativeAssetLoadedByExactName").GetBoolean());
+            Assert.IsFalse(observations.GetProperty("missingNativeAssetLoaded").GetBoolean());
         }
         finally
         {

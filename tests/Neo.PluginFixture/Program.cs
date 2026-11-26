@@ -11,7 +11,9 @@
 
 using Neo.Plugins;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Runtime.Loader;
+using System.Text.Json;
 
 namespace Neo.PluginFixture;
 
@@ -29,26 +31,35 @@ internal static class Program
         var plugin = Plugin.Plugins.Single(p => p.GetType().Assembly.Location == assemblyPath);
         var assembly = plugin.GetType().Assembly;
         var context = AssemblyLoadContext.GetLoadContext(assembly)!;
-        if (context == AssemblyLoadContext.Default)
-        {
-            Console.Error.WriteLine("The plugin was loaded into the default context.");
-            return 1;
-        }
-
         var hostAssembly = typeof(Plugin).Assembly.GetName().Name;
-        if (context.Assemblies.Any(a => a.GetName().Name == hostAssembly))
-        {
-            Console.Error.WriteLine("The plugin context loaded a second copy of the host assembly.");
-            return 1;
-        }
-
         var method = plugin.GetType().GetMethod(nameof(FixturePlugin.GetDependencyAssemblyLocation))!;
-        if (method.Invoke(plugin, null) as string != dependencyPath)
+        var dependencyLocation = (string)method.Invoke(plugin, null)!;
+        Console.WriteLine(JsonSerializer.Serialize(new
         {
-            Console.Error.WriteLine("The plugin dependency was loaded from outside its directory.");
-            return 1;
-        }
+            loadedInDefaultContext = context == AssemblyLoadContext.Default,
+            ownsHostAssembly = context.Assemblies.Any(a => a.GetName().Name == hostAssembly),
+            usesLocalDependency = dependencyLocation == dependencyPath,
+            nativeAssetLoaded = CanLoadNativeImage("NeoPluginFixtureNative", context),
+            nativeAssetLoadedByExactName = CanLoadNativeImage("NeoPluginFixtureNativeExact.bin", context),
+            missingNativeAssetLoaded = CanLoadNativeImage("NeoPluginFixtureMissingNative", context)
+        }));
 
         return 0;
+    }
+
+    private static bool CanLoadNativeImage(string libraryName, AssemblyLoadContext context)
+    {
+        var loadNative = context.GetType().GetMethod("LoadUnmanagedDll", BindingFlags.Instance | BindingFlags.NonPublic)!;
+        var handle = (IntPtr)loadNative.Invoke(context, [libraryName])!;
+        if (handle == IntPtr.Zero)
+            return false;
+        try
+        {
+            return NativeLibrary.TryGetExport(handle, "corehost_main", out _);
+        }
+        finally
+        {
+            NativeLibrary.Free(handle);
+        }
     }
 }
