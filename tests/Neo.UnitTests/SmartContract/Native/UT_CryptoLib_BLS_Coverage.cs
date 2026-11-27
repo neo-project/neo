@@ -15,6 +15,7 @@ using Neo.Extensions;
 using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
+using Neo.VM;
 using Neo.VM.Types;
 using System;
 using System.Text;
@@ -113,6 +114,54 @@ namespace Neo.UnitTests.SmartContract.Native
             byte[] sortFlag = (byte[])identity.Clone();
             sortFlag[0] = 0xe0;
             Assert.Throws<Exception>(() => CryptoLib.Bls12381Deserialize(_engine, sortFlag));
+        }
+
+        [TestMethod]
+        public void Bls12381Deserialize_Gt_ValidatesSubgroupFromIara()
+        {
+            byte[] zero = new byte[576];
+            byte[] orderTwo = new Gt(-Fp12.One).ToArray();
+            byte[] outsideSubgroup = new Gt(Fp12.One + Fp12.One).ToArray();
+
+            // Historical blocks retain the old decoding behavior.
+            CryptoLib.Bls12381Deserialize(_engine, zero);
+            CryptoLib.Bls12381Deserialize(_engine, orderTwo);
+            CryptoLib.Bls12381Deserialize(_engine, outsideSubgroup);
+
+            _engine.SnapshotCache.Add(StorageKey.Create(NativeContract.Policy.Id, 25, Encoding.UTF8.GetBytes("Iara")),
+                new StorageItem(0u));
+            Assert.ThrowsExactly<FormatException>(() => CryptoLib.Bls12381Deserialize(_engine, zero));
+            Assert.ThrowsExactly<FormatException>(() => CryptoLib.Bls12381Deserialize(_engine, orderTwo));
+            Assert.ThrowsExactly<FormatException>(() => CryptoLib.Bls12381Deserialize(_engine, outsideSubgroup));
+
+            var identity = CryptoLib.Bls12381Deserialize(_engine, Gt.Identity.ToArray());
+            Assert.IsTrue(identity.GetInterface<Gt>().IsIdentity);
+
+            G1Affine g1 = G1Affine.FromCompressed(G1);
+            G2Affine g2 = G2Affine.FromCompressed(G2);
+            byte[] pairing = Bls12.Pairing(in g1, in g2).ToArray();
+            Assert.AreSequenceEqual(pairing, CryptoLib.Bls12381Deserialize(_engine, pairing).GetInterface<Gt>().ToArray());
+        }
+
+        [TestMethod]
+        [DataRow(false)]
+        [DataRow(true)]
+        public void Bls12381Deserialize_Gt_NativeCallRespectsIara(bool iara)
+        {
+            var snapshotCache = TestBlockchain.GetTestSnapshotCache();
+            if (iara)
+            {
+                snapshotCache.Add(StorageKey.Create(NativeContract.Policy.Id, 25, Encoding.UTF8.GetBytes("Iara")),
+                    new StorageItem(0u));
+            }
+
+            using ScriptBuilder script = new();
+            script.EmitDynamicCall(NativeContract.CryptoLib.Hash, "bls12381Deserialize", new byte[576]);
+            using var engine = ApplicationEngine.Create(TriggerType.Application, null, snapshotCache,
+                settings: TestProtocolSettings.Default);
+            engine.LoadScript(script.ToArray());
+
+            Assert.AreEqual(iara ? VMState.FAULT : VMState.HALT, engine.Execute());
         }
 
         [TestMethod]
