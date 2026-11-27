@@ -37,6 +37,7 @@ namespace Neo.SmartContract.Native
         private const int MaxFilterLength = 128;
         private const int MaxCallbackLength = 32;
         private const int MaxUserDataLength = 512;
+        private const long MinGasForResponse = 0_10000000;
 
         private const byte Prefix_Price = 5;
         private const byte Prefix_RequestId = 9;
@@ -237,9 +238,10 @@ namespace Neo.SmartContract.Native
             if (callback.StartsWith('_'))
                 throw new ArgumentException("Callback cannot start with underscore.");
 
-            const long MinGasForResponse = 0_10000000;
-            if (gasForResponse < MinGasForResponse)
-                throw new ArgumentException($"gasForResponse {gasForResponse} must be at least {MinGasForResponse} Datoshi.");
+            var minimum = engine.IsHardforkEnabled(Hardfork.HF_Huyao)
+                ? GetMinimumResponseBudget(engine) : MinGasForResponse;
+            if (gasForResponse < minimum)
+                throw new ArgumentException($"gasForResponse {gasForResponse} must be at least {minimum} Datoshi.");
 
             engine.AddFee(GetPrice(engine.SnapshotCache), true);
 
@@ -283,6 +285,40 @@ namespace Neo.SmartContract.Native
                 url,
                 filter ?? StackItem.Null
             });
+        }
+
+        // Calibrated against empty responses and finish with a no-op callback under
+        // Huyao. This is a minimum estimate, not a guarantee for arbitrary callbacks,
+        // future policy changes, or Oracle sets exceeding the witness size limits.
+        internal long GetMinimumResponseBudget(ApplicationEngine engine)
+        {
+            var n = RoleManagement.GetDesignatedByRole(engine.SnapshotCache, Role.Oracle, engine.GetPersistingIndex()).Length;
+            if (n <= 0) return MinGasForResponse;
+            var m = n - (n - 1) / 3;
+            // These opcodes have static Huyao prices. Count the multisig pushes,
+            // the fixed finish script and both native wrappers without building scripts.
+            long OpcodePrice(OpCode opcode) => engine.OpcodeV1(1, opcode, new RunStats());
+            var opcodePrice = (m + n + 2) * OpcodePrice(OpCode.PUSHDATA1)
+                + OpcodePrice(m <= 16 ? (OpCode)((byte)OpCode.PUSH0 + m) : OpCode.PUSHINT8)
+                + OpcodePrice(n <= 16 ? (OpCode)((byte)OpCode.PUSH0 + n) : OpCode.PUSHINT8)
+                + OpcodePrice(OpCode.NEWARRAY0) + OpcodePrice(OpCode.PUSH15)
+                + 2 * OpcodePrice(OpCode.PUSH0) + 2 * OpcodePrice(OpCode.RET)
+                + 4 * OpcodePrice(OpCode.SYSCALL);
+            var nativeCpu = GetContractMethods(engine).Values
+                .Where(p => p.Descriptor.Name is "verify" or "finish").Sum(p => p.CpuFee);
+            var execution = (opcodePrice + nativeCpu * ApplicationEngine.OpcodePriceMultiplier) * engine.ExecFeePicoFactor
+                + n * engine.GetSysCallPrice(ApplicationEngine.System_Crypto_CheckSig)
+                + engine.GetSysCallPrice(ApplicationEngine.System_Crypto_CheckMultisig)
+                + engine.GetSysCallPrice(ApplicationEngine.System_Contract_Call)
+                + 2 * engine.GetSysCallPrice(ApplicationEngine.System_Contract_CallNative);
+            var executionFee = (long)execution.DivideCeiling(ApplicationEngine.FeeFactor * ApplicationEngine.OpcodePriceMultiplier);
+            // 66 bytes/signature, 34 bytes/public key; 136 bounds the fixed fields
+            // and variable-length prefixes for all supported role sets (up to 32).
+            long size = 136 + 66 * m + 34 * n;
+            var fee = checked(executionFee + size * Policy.GetFeePerByte(engine.SnapshotCache)
+                + Policy.GetAttributeFeeV1(engine.SnapshotCache, (byte)TransactionAttributeType.OracleResponse));
+            const long RoundingUnit = 0_01000000;
+            return Math.Max(MinGasForResponse, checked((2 * fee + RoundingUnit - 1) / RoundingUnit * RoundingUnit));
         }
 
         [ContractMethod(CpuFee = 1 << 15)]
