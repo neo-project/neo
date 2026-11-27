@@ -12,6 +12,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Cryptography.ECC;
 using Neo.Extensions;
+using Neo.Json;
 using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
@@ -67,6 +68,48 @@ namespace Neo.UnitTests.VMT
             item2[1] = new Pointer(new Script(ReadOnlyMemory<byte>.Empty), 0);
 
             Assert.AreEqual("{\"type\":\"Map\",\"value\":[{\"key\":{\"type\":\"Integer\",\"value\":\"1\"},\"value\":{\"type\":\"Pointer\",\"value\":0}}]}", item2.ToJson().ToString());
+        }
+
+        [TestMethod]
+        public void TestToJsonDepthLimit()
+        {
+            var root = new VM.Types.Array();
+            var current = root;
+            for (int i = 1; i < 32; i++)
+            {
+                var child = new VM.Types.Array();
+                current.Add(child);
+                current = child;
+            }
+
+            // The last array occupies JSON depth 64. A leaf would need depth 65.
+            JToken.Parse(root.ToJson().ToString());
+            current.Add(1);
+            Assert.ThrowsExactly<InvalidOperationException>(() => root.ToJson());
+
+            var shallowerRoot = new VM.Types.Array();
+            current = shallowerRoot;
+            for (int i = 1; i < 31; i++)
+            {
+                var child = new VM.Types.Array();
+                current.Add(child);
+                current = child;
+            }
+            current.Add(1);
+            JToken.Parse(shallowerRoot.ToJson().ToString());
+
+            var mapRoot = new Map();
+            var currentMap = mapRoot;
+            for (int i = 1; i < 21; i++)
+            {
+                var child = new Map();
+                currentMap[1] = child;
+                currentMap = child;
+            }
+            currentMap[1] = 1;
+            JToken.Parse(mapRoot.ToJson().ToString());
+            currentMap[1] = new Map();
+            Assert.ThrowsExactly<InvalidOperationException>(() => mapRoot.ToJson());
         }
 
         [TestMethod]
