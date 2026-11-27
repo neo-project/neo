@@ -727,7 +727,7 @@ namespace Neo.UnitTests.SmartContract.Native
                 new Witness { InvocationScript = inv.ToArray(), VerificationScript = vrfScript }
             ];
 
-            Assert.AreEqual(VerifyResult.Succeed, tx.VerifyStateIndependent(TestProtocolSettings.Default));
+            Assert.AreEqual(VerifyResult.Invalid, tx.VerifyStateIndependent(TestProtocolSettings.Default));
 
             var snapshotCache = TestBlockchain.GetTestSnapshotCache();
 
@@ -738,6 +738,7 @@ namespace Neo.UnitTests.SmartContract.Native
             snapshotCache.Commit();
 
             Assert.AreEqual(VerifyResult.Succeed, tx.VerifyStateDependent(TestProtocolSettings.Default, snapshotCache, new(), []));
+            Assert.AreEqual(VerifyResult.Invalid, tx.Verify(TestProtocolSettings.Default, snapshotCache, new(), []));
 
             // The resulting witness verification cost is 2154270   * 10e-8GAS.
             // The resulting witness Invocation script (66 bytes length):
@@ -967,7 +968,7 @@ namespace Neo.UnitTests.SmartContract.Native
                 new Witness { InvocationScript = inv.ToArray(), VerificationScript = vrfScript }
             ];
 
-            Assert.AreEqual(VerifyResult.Succeed, tx.VerifyStateIndependent(TestProtocolSettings.Default));
+            Assert.AreEqual(VerifyResult.Invalid, tx.VerifyStateIndependent(TestProtocolSettings.Default));
 
             var snapshotCache = TestBlockchain.GetTestSnapshotCache();
 
@@ -985,6 +986,7 @@ namespace Neo.UnitTests.SmartContract.Native
             var txVrfContext = new TransactionVerificationContext();
             var conflicts = new List<Transaction>();
             Assert.AreEqual(VerifyResult.Succeed, tx.VerifyStateDependent(TestProtocolSettings.Default, snapshotCache, txVrfContext, conflicts));
+            Assert.AreEqual(VerifyResult.Invalid, tx.Verify(TestProtocolSettings.Default, snapshotCache, new(), []));
 
             // The resulting witness verification cost for 3/4 multisig is 8389470  * 10e-8GAS. Cost depends on M/N.
             // The resulting witness Invocation script (198 bytes for 3 signatures):
