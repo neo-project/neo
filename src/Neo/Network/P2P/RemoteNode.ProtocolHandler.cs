@@ -327,6 +327,15 @@ namespace Neo.Network.P2P
             _system.Blockchain.Tell(payload.Headers);
         }
 
+        private void OnRestartInventory(params UInt256[] hashes)
+        {
+            foreach (var hash in hashes)
+            {
+                _pendingKnownHashes.Remove(hash);
+                _knownHashes.Remove(hash);
+            }
+        }
+
         private void OnInventoryReceived(IInventory inventory)
         {
             if (!_knownHashes.TryAdd(inventory.Hash)) return;

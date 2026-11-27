@@ -38,7 +38,8 @@ namespace Neo.Network.P2P
         /// Sent to <see cref="TaskManager"/> to restart tasks for inventories.
         /// </summary>
         /// <param name="Payload">The inventories that need to restart.</param>
-        public record RestartTasks(InvPayload Payload);
+        /// <param name="Source">The peer whose received inventory state must be reset.</param>
+        public record RestartTasks(InvPayload Payload, IActorRef? Source = null);
 
         private record Timer;
 
@@ -172,7 +173,7 @@ namespace Neo.Network.P2P
                     OnNewTasks(tasks.Payload);
                     break;
                 case RestartTasks restart:
-                    OnRestartTasks(restart.Payload);
+                    OnRestartTasks(restart.Payload, restart.Source);
                     break;
                 case Header[] headers:
                     OnHeaders(headers);
@@ -210,17 +211,31 @@ namespace Neo.Network.P2P
             session.LastBlockIndex = update.LastBlockIndex;
         }
 
-        private void OnRestartTasks(InvPayload payload)
+        private void OnRestartTasks(InvPayload payload, IActorRef? source)
         {
             _knownHashes.ExceptWith(payload.Hashes);
             foreach (var hash in payload.Hashes)
             {
                 globalInvTasks.Remove(hash);
-                foreach (var session in sessions.Values)
+                foreach (var s in sessions.Values)
                 {
-                    session.AvailableTasks.Remove(hash);
-                    session.InvTasks.Remove(hash);
+                    s.AvailableTasks.Remove(hash);
+                    s.InvTasks.Remove(hash);
                 }
+            }
+
+            if (source is not null && source != ActorRefs.NoSender && sessions.TryGetValue(source, out var session))
+            {
+                foreach (var index in session.ReceivedBlockHashes
+                    .Where(p => payload.Hashes.Contains(p.Value))
+                    .Select(p => p.Key)
+                    .ToArray())
+                {
+                    session.ReceivedBlockHashes.Remove(index);
+                }
+
+                source.Tell(new RemoteNode.RestartInventory(payload.Hashes));
+                return;
             }
 
             foreach (var group in InvPayload.CreateGroup(payload.Type, payload.Hashes))
@@ -491,8 +506,11 @@ namespace Neo.Network.P2P
             {
                 case TaskManager.Register _:
                 case TaskManager.Update _:
-                case TaskManager.RestartTasks _:
                     return true;
+                case TaskManager.RestartTasks restart:
+                    // The completion is queued before the block reaches the cache.
+                    // Keep its retry behind it in the same FIFO queue.
+                    return restart.Payload.Type != InventoryType.Block;
                 case TaskManager.NewTasks tasks:
                     if (tasks.Payload.Type == InventoryType.Block || tasks.Payload.Type == InventoryType.Extensible)
                         return true;

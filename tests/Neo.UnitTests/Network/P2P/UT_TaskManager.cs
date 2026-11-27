@@ -804,6 +804,54 @@ namespace Neo.UnitTests.Network.P2P
         }
 
         [TestMethod]
+        public void RestartTasks_ClearsSourceStateAndAllowsRetry()
+        {
+            using var neoSystem = TestBlockchain.GetSystem();
+            var currentHeight = NativeContract.Ledger.CurrentIndex(neoSystem.StoreView);
+            var taskManager = ActorOfAsTestActorRef(() => new TaskManager(neoSystem));
+            var peer = RegisterPeer(taskManager, currentHeight);
+            peer.ReceiveOne(TimeSpan.FromSeconds(2), cancellationToken: CancellationToken.None);
+
+            var block = CreateBlock(currentHeight + 1);
+            var secondBlock = CreateBlock(currentHeight + 2);
+            var session = GetSessions(taskManager)[peer.Ref];
+            session.ReceivedBlockHashes[block.Index] = block.Hash;
+            session.ReceivedBlockHashes[secondBlock.Index] = secondBlock.Hash;
+
+            var knownHashesField = typeof(TaskManager).GetField("_knownHashes", BindingFlags.Instance | BindingFlags.NonPublic)!;
+            var knownHashes = (HashSetCache<UInt256>)knownHashesField.GetValue(taskManager.UnderlyingActor)!;
+            knownHashes.TryAdd(block.Hash);
+            knownHashes.TryAdd(secondBlock.Hash);
+
+            peer.Send(taskManager, new TaskManager.RestartTasks(
+                InvPayload.Create(InventoryType.Block, block.Hash, secondBlock.Hash), peer.Ref));
+
+            AwaitAssert(
+                () =>
+                {
+                    Assert.IsFalse(session.ReceivedBlockHashes.ContainsKey(block.Index));
+                    Assert.IsFalse(knownHashes.Contains(block.Hash));
+                    Assert.IsFalse(session.ReceivedBlockHashes.ContainsKey(secondBlock.Index));
+                    Assert.IsFalse(knownHashes.Contains(secondBlock.Hash));
+                },
+                TimeSpan.FromSeconds(3),
+                cancellationToken: CancellationToken.None);
+
+            peer.ExpectMsg<RemoteNode.RestartInventory>(cancellationToken: CancellationToken.None);
+            peer.ExpectNoMsg(TimeSpan.FromMilliseconds(200), cancellationToken: CancellationToken.None);
+
+            peer.Send(taskManager, new TaskManager.NewTasks(
+                InvPayload.Create(InventoryType.Block, block.Hash)));
+            var retry = peer.FishForMessage<Message>(
+                m => m.Command == MessageCommand.GetData,
+                TimeSpan.FromSeconds(3),
+                cancellationToken: CancellationToken.None);
+            Assert.AreEqual(MessageCommand.GetData, retry.Command);
+
+            Sys.Stop(taskManager);
+        }
+
+        [TestMethod]
         public void RestartTasks_DoesNotFaultActor()
         {
             var remote = CreateTestProbe("remote-restart");

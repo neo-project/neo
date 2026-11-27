@@ -10,6 +10,7 @@
 // modifications are permitted.
 
 using Akka.Actor;
+using Akka.Dispatch;
 using Akka.TestKit.MsTest;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Neo.Network.P2P;
@@ -42,7 +43,7 @@ namespace Neo.UnitTests.Network.P2P
         {
             // high priority
             Assert.IsTrue(uut.IsHighPriority(new TaskManager.Register(null!)));
-            Assert.IsTrue(uut.IsHighPriority(new TaskManager.RestartTasks(null!)));
+            Assert.IsTrue(uut.IsHighPriority(new TaskManager.RestartTasks(new InvPayload { Type = InventoryType.TX, Hashes = [] })));
 
             // low priority
             // -> NewTasks: generic InvPayload
@@ -56,6 +57,21 @@ namespace Neo.UnitTests.Network.P2P
             // any random object should not have priority
             object obj = null;
             Assert.IsFalse(uut.IsHighPriority(obj));
+        }
+
+        [TestMethod]
+        public void BlockRetryFollowsQueuedCompletion()
+        {
+            var queue = uut.Create(TestActor, Sys);
+            var completed = new Block { Header = null!, Transactions = [] };
+            var retry = new TaskManager.RestartTasks(new InvPayload { Type = InventoryType.Block, Hashes = [] });
+            queue.Enqueue(TestActor, new Envelope(completed, TestActor));
+            queue.Enqueue(TestActor, new Envelope(retry, TestActor));
+
+            Assert.IsTrue(queue.TryDequeue(out var first));
+            Assert.AreSame(completed, first.Message);
+            Assert.IsTrue(queue.TryDequeue(out var second));
+            Assert.AreSame(retry, second.Message);
         }
     }
 }
