@@ -15,6 +15,7 @@ using Neo.Extensions;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract;
+using Neo.SmartContract.Native;
 using Neo.VM;
 using System;
 using Array = Neo.VM.Types.Array;
@@ -131,6 +132,24 @@ namespace Neo.UnitTests.SmartContract
             using var engine = TestEngineRunner.CreateWithScript(_snapshot, new byte[] { (byte)OpCode.NOP });
             Assert.ThrowsExactly<ArgumentOutOfRangeException>(() =>
                 engine.RuntimeLoadScript([(byte)OpCode.RET], (CallFlags)0xFF, new Array()));
+        }
+
+        [TestMethod]
+        public void RuntimeLoadScript_SetsLoadedScriptCallType()
+        {
+            using var engine = TestEngineRunner.CreateWithScript(_snapshot, new byte[] { (byte)OpCode.NOP });
+            engine.RuntimeLoadScript([(byte)OpCode.RET], CallFlags.ReadOnly, new Array());
+            Assert.AreEqual(ExecutionContextCallType.Dynamic | ExecutionContextCallType.LoadedScript,
+                engine.CurrentContext!.GetState<ExecutionContextState>().CallType);
+        }
+
+        [TestMethod]
+        public void CallContract_SetsDynamicAndNativeCallTypes()
+        {
+            using var engine = TestEngineRunner.CreateWithScript(_snapshot, new byte[] { (byte)OpCode.NOP });
+            engine.CallContract(NativeContract.NEO.Hash, "symbol", CallFlags.ReadOnly, new Array());
+            Assert.AreEqual(ExecutionContextCallType.Dynamic | ExecutionContextCallType.NativeContract,
+                engine.CurrentContext!.GetState<ExecutionContextState>().CallType);
         }
 
         [TestMethod]

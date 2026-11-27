@@ -155,7 +155,8 @@ namespace Neo.UnitTests.SmartContract
             Assert.IsNotNull(contract);
             var method = contract.Manifest.Abi.GetMethod("symbol", 0);
             Assert.IsNotNull(method);
-            engine.LoadContract(contract, method, CallFlags.ReadOnly);
+            var context = engine.LoadContract(contract, method, CallFlags.ReadOnly);
+            Assert.AreEqual(ExecutionContextCallType.NativeContract, context.GetState<ExecutionContextState>().CallType);
             Assert.AreEqual(VMState.HALT, engine.Execute());
             Assert.AreEqual("NEO", engine.ResultStack.Pop().GetString());
         }

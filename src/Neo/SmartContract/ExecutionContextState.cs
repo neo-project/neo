@@ -52,7 +52,10 @@ namespace Neo.SmartContract
 
         public int NotificationCount { get; set; }
 
-        public bool IsDynamicCall { get; set; }
+        /// <summary>
+        /// The kind of call that created this context.
+        /// </summary>
+        public ExecutionContextCallType CallType { get; set; }
 
         /// <summary>
         /// True if the execution is whitelisted by committee
