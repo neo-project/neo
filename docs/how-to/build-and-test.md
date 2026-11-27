@@ -1,6 +1,6 @@
 # How to: build and test
 
-Covers all three official repositories. Use **.NET 10**.
+Covers all three official repositories. Use **.NET 11**.
 
 ## Check the SDK
 
@@ -8,7 +8,7 @@ Covers all three official repositories. Use **.NET 10**.
 dotnet --version
 ```
 
-You want a **10.x** SDK. The projects set `<TargetFramework>net10.0</TargetFramework>` (neo, neo-node, neo-vm).
+You want an **11.x** SDK. The projects set `<TargetFramework>net11.0</TargetFramework>` (neo, neo-node, neo-vm).
 
 ## 1. Protocol library — `neo-project/neo`
 
@@ -83,7 +83,7 @@ Core-dev practice is to land VM then library then node, so binaries stay consist
 
 ## If tests fail on your machine
 
-- Confirm `net10.0` is installed: `dotnet --list-sdks`
+- Confirm an **11.x** SDK is installed: `dotnet --list-sdks`
 - On this repo, tests are **not parallel** by default (`DoNotParallelize` unless a project opts in)
 - Native store tests need the right native DLL on Windows (LevelDB from neo-project)
 
