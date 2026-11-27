@@ -102,7 +102,9 @@ namespace Neo.Network.P2P.Payloads
             OracleRequest? request = NativeContract.Oracle.GetRequest(snapshot, Id);
             if (request is null) return false;
             if (tx.NetworkFee + tx.SystemFee != request.GasForResponse) return false;
-            UInt160 oracleAccount = Contract.GetBFTAddress(NativeContract.RoleManagement.GetDesignatedByRole(snapshot, Role.Oracle, NativeContract.Ledger.CurrentIndex(snapshot) + 1));
+            var oracleNodes = NativeContract.RoleManagement.GetDesignatedByRole(snapshot, Role.Oracle, NativeContract.Ledger.CurrentIndex(snapshot) + 1);
+            if (oracleNodes.Length == 0) return false;
+            UInt160 oracleAccount = Contract.GetBFTAddress(oracleNodes);
             return tx.Signers.Any(p => p.Account.Equals(oracleAccount));
         }
     }
