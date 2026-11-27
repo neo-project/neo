@@ -47,6 +47,8 @@ namespace Neo.SmartContract
         /// </summary>
         public const long TestModeGas = 20_00000000;
 
+        private const uint MaxInvocationStackSizeBeforeIara = 1024;
+
         public delegate void OnInstanceHandlerEvent(ApplicationEngine engine);
         public delegate void OnLogEvent(ApplicationEngine engine, LogEventArgs args);
         public delegate void OnNotifyEvent(ApplicationEngine engine, NotifyEventArgs args);
@@ -254,7 +256,7 @@ namespace Neo.SmartContract
             TriggerType trigger, IVerifiable? container, DataCache snapshotCache, Block? persistingBlock,
             ProtocolSettings settings, long gas, IDiagnostic? diagnostic = null, JumpTable? jumpTable = null,
             DynamicPriceTable? dynamicPriceTable = null)
-            : base(jumpTable ?? DefaultJumpTable)
+            : base(jumpTable ?? DefaultJumpTable, GetExecutionEngineLimits(settings, snapshotCache, persistingBlock))
         {
             Trigger = trigger;
             ScriptContainer = container;
@@ -317,6 +319,15 @@ namespace Neo.SmartContract
                 nonce ^= persistingBlock.Nonce;
             }
             diagnostic?.Initialized(this);
+        }
+
+        private static ExecutionEngineLimits GetExecutionEngineLimits(ProtocolSettings settings, DataCache snapshotCache, Block? persistingBlock)
+        {
+            var index = GetPersistingIndex(persistingBlock, snapshotCache);
+            return settings is not null && snapshotCache is not null &&
+                PolicyContract.IsHardforkEnabled(settings, snapshotCache, Hardfork.HF_Iara, index)
+                ? ExecutionEngineLimits.Default
+                : ExecutionEngineLimits.Default with { MaxInvocationStackSize = MaxInvocationStackSizeBeforeIara };
         }
 
         #region JumpTable
