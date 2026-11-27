@@ -422,7 +422,7 @@ namespace Neo.UnitTests.Network.P2P
             session.IndexTasks.Add(blockB.Index, TimeProvider.Current.UtcNow);
             peer.Send(taskManager, blockB);
 
-            peer.FishForMessage(m => m is Tcp.Abort, TimeSpan.FromSeconds(3), cancellationToken: CancellationToken.None);
+            peer.FishForMessage(m => m is Connection.Close { Abort: true }, TimeSpan.FromSeconds(3), cancellationToken: CancellationToken.None);
 
             Sys.Stop(taskManager);
         }
@@ -526,7 +526,7 @@ namespace Neo.UnitTests.Network.P2P
             Assert.IsFalse(GetGlobalIndexTasks(taskManager).ContainsKey(index), "An unsolicited in-window block must still complete global index bookkeeping so the height can be retried.");
 
             unsolicitedPeer.Send(taskManager, new Blockchain.RelayResult(block, VerifyResult.Invalid));
-            unsolicitedPeer.FishForMessage(m => m is Tcp.Abort, TimeSpan.FromSeconds(3), cancellationToken: CancellationToken.None);
+            unsolicitedPeer.FishForMessage(m => m is Connection.Close { Abort: true }, TimeSpan.FromSeconds(3), cancellationToken: CancellationToken.None);
 
             GetGlobalInvTasks(taskManager)[UInt256.Zero] = 3; // skip GetHeaders
 
@@ -562,7 +562,7 @@ namespace Neo.UnitTests.Network.P2P
 
             taskManager.Receive(new Blockchain.RelayResult(block, VerifyResult.Invalid), peer.Ref);
 
-            peer.FishForMessage(m => m is Tcp.Abort, TimeSpan.FromSeconds(3), cancellationToken: CancellationToken.None);
+            peer.FishForMessage(m => m is Connection.Close { Abort: true }, TimeSpan.FromSeconds(3), cancellationToken: CancellationToken.None);
 
             Sys.Stop(taskManager);
         }
@@ -587,7 +587,7 @@ namespace Neo.UnitTests.Network.P2P
 
             taskManager.Receive(new Blockchain.RelayResult(block, VerifyResult.Invalid), peer.Ref);
 
-            peer.FishForMessage(m => m is Tcp.Abort, TimeSpan.FromSeconds(3), cancellationToken: CancellationToken.None);
+            peer.FishForMessage(m => m is Connection.Close { Abort: true }, TimeSpan.FromSeconds(3), cancellationToken: CancellationToken.None);
 
             Sys.Stop(taskManager);
         }
@@ -637,7 +637,7 @@ namespace Neo.UnitTests.Network.P2P
 
             taskManager.Receive(new Blockchain.PersistCompleted(persistedBlock), peer.Ref);
 
-            peer.FishForMessage(m => m is Tcp.Abort, TimeSpan.FromSeconds(3), cancellationToken: CancellationToken.None);
+            peer.FishForMessage(m => m is Connection.Close { Abort: true }, TimeSpan.FromSeconds(3), cancellationToken: CancellationToken.None);
 
             Sys.Stop(taskManager);
         }
