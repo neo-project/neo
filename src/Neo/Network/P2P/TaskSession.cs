@@ -19,11 +19,17 @@ namespace Neo.Network.P2P
 {
     internal class TaskSession
     {
+        public const int MaxTasks = 100;
+
         public Dictionary<UInt256, DateTime> InvTasks { get; } = new Dictionary<UInt256, DateTime>();
         public Dictionary<uint, DateTime> IndexTasks { get; } = new Dictionary<uint, DateTime>();
         public HashSet<UInt256> AvailableTasks { get; } = new HashSet<UInt256>();
+        // Inventory waiting for room in the active task budget.
+        public Dictionary<UInt256, InventoryType> DeferredTasks { get; } = new();
         public Dictionary<uint, UInt256> ReceivedBlockHashes { get; } = new Dictionary<uint, UInt256>();
-        public bool HasTooManyTasks => InvTasks.Count + IndexTasks.Count >= 100;
+        public int PendingTaskCount => InvTasks.Count + IndexTasks.Count;
+        public int TaskCount => PendingTaskCount + AvailableTasks.Count;
+        public bool HasTooManyTasks => TaskCount >= MaxTasks;
         public bool IsFullNode { get; }
         public uint LastBlockIndex { get; set; }
         public bool MempoolSent { get; set; }

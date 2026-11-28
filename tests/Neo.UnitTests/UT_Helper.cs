@@ -15,6 +15,7 @@ using Neo.IO.Caching;
 using Neo.Network.P2P;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
+using Neo.VM;
 using Neo.Wallets;
 using System;
 using System.Collections.Generic;
@@ -61,6 +62,18 @@ namespace Neo.UnitTests
             byte[] testByteArray = TestUtils.GetByteArray(64, 0x42);
             UInt160 res = testByteArray.ToScriptHash();
             Assert.AreEqual(UInt160.Parse("2d3b96ae1bcc5a585e075e3b81920210dec16302"), res);
+        }
+
+        [TestMethod]
+        public void ScriptHashMatchesToScriptHash()
+        {
+            byte[][] scripts = [[], [(byte)OpCode.PUSH1, (byte)OpCode.RET]];
+            foreach (byte[] bytes in scripts)
+            {
+                Script script = new(bytes);
+                Assert.AreEqual(bytes.ToScriptHash(), new UInt160(script.ScriptHash.Span));
+                Assert.AreEqual(bytes.ToScriptHash(), script.ToScriptHash());
+            }
         }
 
         [TestMethod]

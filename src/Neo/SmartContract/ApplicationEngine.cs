@@ -267,7 +267,6 @@ namespace Neo.SmartContract
             nonceData = container is Transaction tx ? tx.Hash.ToArray()[..16] : new byte[16];
 
             var persistingIndex = GetPersistingIndex();
-
             if (snapshotCache is null || persistingIndex == 0)
             {
                 // Policy storage isn't available yet (genesis or no snapshot): fall back to the defaults.
@@ -361,6 +360,10 @@ namespace Neo.SmartContract
         public static JumpTable ComposeNotHuyaoJumpTable()
         {
             var table = ComposeDefaultJumpTable();
+
+            table[OpCode.CALLA] = CallA_BeforeHuyao;
+            table[OpCode.EQUAL] = Equal_BeforeHuyao;
+            table[OpCode.NOTEQUAL] = NotEqual_BeforeHuyao;
 
             // Before https://github.com/neo-project/neo-vm/pull/606
             table[OpCode.SETITEM] = SetItem_Before606;
@@ -832,7 +835,7 @@ namespace Neo.SmartContract
         protected override void ContextUnloaded(ExecutionContext context)
         {
             base.ContextUnloaded(context);
-            if (context.Script != CurrentContext?.Script)
+            if (!ReferenceEquals(context.Script, CurrentContext?.Script))
             {
                 ExecutionContextState state = context.GetState<ExecutionContextState>();
                 if (UncaughtException is null)
@@ -988,7 +991,7 @@ namespace Neo.SmartContract
         {
             // Set default execution context state
             var state = context.GetState<ExecutionContextState>();
-            state.ScriptHash ??= ((ReadOnlyMemory<byte>)context.Script).Span.ToScriptHash();
+            state.ScriptHash ??= context.Script.ToScriptHash();
             invocationCounter.TryAdd(state.ScriptHash, 1);
             base.LoadContext(context);
             Diagnostic?.ContextLoaded(context);
