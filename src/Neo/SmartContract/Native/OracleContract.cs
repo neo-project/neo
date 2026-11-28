@@ -103,6 +103,13 @@ namespace Neo.SmartContract.Native
             if (response == null) throw new ArgumentException("Oracle response not found");
             OracleRequest? request = GetRequest(engine.SnapshotCache, response.Id);
             if (request == null) throw new ArgumentException("Oracle request not found");
+            if (engine.IsHardforkEnabled(Hardfork.HF_Iara))
+            {
+                var original = Ledger.GetTransaction(engine.SnapshotCache, request.OriginalTxid)
+                    ?? throw new InvalidOperationException("Original Oracle request transaction not found");
+                if (original.Signers.Any(p => Policy.IsBlocked(engine.SnapshotCache, p.Account)))
+                    throw new InvalidOperationException("An original Oracle request signer is blocked");
+            }
             engine.SendNotification(Hash, "OracleResponse", new Array() { response.Id, request.OriginalTxid.ToArray() });
             StackItem userData = BinarySerializer.Deserialize(request.UserData, engine.Limits);
             return engine.CallFromNativeContractAsync(Hash, request.CallbackContract, request.CallbackMethod, request.Url, userData, (int)response.Code, response.Result);
